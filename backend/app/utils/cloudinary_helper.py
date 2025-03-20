@@ -14,3 +14,7 @@ def upload_images(images):
         result = cloudinary.uploader.upload(image)
         image_urls.append(result['url'])
     return image_urls
+
+def upload_image(image_file):
+    result = cloudinary.uploader.upload(image_file)
+    return result['url']
