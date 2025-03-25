@@ -24,4 +24,4 @@ class Config:
     if SQLALCHEMY_DATABASE_URI.startswith("postgresql://"):
         import urllib.parse
         url = urllib.parse.urlparse(SQLALCHEMY_DATABASE_URI)
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{url.username}:{url.password}@{url.hostname}:{url.port}{url.path}"
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{url.username}:{url.password}@{url.hostname}:{url.port}{url.path}"
