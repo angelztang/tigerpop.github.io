@@ -22,7 +22,8 @@ def create_app():
     jwt.init_app(app)
 
     # Register blueprints (if any)
-    from .routes import auth_routes
+    from .routes import auth_routes, listing_routes
     app.register_blueprint(auth_routes.bp)
+    app.register_blueprint(listing_routes.bp)
 
     return app
