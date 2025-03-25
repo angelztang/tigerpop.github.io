@@ -1,36 +1,111 @@
 // Popup Modal that appears when users click "Create Listing"
-import { useState } from "react";
-import { createListing } from "../services/listingService";
-import React from "react";
+import React, { useState } from 'react';
+import { createListing } from '../services/listingService';
 
-const ListingForm = ({ onClose }) => {
-  const [formData, setFormData] = useState({ title: "", price: "", description: "" });
+interface ListingFormProps {
+  onClose?: () => void;
+}
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: '',
+    image_url: ''
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createListing(formData);
-    onClose();
-    window.location.reload(); // Refresh for prototype
+    try {
+      await createListing({
+        ...formData,
+        price: parseFloat(formData.price)
+      });
+      setFormData({
+        title: '',
+        description: '',
+        price: '',
+        image_url: ''
+      });
+      if (onClose) {
+        onClose();
+      }
+      window.location.reload(); // Refresh for prototype simplicity
+    } catch (error) {
+      console.error('Error creating listing:', error);
+    }
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white p-6 rounded-lg shadow-lg">
-        <h2 className="text-xl font-semibold mb-4">Create Listing</h2>
-        <input name="title" onChange={handleChange} placeholder="Title" className="border p-2 w-full" />
-        <input name="price" onChange={handleChange} placeholder="Price" className="border p-2 w-full mt-2" />
-        <textarea name="description" onChange={handleChange} placeholder="Description" className="border p-2 w-full mt-2" />
-        
-        <div className="flex justify-end mt-4">
-          <button onClick={onClose} className="mr-2 text-gray-500">Cancel</button>
-          <button onClick={handleSubmit} className="bg-blue-500 text-white px-4 py-2 rounded">Submit</button>
-        </div>
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Title:</label>
+        <input
+          type="text"
+          name="title"
+          value={formData.title}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
       </div>
-    </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Description:</label>
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Price:</label>
+        <input
+          type="number"
+          name="price"
+          value={formData.price}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Image URL:</label>
+        <input
+          type="url"
+          name="image_url"
+          value={formData.image_url}
+          onChange={handleChange}
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+        />
+      </div>
+      <div className="flex justify-end space-x-2">
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+          >
+            Cancel
+          </button>
+        )}
+        <button
+          type="submit"
+          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700"
+        >
+          Create Listing
+        </button>
+      </div>
+    </form>
   );
 };
 
