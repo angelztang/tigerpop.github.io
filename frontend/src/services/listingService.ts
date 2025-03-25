@@ -8,7 +8,7 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
-  image_url?: string;
+  images: string[];
   user_id: number;
   created_at?: string;
   updated_at?: string;
@@ -18,14 +18,14 @@ export interface CreateListingData {
   title: string;
   description: string;
   price: number;
-  image_url?: string;
+  image_urls?: string[];
 }
 
 const getAuthHeaders = () => {
-  const token = getToken();
+  const token = localStorage.getItem('token');
   return {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
   };
 };
 
@@ -123,5 +123,32 @@ export const getUserListings = async (): Promise<Listing[]> => {
   }
   
   return response.json();
+};
+
+export const uploadImages = async (files: File[]): Promise<string[]> => {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    throw new Error('Authentication required');
+  }
+
+  const formData = new FormData();
+  files.forEach(file => {
+    formData.append('images', file);
+  });
+
+  const response = await fetch(`${API_URL}/api/listings/upload`, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${token}`
+    },
+    body: formData
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to upload images');
+  }
+
+  const data = await response.json();
+  return data.urls;
 };
   

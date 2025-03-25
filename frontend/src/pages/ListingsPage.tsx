@@ -7,17 +7,23 @@ const ListingsPage: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
 
+  const fetchListings = async () => {
+    try {
+      const data = await getListings();
+      setListings(data);
+    } catch (error) {
+      console.error('Error fetching listings:', error);
+    }
+  };
+
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const data = await getListings();
-        setListings(data);
-      } catch (error) {
-        console.error('Error fetching listings:', error);
-      }
-    };
     fetchListings();
   }, []);
+
+  const handleFormClose = () => {
+    setShowCreateForm(false);
+    fetchListings(); // Refresh listings after form is closed
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -33,13 +39,7 @@ const ListingsPage: React.FC = () => {
 
       {showCreateForm && (
         <div className="mb-8">
-          <ListingForm />
-          <button
-            onClick={() => setShowCreateForm(false)}
-            className="mt-4 text-gray-600 hover:text-gray-800"
-          >
-            Cancel
-          </button>
+          <ListingForm onClose={handleFormClose} />
         </div>
       )}
 

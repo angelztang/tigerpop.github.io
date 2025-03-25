@@ -11,17 +11,24 @@ class User(db.Model):
     def __repr__(self):
         return f'<User {self.username}>'
 
+class ListingImage(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    url = db.Column(db.String(500), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listing.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def __repr__(self):
+        return f'<ListingImage {self.url}>'
+
 class Listing(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
-    image_url = db.Column(db.String(200))
     status = db.Column(db.String(20), default='available')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-
-    user = db.relationship('User', backref=db.backref('listings', lazy=True))
+    images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
 
     def __repr__(self):
         return f'<Listing {self.title}>'
