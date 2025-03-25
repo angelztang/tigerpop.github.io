@@ -23,9 +23,9 @@ const SellerListings: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {listings.map(listing => (
           <div key={listing.id} className="border p-4 rounded-lg shadow">
-            {listing.image_url && (
+            {listing.images && listing.images.length > 0 && (
               <img 
-                src={listing.image_url} 
+                src={listing.images[0]} 
                 alt={listing.title} 
                 className="w-full h-48 object-cover rounded-md mb-4"
               />
