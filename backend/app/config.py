@@ -13,10 +13,14 @@ class Config:
     # Handle Heroku's DATABASE_URL
     database_url = os.getenv("DATABASE_URL")
     if database_url:
-        # Heroku provides postgres:// but SQLAlchemy needs postgresql://
-        if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql://", 1)
-        SQLALCHEMY_DATABASE_URI = database_url
+        # Parse the database URL
+        url = urlparse(database_url)
+        username = url.username
+        password = url.password
+        hostname = url.hostname
+        port = url.port
+        database = url.path[1:]  # Remove leading slash
+        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{username}:{password}@{hostname}:{port}/{database}"
     else:
         SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"  # Use SQLite for local development
 
