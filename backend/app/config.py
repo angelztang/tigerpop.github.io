@@ -20,7 +20,7 @@ class Config:
         hostname = url.hostname
         port = url.port
         database = url.path[1:]  # Remove leading slash
-        SQLALCHEMY_DATABASE_URI = f"postgresql+psycopg2://{username}:{password}@{hostname}:{port}/{database}"
+        SQLALCHEMY_DATABASE_URI = f"postgresql://{username}:{password}@{hostname}:{port}/{database}"
     else:
         SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"  # Use SQLite for local development
 
