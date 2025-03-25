@@ -1,16 +1,33 @@
 from flask import Blueprint, request, jsonify
-from app.services.listing_service import create_listing
+from app import db
+from app.models import Listing
 
 bp = Blueprint('listings', __name__)
 
-@bp.route('/', methods=['POST'])
-def add_listing():
+@bp.route('/create', methods=['POST'])
+def create_listing():
     data = request.get_json()
+    title = data['title']
+    description = data['description']
+    price = data['price']
+    image_url = data.get('image_url')
 
-    # Ensure the required fields are present
-    required_fields = ['title', 'category', 'price', 'size', 'images']
-    for field in required_fields:
-        if field not in data:
-            return jsonify({'message': f'Missing {field}'}), 400
+    new_listing = Listing(
+        title=title,
+        description=description,
+        price=price,
+        image_url=image_url,
+        user_id=1  # Example: You should get user_id from authenticated user
+    )
 
-    return create_listing(data)
+    db.session.add(new_listing)
+    db.session.commit()
+
+    return jsonify({'message': 'Listing created successfully!'}), 201
+
+@bp.route('/<int:listing_id>', methods=['GET'])
+def get_listing(listing_id):
+    listing = Listing.query.get(listing_id)
+    if listing:
+        return jsonify({'title': listing.title, 'description': listing.description, 'price': listing.price, 'image_url': listing.image_url})
+    return jsonify({'message': 'Listing not found'}), 404
