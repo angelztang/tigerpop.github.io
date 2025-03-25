@@ -15,7 +15,7 @@ class Config:
     if database_url:
         # Heroku provides postgres:// but SQLAlchemy needs postgresql://
         if database_url.startswith("postgres://"):
-            database_url = database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+            database_url = database_url.replace("postgres://", "postgresql://", 1)
         SQLALCHEMY_DATABASE_URI = database_url
     else:
         SQLALCHEMY_DATABASE_URI = "sqlite:///app.db"  # Use SQLite for local development
