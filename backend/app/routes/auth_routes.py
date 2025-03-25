@@ -8,9 +8,10 @@ bp = Blueprint('auth', __name__)
 def signup():
     data = request.get_json()
     username = data['username']
+    email = data['email']
     password = data['password']
     
-    new_user = User(username=username, password=password)
+    new_user = User(username=username, email=email, password=password)
     db.session.add(new_user)
     db.session.commit()
 
