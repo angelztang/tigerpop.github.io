@@ -3,8 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 import os
-from sqlalchemy import create_engine
-from urllib.parse import urlparse
 
 db = SQLAlchemy()
 jwt = JWTManager()
@@ -17,13 +15,9 @@ def create_app():
     database_url = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
     if database_url.startswith('postgres://'):
         database_url = database_url.replace('postgres://', 'postgresql://', 1)
-
-    # Create the engine directly
-    engine = create_engine(database_url)
     
     # Configure SQLAlchemy
-    app.config['SQLALCHEMY_ENGINE'] = engine
-    app.config['SQLALCHEMY_DATABASE_URI'] = str(engine.url)
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     app.config['JWT_SECRET_KEY'] = os.environ.get('JWT_SECRET_KEY', 'dev-key-change-this')
     app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
