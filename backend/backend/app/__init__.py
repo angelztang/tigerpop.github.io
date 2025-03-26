@@ -28,10 +28,10 @@ def create_app(config_class=Config):
     # Print database URL for debugging (remove in production)
     logger.info(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
     
-    # Register blueprints with URL prefix
+    # Register blueprints
     from .routes import auth_routes, listing_routes
-    app.register_blueprint(auth_routes.bp, url_prefix='/api')
-    app.register_blueprint(listing_routes.bp, url_prefix='/api')
+    app.register_blueprint(auth_routes.bp)
+    app.register_blueprint(listing_routes.bp)
     
     # Create tables if they don't exist
     with app.app_context():

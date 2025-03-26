@@ -9,6 +9,7 @@ export interface Listing {
   description: string;
   price: number;
   images: string[];
+  category: string;
   user_id: number;
   created_at?: string;
   updated_at?: string;
@@ -18,20 +19,26 @@ export interface CreateListingData {
   title: string;
   description: string;
   price: number;
+  category?: string;
   image_urls?: string[];
+  user_id?: number;
 }
 
 const getAuthHeaders = () => {
   const token = getToken();
   return {
-    'Authorization': `Bearer ${token}`,
+    'Authorization': token ? `Bearer ${token}` : '',
     'Content-Type': 'application/json'
   };
 };
 
-export const getListings = async (): Promise<Listing[]> => {
+export const getListings = async (queryString: string = ''): Promise<Listing[]> => {
   try {
-    const response = await fetch(`${API_URL}/listings`, {
+    const url = queryString.startsWith('/api') 
+      ? `${API_URL}${queryString.substring(4)}` 
+      : `${API_URL}/listings${queryString}`;
+    
+    const response = await fetch(url, {
       headers: getAuthHeaders()
     });
     if (!response.ok) {
@@ -46,10 +53,16 @@ export const getListings = async (): Promise<Listing[]> => {
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
   try {
+    // Use default user ID (1) if no user is logged in
+    const listingData = {
+      ...data,
+      user_id: data.user_id || 1
+    };
+
     const response = await fetch(`${API_URL}/listings`, {
       method: 'POST',
       headers: getAuthHeaders(),
-      body: JSON.stringify(data)
+      body: JSON.stringify(listingData)
     });
 
     if (!response.ok) {
