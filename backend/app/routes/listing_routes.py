@@ -58,31 +58,40 @@ def get_listings():
 
 @bp.route('', methods=['POST'])
 def create_listing():
-    data = request.get_json()
-    # For now, set a default user_id of 1
-    user_id = 1
-    
-    new_listing = Listing(
-        title=data['title'],
-        description=data['description'],
-        price=data['price'],
-        user_id=user_id
-    )
-    
-    # Add images
-    if 'image_urls' in data:
-        for url in data['image_urls']:
-            image = ListingImage(url=url)
-            new_listing.images.append(image)
-    
-    db.session.add(new_listing)
-    db.session.commit()
-    
-    return jsonify({
-        'message': 'Listing created successfully',
-        'id': new_listing.id,
-        'images': [img.url for img in new_listing.images]
-    }), 201
+    try:
+        data = request.get_json()
+        print("Received data:", data)  # Debug log
+        
+        # For now, set a default user_id of 1
+        user_id = 1
+        
+        new_listing = Listing(
+            title=data['title'],
+            description=data['description'],
+            price=data['price'],
+            user_id=user_id
+        )
+        
+        # Add images
+        if 'image_urls' in data:
+            for url in data['image_urls']:
+                image = ListingImage(url=url)
+                new_listing.images.append(image)
+        
+        db.session.add(new_listing)
+        db.session.commit()
+        
+        print("Listing created successfully with ID:", new_listing.id)  # Debug log
+        
+        return jsonify({
+            'message': 'Listing created successfully',
+            'id': new_listing.id,
+            'images': [img.url for img in new_listing.images]
+        }), 201
+    except Exception as e:
+        print("Error creating listing:", str(e))  # Debug log
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/user', methods=['GET'])
 @jwt_required()

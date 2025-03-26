@@ -22,7 +22,7 @@ export interface CreateListingData {
 }
 
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = getToken();
   return {
     'Authorization': `Bearer ${token}`,
     'Content-Type': 'application/json'
@@ -30,119 +30,132 @@ const getAuthHeaders = () => {
 };
 
 export const getListings = async (): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/listings`, {
-    headers: getAuthHeaders()
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch listings');
+  try {
+    const response = await fetch(`${API_URL}/listings`, {
+      headers: getAuthHeaders()
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch listings');
+    }
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching listings:', error);
+    throw error;
   }
-  return response.json();
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/listings`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  });
+  try {
+    const response = await fetch(`${API_URL}/listings`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to create listing');
+    if (!response.ok) {
+      throw new Error('Failed to create listing');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    throw error;
   }
-
-  return response.json();
 };
 
 export const updateListing = async (id: number, data: Partial<CreateListingData>): Promise<Listing> => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error('Authentication required');
+  try {
+    const response = await fetch(`${API_URL}/listings/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to update listing');
+    }
+
+    return response.json();
+  } catch (error) {
+    console.error('Error updating listing:', error);
+    throw error;
   }
-
-  const response = await fetch(`${API_URL}/listings/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
-    },
-    body: JSON.stringify(data)
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to update listing');
-  }
-
-  return response.json();
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error('Authentication required');
-  }
+  try {
+    const response = await fetch(`${API_URL}/listings/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
 
-  const response = await fetch(`${API_URL}/listings/${id}`, {
-    method: 'DELETE',
-    headers: {
-      'Authorization': `Bearer ${token}`
+    if (!response.ok) {
+      throw new Error('Failed to delete listing');
     }
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete listing');
+  } catch (error) {
+    console.error('Error deleting listing:', error);
+    throw error;
   }
 };
 
 export const updateListingStatus = async (id: number, status: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/listings/${id}/status`, {
-    method: 'PATCH',
-    headers: getAuthHeaders(),
-    body: JSON.stringify({ status }),
-  });
+  try {
+    const response = await fetch(`${API_URL}/listings/${id}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status }),
+    });
 
-  if (!response.ok) {
-    throw new Error('Failed to update listing status');
+    if (!response.ok) {
+      throw new Error('Failed to update listing status');
+    }
+  } catch (error) {
+    console.error('Error updating listing status:', error);
+    throw error;
   }
 };
 
 export const getUserListings = async (): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/listings/user`, {
-    headers: getAuthHeaders(),
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to fetch user listings');
+  try {
+    const response = await fetch(`${API_URL}/listings/user`, {
+      headers: getAuthHeaders(),
+    });
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch user listings');
+    }
+    
+    return response.json();
+  } catch (error) {
+    console.error('Error fetching user listings:', error);
+    throw error;
   }
-  
-  return response.json();
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error('Authentication required');
+  try {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
+
+    const response = await fetch(`${API_URL}/listings/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: formData
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to upload images');
+    }
+
+    const data = await response.json();
+    return data.urls;
+  } catch (error) {
+    console.error('Error uploading images:', error);
+    throw error;
   }
-
-  const formData = new FormData();
-  files.forEach(file => {
-    formData.append('images', file);
-  });
-
-  const response = await fetch(`${API_URL}/listings/upload`, {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${token}`
-    },
-    body: formData
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to upload images');
-  }
-
-  const data = await response.json();
-  return data.urls;
 };
   
