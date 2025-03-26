@@ -30,7 +30,7 @@ const getAuthHeaders = () => {
 };
 
 export const getListings = async (): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/api/listings`, {
+  const response = await fetch(`${API_URL}/listings`, {
     headers: getAuthHeaders()
   });
   if (!response.ok) {
@@ -45,7 +45,7 @@ export const createListing = async (data: CreateListingData): Promise<Listing> =
     throw new Error('Authentication required');
   }
 
-  const response = await fetch(`${API_URL}/api/listings`, {
+  const response = await fetch(`${API_URL}/listings`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -67,7 +67,7 @@ export const updateListing = async (id: number, data: Partial<CreateListingData>
     throw new Error('Authentication required');
   }
 
-  const response = await fetch(`${API_URL}/api/listings/${id}`, {
+  const response = await fetch(`${API_URL}/listings/${id}`, {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export const deleteListing = async (id: number): Promise<void> => {
     throw new Error('Authentication required');
   }
 
-  const response = await fetch(`${API_URL}/api/listings/${id}`, {
+  const response = await fetch(`${API_URL}/listings/${id}`, {
     method: 'DELETE',
     headers: {
       'Authorization': `Bearer ${token}`
@@ -102,7 +102,7 @@ export const deleteListing = async (id: number): Promise<void> => {
 };
 
 export const updateListingStatus = async (id: number, status: string): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/listings/${id}/status`, {
+  const response = await fetch(`${API_URL}/listings/${id}/status`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
     body: JSON.stringify({ status }),
@@ -114,7 +114,7 @@ export const updateListingStatus = async (id: number, status: string): Promise<v
 };
 
 export const getUserListings = async (): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/api/listings/user`, {
+  const response = await fetch(`${API_URL}/listings/user`, {
     headers: getAuthHeaders(),
   });
   
@@ -136,7 +136,7 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
     formData.append('images', file);
   });
 
-  const response = await fetch(`${API_URL}/api/listings/upload`, {
+  const response = await fetch(`${API_URL}/listings/upload`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`

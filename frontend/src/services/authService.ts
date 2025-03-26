@@ -5,8 +5,10 @@ export interface LoginData {
   password: string;
 }
 
-export interface SignupData extends LoginData {
+export interface SignupData {
+  username: string;
   email: string;
+  password: string;
 }
 
 export interface AuthResponse {
