@@ -18,6 +18,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -42,6 +43,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setMessage(null);
     try {
       setUploading(true);
       
@@ -52,7 +54,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       }
 
       // Then create listing with image URLs
-      await createListing({
+      const response = await createListing({
         ...formData,
         price: parseFloat(formData.price),
         image_urls: imageUrls
@@ -69,12 +71,20 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       setSelectedFiles([]);
       setPreviewUrls([]);
       
-      if (onClose) {
-        onClose();
-      }
-      navigate('/');
+      // Show success message
+      setMessage({ text: 'Listing created successfully!', type: 'success' });
+      
+      // Wait for 2 seconds to show the success message before redirecting
+      setTimeout(() => {
+        if (onClose) {
+          onClose();
+        }
+        navigate('/');
+      }, 2000);
+      
     } catch (error) {
       console.error('Error creating listing:', error);
+      setMessage({ text: 'Failed to create listing. Please try again.', type: 'error' });
     } finally {
       setUploading(false);
     }
@@ -82,6 +92,13 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {message && (
+        <div className={`p-4 rounded-md ${
+          message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        }`}>
+          {message.text}
+        </div>
+      )}
       <div>
         <label className="block text-sm font-medium text-gray-700">Title:</label>
         <input
