@@ -152,22 +152,37 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
       formData.append('images', file);
     });
 
+    const token = getToken();
+    console.log('Uploading images to:', `${API_URL}/listings/upload`); // Log the URL
+    console.log('Number of files:', files.length); // Log number of files
+    console.log('Token present:', !!token); // Log if token exists
+
     const response = await fetch(`${API_URL}/listings/upload`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${getToken()}`
+        'Authorization': token ? `Bearer ${token}` : ''
       },
       body: formData
     });
 
+    console.log('Upload response status:', response.status); // Log response status
+
     if (!response.ok) {
-      throw new Error('Failed to upload images');
+      const errorText = await response.text();
+      console.error('Upload error response:', errorText);
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData?.message || 'Failed to upload images');
+      } catch (e) {
+        throw new Error(`Failed to upload images: ${errorText}`);
+      }
     }
 
     const data = await response.json();
+    console.log('Upload success, received URLs:', data.urls); // Log successful response
     return data.urls;
   } catch (error) {
-    console.error('Error uploading images:', error);
+    console.error('Detailed upload error:', error);
     throw error;
   }
 };

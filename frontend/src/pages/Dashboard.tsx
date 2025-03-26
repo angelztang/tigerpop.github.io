@@ -1,6 +1,7 @@
 // Main dashboard with Buyer/Seller mode toggle
 import { useState } from "react";
 import SellerDashboard from "./SellerDashboard";
+import ListingsPage from "./ListingsPage";
 import React from "react";
 
 const Dashboard = () => {
@@ -18,7 +19,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      {mode === "seller" ? <SellerDashboard /> : <p>Buyer mode coming soon!</p>}
+      {mode === "seller" ? <SellerDashboard /> : <ListingsPage />}
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { API_URL } from '../config';
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createListing, uploadImages } from '../services/listingService';
+import { getToken } from '../services/authService';
 
 interface ListingFormProps {
   onClose?: () => void;
@@ -43,10 +44,32 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setSelectedFiles(files);
+    
+    // Validate files
+    const validFiles = files.filter(file => {
+      // Check if file is an image
+      if (!file.type.startsWith('image/')) {
+        setMessage({ text: `File "${file.name}" is not an image`, type: 'error' });
+        return false;
+      }
+      
+      // Check file size (e.g., max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setMessage({ text: `File "${file.name}" is too large (max 5MB)`, type: 'error' });
+        return false;
+      }
+      
+      return true;
+    });
+
+    if (validFiles.length === 0) {
+      return;
+    }
+
+    setSelectedFiles(validFiles);
     
     // Create preview URLs
-    const urls = files.map(file => URL.createObjectURL(file));
+    const urls = validFiles.map(file => URL.createObjectURL(file));
     setPreviewUrls(prev => {
       // Revoke old URLs to prevent memory leaks
       prev.forEach(url => URL.revokeObjectURL(url));
@@ -64,24 +87,23 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       
       // Only attempt to upload images if they exist
       if (selectedFiles.length > 0) {
-        const formData = new FormData();
-        selectedFiles.forEach((file) => {
-          formData.append('images', file);
-        });
-
-        const response = await fetch(`${API_URL}/api/listings/upload`, {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to upload images');
+        try {
+          console.log('Starting image upload...'); // Debug log
+          imageUrls = await uploadImages(selectedFiles);
+          console.log('Image upload successful:', imageUrls); // Debug log
+        } catch (error) {
+          console.error('Detailed image upload error:', error);
+          setMessage({ 
+            text: error instanceof Error 
+              ? `Failed to upload images: ${error.message}` 
+              : 'Failed to upload images. Please try again.', 
+            type: 'error' 
+          });
+          return;
         }
-
-        const data = await response.json();
-        imageUrls = data.urls;
       }
 
+      console.log('Creating listing with images:', imageUrls); // Debug log
       const response = await createListing({
         ...formData,
         price: parseFloat(formData.price),
@@ -114,7 +136,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       
     } catch (error) {
       console.error('Error creating listing:', error);
-      setMessage({ text: 'Failed to create listing. Please try again.', type: 'error' });
+      setMessage({ 
+        text: error instanceof Error 
+          ? `Failed to create listing: ${error.message}` 
+          : 'Failed to create listing. Please try again.', 
+        type: 'error' 
+      });
     } finally {
       setUploading(false);
     }

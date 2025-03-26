@@ -1,26 +1,105 @@
 // Shows seller's listings + create listing button
-import React, { useState } from 'react';
-import SellerListings from "../components/SellerListings";
+import React, { useState, useEffect } from 'react';
+import { Listing, getListings } from '../services/listingService';
 import ListingForm from "../components/ListingForm";
+
+type FilterType = 'all' | 'selling' | 'sold' | 'likes' | 'saved';
 
 const SellerDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [listings, setListings] = useState<Listing[]>([]);
+
+  useEffect(() => {
+    const fetchListings = async () => {
+      try {
+        // In a real app, this would be filtered by user_id
+        const data = await getListings('/api/listings');
+        setListings(data);
+      } catch (error) {
+        console.error('Error fetching listings:', error);
+      }
+    };
+
+    fetchListings();
+  }, []);
+
+  const filterTabs: { label: string; value: FilterType }[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Selling', value: 'selling' },
+    { label: 'Sold', value: 'sold' },
+    { label: 'Likes', value: 'likes' },
+    { label: 'Saved', value: 'saved' },
+  ];
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* User Profile Section */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+        <h2 className="text-xl">netid</h2>
+      </div>
+
+      {/* Listings Header */}
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">My Listings</h1>
         <button
           onClick={() => setShowForm(true)}
-          className="bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition-colors duration-200 flex items-center"
+          className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800 transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
-          </svg>
-          Create New Listing
+          Create new post
         </button>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="flex gap-8">
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveFilter(tab.value)}
+              className={`pb-4 px-1 ${
+                activeFilter === tab.value
+                  ? 'border-b-2 border-black font-medium'
+                  : 'text-gray-500'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Listings Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {listings.map((item) => (
+          <div key={item.id} className="group relative">
+            <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-200">
+              <img
+                src={item.images[0] || "https://via.placeholder.com/300"}
+                alt={item.title}
+                className="h-full w-full object-cover object-center"
+              />
+            </div>
+            <div className="mt-2 flex justify-between items-start">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">{item.title}</h3>
+                <p className="text-sm text-gray-500">${item.price}</p>
+              </div>
+              <button 
+                className="p-1 hover:bg-gray-100 rounded-full"
+                onClick={() => {/* Handle edit */}}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Create Listing Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -39,8 +118,6 @@ const SellerDashboard: React.FC = () => {
           </div>
         </div>
       )}
-      
-      <SellerListings />
     </div>
   );
 };
