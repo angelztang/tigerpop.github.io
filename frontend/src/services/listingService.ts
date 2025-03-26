@@ -40,16 +40,10 @@ export const getListings = async (): Promise<Listing[]> => {
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  const token = localStorage.getItem('token');
-  if (!token) {
-    throw new Error('Authentication required');
-  }
-
   const response = await fetch(`${API_URL}/listings`, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify(data)
   });

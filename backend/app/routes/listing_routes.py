@@ -57,10 +57,10 @@ def get_listings():
     } for listing in listings])
 
 @bp.route('', methods=['POST'])
-@jwt_required()
 def create_listing():
     data = request.get_json()
-    user_id = get_jwt_identity()
+    # For now, set a default user_id of 1
+    user_id = 1
     
     new_listing = Listing(
         title=data['title'],
