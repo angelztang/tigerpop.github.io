@@ -5,6 +5,7 @@ import os
 from .. import db
 from ..models import Listing, ListingImage
 from datetime import datetime
+from sqlalchemy import and_
 
 bp = Blueprint('listings', __name__, url_prefix='/api/listings')
 
@@ -45,15 +46,31 @@ def upload_images():
 
 @bp.route('', methods=['GET'])
 def get_listings():
-    listings = Listing.query.all()
+    # Get filter parameters
+    max_price = request.args.get('max_price', type=float)
+    category = request.args.get('category')
+    
+    # Build query
+    query = Listing.query
+    
+    if max_price is not None:
+        query = query.filter(Listing.price <= max_price)
+    
+    if category:
+        query = query.filter(Listing.category == category)
+    
+    listings = query.all()
+    
     return jsonify([{
         'id': listing.id,
         'title': listing.title,
         'description': listing.description,
         'price': listing.price,
+        'category': listing.category,
         'images': [img.url for img in listing.images],
         'status': listing.status,
-        'user_id': listing.user_id
+        'user_id': listing.user_id,
+        'created_at': listing.created_at.isoformat()
     } for listing in listings])
 
 @bp.route('', methods=['POST'])
@@ -69,6 +86,7 @@ def create_listing():
             title=data['title'],
             description=data['description'],
             price=data['price'],
+            category=data.get('category', 'other'),
             user_id=user_id
         )
         
@@ -86,12 +104,21 @@ def create_listing():
         return jsonify({
             'message': 'Listing created successfully',
             'id': new_listing.id,
+            'category': new_listing.category,
             'images': [img.url for img in new_listing.images]
         }), 201
     except Exception as e:
         print("Error creating listing:", str(e))  # Debug log
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/categories', methods=['GET'])
+def get_categories():
+    categories = [
+        'tops', 'bottoms', 'shoes', 'dresses',
+        'fridges', 'couches', 'textbooks', 'other'
+    ]
+    return jsonify(categories)
 
 @bp.route('/user', methods=['GET'])
 @jwt_required()
@@ -104,9 +131,11 @@ def get_user_listings():
         'title': listing.title,
         'description': listing.description,
         'price': listing.price,
-        'image_url': listing.image_url,
+        'category': listing.category,
+        'images': [img.url for img in listing.images],
         'status': listing.status,
-        'user_id': listing.user_id
+        'user_id': listing.user_id,
+        'created_at': listing.created_at.isoformat()
     } for listing in listings])
 
 @bp.route('/<int:id>/status', methods=['PATCH'])

@@ -26,6 +26,7 @@ class Listing(db.Model):
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
     status = db.Column(db.String(20), default='available')
+    category = db.Column(db.String(50), nullable=False, default='other')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
