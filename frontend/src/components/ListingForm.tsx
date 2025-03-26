@@ -1,3 +1,4 @@
+import { API_URL } from '../config';
 // Popup Modal that appears when users click "Create Listing"
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +8,17 @@ interface ListingFormProps {
   onClose?: () => void;
 }
 
+const categories = [
+  'tops',
+  'bottoms',
+  'shoes',
+  'dresses',
+  'fridges',
+  'couches',
+  'textbooks',
+  'other'
+];
+
 const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -14,13 +26,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
     title: '',
     description: '',
     price: '',
+    category: '',
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -47,17 +60,33 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
     try {
       setUploading(true);
       
-      // First upload images
       let imageUrls: string[] = [];
+      
+      // Only attempt to upload images if they exist
       if (selectedFiles.length > 0) {
-        imageUrls = await uploadImages(selectedFiles);
+        const formData = new FormData();
+        selectedFiles.forEach((file) => {
+          formData.append('images', file);
+        });
+
+        const response = await fetch(`${API_URL}/api/listings/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to upload images');
+        }
+
+        const data = await response.json();
+        imageUrls = data.urls;
       }
 
-      // Then create listing with image URLs
       const response = await createListing({
         ...formData,
         price: parseFloat(formData.price),
-        image_urls: imageUrls
+        image_urls: imageUrls,
+        user_id: 1 // Using default user ID for now
       });
 
       // Clean up preview URLs
@@ -67,6 +96,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         title: '',
         description: '',
         price: '',
+        category: '',
       });
       setSelectedFiles([]);
       setPreviewUrls([]);
@@ -79,7 +109,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         if (onClose) {
           onClose();
         }
-        navigate('/');
+        navigate('/listings');
       }, 2000);
       
     } catch (error) {
@@ -107,8 +137,25 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
           value={formData.title}
           onChange={handleChange}
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
         />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700">Category:</label>
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+        >
+          <option value="">Select a category</option>
+          {categories.map(category => (
+            <option key={category} value={category}>
+              {category.charAt(0).toUpperCase() + category.slice(1)}
+            </option>
+          ))}
+        </select>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Description:</label>
@@ -117,19 +164,27 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
           value={formData.description}
           onChange={handleChange}
           required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+          rows={4}
         />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Price:</label>
-        <input
-          type="number"
-          name="price"
-          value={formData.price}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-        />
+        <div className="mt-1 relative rounded-md shadow-sm">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <span className="text-gray-500 sm:text-sm">$</span>
+          </div>
+          <input
+            type="number"
+            name="price"
+            value={formData.price}
+            onChange={handleChange}
+            required
+            min="0"
+            step="0.01"
+            className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+          />
+        </div>
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Images:</label>
@@ -143,8 +198,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
             file:mr-4 file:py-2 file:px-4
             file:rounded-md file:border-0
             file:text-sm file:font-semibold
-            file:bg-blue-50 file:text-blue-700
-            hover:file:bg-blue-100"
+            file:bg-orange-50 file:text-orange-700
+            hover:file:bg-orange-100"
         />
         {previewUrls.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-4">
@@ -184,8 +239,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         <button
           type="submit"
           disabled={uploading}
-          className={`px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md ${
-            uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-700'
+          className={`px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md ${
+            uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-orange-600'
           }`}
         >
           {uploading ? 'Creating...' : 'Create Listing'}

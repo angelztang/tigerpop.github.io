@@ -6,17 +6,12 @@ from .. import db
 from ..models import Listing, ListingImage
 from datetime import datetime
 from sqlalchemy import and_
-import logging
 
 bp = Blueprint('listings', __name__, url_prefix='/api/listings')
 
 # Configure upload settings
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -49,93 +44,73 @@ def upload_images():
     
     return jsonify({'urls': image_urls}), 200
 
-@bp.route('/listings', methods=['GET'])
+@bp.route('', methods=['GET'])
 def get_listings():
-    try:
-        # Get query parameters
-        price = request.args.get('price')
-        category = request.args.get('category')
-        
-        # Start with base query
-        query = Listing.query
-        
-        # Apply filters if provided
-        if price:
-            query = query.filter(Listing.price <= float(price))
-        if category:
-            query = query.filter(Listing.category == category)
-        
-        # Get all listings
-        listings = query.all()
-        
-        # Convert to dict and include image URLs
-        listings_data = []
-        for listing in listings:
-            listing_dict = {
-                'id': listing.id,
-                'title': listing.title,
-                'description': listing.description,
-                'price': listing.price,
-                'category': listing.category,
-                'user_id': listing.user_id,
-                'created_at': listing.created_at.isoformat() if listing.created_at else None,
-                'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
-                'images': [img.url for img in listing.images]
-            }
-            listings_data.append(listing_dict)
-        
-        return jsonify(listings_data)
-    except Exception as e:
-        logger.error(f"Error fetching listings: {str(e)}")
-        return jsonify({'error': 'Failed to fetch listings'}), 500
+    # Get filter parameters
+    max_price = request.args.get('max_price', type=float)
+    category = request.args.get('category')
+    
+    # Build query
+    query = Listing.query
+    
+    if max_price is not None:
+        query = query.filter(Listing.price <= max_price)
+    
+    if category:
+        query = query.filter(Listing.category == category)
+    
+    listings = query.all()
+    
+    return jsonify([{
+        'id': listing.id,
+        'title': listing.title,
+        'description': listing.description,
+        'price': listing.price,
+        'category': listing.category,
+        'images': [img.url for img in listing.images],
+        'status': listing.status,
+        'user_id': listing.user_id,
+        'created_at': listing.created_at.isoformat()
+    } for listing in listings])
 
-@bp.route('/listings', methods=['POST'])
+@bp.route('', methods=['POST'])
 def create_listing():
     try:
         data = request.get_json()
-        logger.info(f"Received listing data: {data}")
+        print("Received data:", data)  # Debug log
         
-        # Extract data from request
-        title = data.get('title')
-        description = data.get('description')
-        price = data.get('price')
-        category = data.get('category', 'other')
-        user_id = data.get('user_id', 1)  # Default to user ID 1 if not provided
+        # For now, set a default user_id of 1
+        user_id = 1
         
-        if not all([title, description, price]):
-            return jsonify({'error': 'Missing required fields'}), 400
-        
-        # Create new listing
         new_listing = Listing(
-            title=title,
-            description=description,
-            price=float(price),
-            category=category,
+            title=data['title'],
+            description=data['description'],
+            price=data['price'],
+            category=data.get('category', 'other'),
             user_id=user_id
         )
+        
+        # Add images
+        if 'image_urls' in data:
+            for url in data['image_urls']:
+                image = ListingImage(url=url)
+                new_listing.images.append(image)
         
         db.session.add(new_listing)
         db.session.commit()
         
-        logger.info(f"Created listing with ID: {new_listing.id}")
+        print("Listing created successfully with ID:", new_listing.id)  # Debug log
         
-        # Return the created listing
         return jsonify({
+            'message': 'Listing created successfully',
             'id': new_listing.id,
-            'title': new_listing.title,
-            'description': new_listing.description,
-            'price': new_listing.price,
             'category': new_listing.category,
-            'user_id': new_listing.user_id,
-            'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
-            'updated_at': new_listing.updated_at.isoformat() if new_listing.updated_at else None,
-            'images': []
+            'images': [img.url for img in new_listing.images]
         }), 201
-        
     except Exception as e:
-        logger.error(f"Error creating listing: {str(e)}")
+        print("Error creating listing:", str(e))  # Debug log
         db.session.rollback()
-        return jsonify({'error': 'Failed to create listing'}), 500
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/categories', methods=['GET'])
 def get_categories():
