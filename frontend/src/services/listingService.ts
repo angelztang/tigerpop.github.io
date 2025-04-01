@@ -53,20 +53,17 @@ export const getListings = async (queryString: string = ''): Promise<Listing[]> 
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
   try {
-    // Use default user ID (1) if no user is logged in
-    const listingData = {
-      ...data,
-      user_id: data.user_id || 1
-    };
-
-    const response = await fetch(`${API_URL}/listings`, {
+    const response = await fetch(`${API_URL}/api/listings`, {
       method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(listingData)
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
     });
 
     if (!response.ok) {
-      throw new Error('Failed to create listing');
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create listing');
     }
 
     return response.json();
