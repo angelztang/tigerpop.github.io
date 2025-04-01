@@ -35,7 +35,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-6">
               <Link to="/listings" className="text-gray-600 hover:text-gray-900">home</Link>
               <Link to="/listings" className="text-orange-500 hover:text-orange-600">buy</Link>
-              <Link to="/seller" className="text-gray-600 hover:text-gray-900">sell</Link>
+              <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">sell</Link>
               {username ? (
                 <div 
                   className="flex items-center cursor-pointer"

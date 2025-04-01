@@ -1,14 +1,15 @@
 // Main dashboard with Buyer/Seller mode toggle
 import { useState } from "react";
 import SellerDashboard from "./SellerDashboard";
-import ListingsPage from "./ListingsPage";
+import BuyerDashboard from "./BuyerDashboard";
+import ListingsPage from "./Marketplace";
 import React from "react";
 
 const Dashboard = () => {
   const [mode, setMode] = useState("buyer");
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
+    <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <button
@@ -20,6 +21,7 @@ const Dashboard = () => {
       </div>
 
       {mode === "seller" ? <SellerDashboard /> : <ListingsPage />}
+      {/* {mode === "buyer" ? <BuyerDashboard /> : <ListingsPage />} */}
     </div>
   );
 };

@@ -1,3 +1,4 @@
+// this should be buyer's purchase history, similar to SellerDashboard
 import React, { useEffect, useState } from 'react';
 import { Listing, getListings } from '../services/listingService';
 

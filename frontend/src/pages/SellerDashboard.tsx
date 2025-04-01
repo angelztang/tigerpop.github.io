@@ -4,7 +4,7 @@ import { Listing, getListings } from '../services/listingService';
 import ListingForm from "../components/ListingForm";
 import ListingEditModal from "../components/ListingEditModal";
 
-type FilterType = 'all' | 'selling' | 'sold' | 'likes' | 'saved';
+type FilterType = 'all' | 'selling' | 'sold' | 'saved';
 
 const SellerDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -42,7 +42,6 @@ const SellerDashboard: React.FC = () => {
     { label: 'All', value: 'all' },
     { label: 'Selling', value: 'selling' },
     { label: 'Sold', value: 'sold' },
-    { label: 'Likes', value: 'likes' },
     { label: 'Saved', value: 'saved' },
   ];
 
