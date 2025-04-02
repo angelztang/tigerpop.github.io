@@ -1,31 +1,55 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { isAuthenticated, getUsername } from './services/authService';
 import Navbar from './components/Navbar';
-import ListingsPage from './pages/Marketplace';
-import LoginPage from './pages/LoginPage';
-import SignupPage from './pages/SignupPage';
-import ProfilePage from './pages/ProfilePage';
-import Dashboard from './pages/Dashboard';
-import SellerDashboard from './pages/SellerDashboard';
-import { isAuthenticated } from './services/authService';
-
-const PrivateRoute: React.FC<{ element: React.ReactElement }> = ({ element }) => {
-  return isAuthenticated() ? element : <Navigate to="/login" />;
-};
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Profile from './pages/Profile';
+import ListingDetail from './pages/ListingDetail';
+import CreateListing from './pages/CreateListing';
+import './index.css';
 
 const App: React.FC = () => {
+  const [authenticated, setAuthenticated] = useState<boolean>(isAuthenticated());
+  const [username, setUsername] = useState<string | null>(getUsername());
+
+  useEffect(() => {
+    // Update authentication state when it changes
+    const checkAuth = () => {
+      setAuthenticated(isAuthenticated());
+      setUsername(getUsername());
+    };
+
+    // Check auth state on mount and when localStorage changes
+    window.addEventListener('storage', checkAuth);
+    checkAuth();
+
+    return () => {
+      window.removeEventListener('storage', checkAuth);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Navbar />
-      <Routes>
-        <Route path="/" element={<Navigate to="/listings" replace />} />
-        <Route path="/listings" element={<ListingsPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/seller" element={<SellerDashboard />} />
-      </Routes>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar authenticated={authenticated} username={username} />
+      <div className="container mx-auto px-4 py-8">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route 
+            path="/login" 
+            element={authenticated ? <Navigate to="/" /> : <Login />} 
+          />
+          <Route 
+            path="/profile" 
+            element={authenticated ? <Profile /> : <Navigate to="/login" />} 
+          />
+          <Route path="/listings/:id" element={<ListingDetail />} />
+          <Route 
+            path="/create-listing" 
+            element={authenticated ? <CreateListing /> : <Navigate to="/login" />} 
+          />
+        </Routes>
+      </div>
     </div>
   );
 };

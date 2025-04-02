@@ -25,7 +25,9 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
     title: listing.title,
     description: listing.description,
     price: listing.price.toString(),
+    condition: listing.condition,
     category: listing.category,
+    images: listing.images
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>(listing.images || []);
@@ -33,7 +35,7 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
   const [message, setMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -56,8 +58,12 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setMessage(null);
     try {
+      if (!listing.id) {
+        throw new Error('Listing ID is required');
+      }
+
+      setMessage(null);
       setUploading(true);
       
       let imageUrls = [...(listing.images || [])];
@@ -74,10 +80,10 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
         }
       }
 
-      await updateListing(listing.id, {
+      const response = await updateListing(listing.id, {
         ...formData,
         price: parseFloat(formData.price),
-        image_urls: imageUrls,
+        images: imageUrls,
       });
 
       setMessage({ text: 'Listing updated successfully!', type: 'success' });
@@ -98,6 +104,10 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
 
   const handleDelete = async () => {
     try {
+      if (!listing.id) {
+        throw new Error('Listing ID is required');
+      }
+
       await deleteListing(listing.id);
       setMessage({ text: 'Listing deleted successfully!', type: 'success' });
       onUpdate();
@@ -158,24 +168,6 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Category:</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            >
-              <option value="">Select a category</option>
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category.charAt(0).toUpperCase() + category.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
             <label className="block text-sm font-medium text-gray-700">Description:</label>
             <textarea
               name="description"
@@ -204,6 +196,41 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
                 className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Condition:</label>
+            <select
+              name="condition"
+              value={formData.condition}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            >
+              <option value="new">New</option>
+              <option value="like_new">Like New</option>
+              <option value="good">Good</option>
+              <option value="fair">Fair</option>
+              <option value="poor">Poor</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700">Category:</label>
+            <select
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            >
+              <option value="">Select a category</option>
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category.charAt(0).toUpperCase() + category.slice(1)}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>

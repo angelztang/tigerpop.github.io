@@ -18,8 +18,7 @@ const SellerDashboard: React.FC = () => {
 
   const fetchListings = async () => {
     try {
-      // In a real app, this would be filtered by user_id
-      const data = await getListings('/api/listings');
+      const data = await getListings();
       setListings(data);
     } catch (error) {
       console.error('Error fetching listings:', error);

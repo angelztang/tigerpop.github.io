@@ -1,22 +1,38 @@
 // this should be buyer's purchase history, similar to SellerDashboard
-import React, { useEffect, useState } from 'react';
-import { Listing, getListings } from '../services/listingService';
+import React, { useState, useEffect } from 'react';
+import { getListings, Listing, ListingFilters } from '../services/listingService';
+import ListingCard from '../components/ListingCard';
 
 const BuyerDashboard: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchListings = async () => {
+    try {
+      setLoading(true);
+      const data = await getListings({}); // Pass empty filters object instead of string
+      setListings(data);
+      setError(null);
+    } catch (err) {
+      setError('Failed to fetch listings');
+      console.error('Error fetching listings:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const data = await getListings('/api/listings');
-        setListings(data);
-      } catch (error) {
-        console.error('Error fetching listings:', error);
-      }
-    };
-
     fetchListings();
   }, []);
+
+  if (loading) {
+    return <div className="text-center py-12">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-center py-12 text-red-600">{error}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -28,24 +44,8 @@ const BuyerDashboard: React.FC = () => {
       
       <div className="container mx-auto px-4 py-8">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {listings.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
-            >
-              <div className="aspect-w-1 aspect-h-1">
-                <img
-                  src={item.images[0] || "https://via.placeholder.com/300"}
-                  alt={item.title}
-                  className="w-full h-48 object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h2>
-                <p className="text-orange-500 font-bold">${item.price}</p>
-                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-              </div>
-            </div>
+          {listings.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} />
           ))}
         </div>
       </div>

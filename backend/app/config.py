@@ -1,28 +1,34 @@
 import os
-from urllib.parse import urlparse
 from datetime import timedelta
-from dotenv import load_dotenv
-
-load_dotenv()
 
 class Config:
-    SECRET_KEY = os.getenv("SECRET_KEY", "your-secret-key")
+    # Basic Flask config
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-please-change'
+    
+    # JWT config
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'dev-secret-key')
+    JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
+    
+    # Database config
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL', 'sqlite:///tigerpop.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
-    # JWT settings
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'dev-key-change-this')
-    JWT_ACCESS_TOKEN_EXPIRES = timedelta(days=1)
-    
-    # Get the database URL and parse it
-    database_url = os.environ.get('DATABASE_URL', 'sqlite:///app.db')
-    if database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    
-    SQLALCHEMY_DATABASE_URI = database_url
+    # File upload config
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
+    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'uploads')
     
-    # Ensure SQLAlchemy can handle the database URL
-    if SQLALCHEMY_DATABASE_URI.startswith("postgresql://"):
-        import urllib.parse
-        url = urllib.parse.urlparse(SQLALCHEMY_DATABASE_URI)
-        SQLALCHEMY_DATABASE_URI = f"postgresql://{url.username}:{url.password}@{url.hostname}:{url.port}{url.path}"
+    # Email config
+    MAIL_SERVER = os.environ.get('MAIL_SERVER', 'smtp.gmail.com')
+    MAIL_PORT = int(os.environ.get('MAIL_PORT', 587))
+    MAIL_USE_TLS = os.environ.get('MAIL_USE_TLS', True)
+    MAIL_USERNAME = os.environ.get('MAIL_USERNAME', 'your-email@gmail.com')
+    MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD', 'your-app-password')
+    MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'your-email@gmail.com')
+    
+    # Ensure upload directory exists
+    if not os.path.exists(UPLOAD_FOLDER):
+        os.makedirs(UPLOAD_FOLDER)
+    
+    # Parse database URL for Heroku
+    if SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)

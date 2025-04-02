@@ -1,45 +1,29 @@
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
-from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from .config import Config
-import os
-import logging
-
-db = SQLAlchemy()
-migrate = Migrate()
-jwt = JWTManager()
+from .extensions import init_extensions
 
 def create_app(config_class=Config):
-    app = Flask(__name__, static_folder='../uploads', static_url_path='/uploads')
+    app = Flask(__name__)
     app.config.from_object(config_class)
     
-    # Configure logging
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-    
     # Initialize extensions
-    CORS(app)
-    db.init_app(app)
-    migrate.init_app(app, db)
-    jwt.init_app(app)
+    init_extensions(app)
     
-    # Print database URL for debugging (remove in production)
-    logger.info(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    # Configure CORS
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:3000"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+            "allow_headers": ["Content-Type", "Authorization", "Accept"],
+            "supports_credentials": True
+        }
+    })
     
     # Register blueprints
-    from .routes import auth_routes, listing_routes
-    app.register_blueprint(auth_routes.bp)
-    app.register_blueprint(listing_routes.bp)
-    
-    # Create tables if they don't exist
-    with app.app_context():
-        try:
-            db.create_all()
-            logger.info("Database tables created successfully")
-        except Exception as e:
-            logger.error(f"Error creating database tables: {str(e)}")
-            raise
+    from .routes import auth_bp, listing_bp, user_bp
+    app.register_blueprint(auth_bp, url_prefix='/api/auth')
+    app.register_blueprint(listing_bp, url_prefix='/api/listings')
+    app.register_blueprint(user_bp, url_prefix='/api/users')
     
     return app

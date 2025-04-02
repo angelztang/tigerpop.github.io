@@ -28,6 +28,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
     description: '',
     price: '',
     category: '',
+    condition: 'new'
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -77,8 +78,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       const response = await createListing({
         ...formData,
         price: parseFloat(formData.price),
-        image_urls: imageUrls,
-        user_id: 1 // Using default user ID for now
+        images: imageUrls
       });
 
       // Clean up preview URLs
@@ -89,6 +89,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         description: '',
         price: '',
         category: '',
+        condition: 'new'
       });
       setSelectedFiles([]);
       setPreviewUrls([]);
@@ -150,6 +151,22 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         </select>
       </div>
       <div>
+        <label className="block text-sm font-medium text-gray-700">Condition:</label>
+        <select
+          name="condition"
+          value={formData.condition}
+          onChange={handleChange}
+          required
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+        >
+          <option value="new">New</option>
+          <option value="like_new">Like New</option>
+          <option value="good">Good</option>
+          <option value="fair">Fair</option>
+          <option value="poor">Poor</option>
+        </select>
+      </div>
+      <div>
         <label className="block text-sm font-medium text-gray-700">Description:</label>
         <textarea
           name="description"
@@ -162,21 +179,16 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Price:</label>
-        <div className="mt-1 relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-500 sm:text-sm">$</span>
-          </div>
-          <input
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            required
-            min="0"
-            step="0.01"
-            className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-          />
-        </div>
+        <input
+          type="number"
+          name="price"
+          value={formData.price}
+          onChange={handleChange}
+          required
+          min="0"
+          step="0.01"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+        />
       </div>
       <div>
         <label className="block text-sm font-medium text-gray-700">Images:</label>
@@ -184,14 +196,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
-          multiple
           accept="image/*"
-          className="mt-1 block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0
-            file:text-sm file:font-semibold
-            file:bg-orange-50 file:text-orange-700
-            hover:file:bg-orange-100"
+          multiple
+          className="mt-1 block w-full"
         />
         {previewUrls.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-4">
