@@ -1,10 +1,10 @@
-// Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { Listing, getListings } from '../services/listingService';
 import ListingForm from "../components/ListingForm";
 import ListingEditModal from "../components/ListingEditModal";
+import ListingCard from "../components/ListingCard";
 
-type FilterType = 'all' | 'selling' | 'sold' | 'saved';
+type FilterType = 'all' | 'selling' | 'sold';
 
 const SellerDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
@@ -18,7 +18,6 @@ const SellerDashboard: React.FC = () => {
 
   const fetchListings = async () => {
     try {
-      // In a real app, this would be filtered by user_id
       const data = await getListings('/api/listings');
       setListings(data);
     } catch (error) {
@@ -35,14 +34,26 @@ const SellerDashboard: React.FC = () => {
   };
 
   const handleListingUpdate = () => {
-    fetchListings(); // Refresh the listings after an update
+    fetchListings();
+  };
+
+  const handleMarkAsSold = async (listingId: number) => {
+    try {
+      await updateListingStatus(listingId, 'sold');
+      fetchListings();
+    } catch (error) {
+      console.error('Error marking as sold:', error);
+    }
+  };
+
+  const updateListingStatus = async (listingId: number, status: string) => {
+    // Implement the function to update the listing status on the server
   };
 
   const filterTabs: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
     { label: 'Selling', value: 'selling' },
     { label: 'Sold', value: 'sold' },
-    { label: 'Saved', value: 'saved' },
   ];
 
   return (
@@ -87,27 +98,13 @@ const SellerDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {listings.map((item) => (
           <div key={item.id} className="group relative">
-            <div className="aspect-square w-full overflow-hidden rounded-lg bg-gray-200">
-              <img
-                src={item.images[0] || "https://via.placeholder.com/300"}
-                alt={item.title}
-                className="h-full w-full object-cover object-center"
-              />
-            </div>
-            <div className="mt-2 flex justify-between items-start">
-              <div>
-                <h3 className="text-sm font-medium text-gray-900">{item.title}</h3>
-                <p className="text-sm text-gray-500">${item.price}</p>
-              </div>
-              <button 
-                className="p-1 hover:bg-gray-100 rounded-full"
-                onClick={() => handleEditClick(item)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10" />
-                </svg>
-              </button>
-            </div>
+            <ListingCard
+              item={item}
+              userType="seller" // Pass 'seller' type
+              onEdit={handleEditClick}
+              onDelete={() => console.log('Delete Listing')}
+              onMarkAsSold={() => handleMarkAsSold(item.id)}
+            />
           </div>
         ))}
       </div>

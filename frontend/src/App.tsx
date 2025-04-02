@@ -1,7 +1,7 @@
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import ListingsPage from './pages/Marketplace';
+import MarketplacePage from './pages/MarketplacePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ProfilePage from './pages/ProfilePage';
@@ -19,7 +19,7 @@ const App: React.FC = () => {
       <Navbar />
       <Routes>
         <Route path="/" element={<Navigate to="/listings" replace />} />
-        <Route path="/listings" element={<ListingsPage />} />
+        <Route path="/listings" element={<MarketplacePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/profile" element={<ProfilePage />} />

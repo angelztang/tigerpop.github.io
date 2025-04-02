@@ -1,54 +1,73 @@
-// this should be buyer's purchase history, similar to SellerDashboard
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Listing, getListings } from '../services/listingService';
+import ListingCard from "../components/ListingCard";
+
+type FilterType = 'all' | 'saved' | 'pending' | 'purchased';
 
 const BuyerDashboard: React.FC = () => {
-  const [listings, setListings] = useState<Listing[]>([]);
+  const [purchases, setPurchases] = useState<Listing[]>([]);
+  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
 
   useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const data = await getListings('/api/listings');
-        setListings(data);
-      } catch (error) {
-        console.error('Error fetching listings:', error);
-      }
-    };
-
-    fetchListings();
+    fetchPurchases();
   }, []);
 
+  const fetchPurchases = async () => {
+    try {
+      const data = await getListings('/api/purchases');
+      setPurchases(data);
+    } catch (error) {
+      console.error('Error fetching purchases:', error);
+    }
+  };
+
+  const filterTabs: { label: string; value: FilterType }[] = [
+    { label: 'All', value: 'all' },
+    { label: 'Saved', value: 'saved' },
+    { label: 'Pending', value: 'pending' },
+    { label: 'Purchased', value: 'purchased' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-orange-500 text-white p-4 shadow-md">
-        <div className="container mx-auto">
-          <h1 className="text-2xl font-bold">TigerPop Marketplace</h1>
-        </div>
-      </nav>
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {listings.map((item) => (
-            <div
-              key={item.id}
-              className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-200"
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* User Profile Section */}
+      <div className="flex items-center gap-4 mb-8">
+        <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+        <h2 className="text-xl">netid</h2>
+      </div>
+
+      {/* Purchases Header */}
+      <h1 className="text-2xl font-bold mb-6">My Purchases</h1>
+
+      {/* Filter Tabs */}
+      <div className="border-b border-gray-200 mb-6">
+        <nav className="flex gap-8">
+          {filterTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setActiveFilter(tab.value)}
+              className={`pb-4 px-1 ${
+                activeFilter === tab.value
+                  ? 'border-b-2 border-black font-medium'
+                  : 'text-gray-500'
+              }`}
             >
-              <div className="aspect-w-1 aspect-h-1">
-                <img
-                  src={item.images[0] || "https://via.placeholder.com/300"}
-                  alt={item.title}
-                  className="w-full h-48 object-cover"
-                />
-              </div>
-              <div className="p-4">
-                <h2 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h2>
-                <p className="text-orange-500 font-bold">${item.price}</p>
-                <p className="text-sm text-gray-600 mt-1">{item.description}</p>
-              </div>
-            </div>
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </div>
+
+      {/* Purchase History Grid */}
+      {purchases.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {purchases.map((item) => (
+            <ListingCard key={item.id} item={item} userType="buyer" />
           ))}
         </div>
-      </div>
+      ) : (
+        <p className="text-gray-500">You haven't purchased anything yet.</p>
+      )}
     </div>
   );
 };

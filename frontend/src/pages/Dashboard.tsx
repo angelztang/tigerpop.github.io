@@ -2,7 +2,7 @@
 import { useState } from "react";
 import SellerDashboard from "./SellerDashboard";
 import BuyerDashboard from "./BuyerDashboard";
-import ListingsPage from "./Marketplace";
+import Marketplace from "./MarketplacePage";
 import React from "react";
 
 const Dashboard = () => {
@@ -14,14 +14,13 @@ const Dashboard = () => {
         <h1 className="text-2xl font-semibold">Dashboard</h1>
         <button
           onClick={() => setMode(mode === "buyer" ? "seller" : "buyer")}
-          className="bg-blue-500 text-white px-4 py-2 rounded-lg"
+          className="bg-orange-500 text-white px-4 py-2 rounded-lg"
         >
           Switch to {mode === "buyer" ? "Seller" : "Buyer"} Mode
         </button>
       </div>
 
-      {mode === "seller" ? <SellerDashboard /> : <ListingsPage />}
-      {/* {mode === "buyer" ? <BuyerDashboard /> : <ListingsPage />} */}
+      {mode === "seller" ? <SellerDashboard /> : <BuyerDashboard />}
     </div>
   );
 };
