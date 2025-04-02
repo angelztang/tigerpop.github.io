@@ -4,9 +4,20 @@ import SellerDashboard from "./SellerDashboard";
 import BuyerDashboard from "./BuyerDashboard";
 import Marketplace from "./MarketplacePage";
 import React from "react";
+import { purchaseListing, Listing } from "../services/listingService";
 
 const Dashboard = () => {
-  const [mode, setMode] = useState("buyer");
+  const [mode, setMode] = useState<"buyer" | "seller">("buyer");
+
+  const handlePurchase = async (listing: Listing) => {
+    try {
+      await purchaseListing(listing.id);
+      // Refresh the listings or update the UI as needed
+      // You might want to show a success message
+    } catch (error) {
+      // Handle error (show error message to user)
+    }
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">

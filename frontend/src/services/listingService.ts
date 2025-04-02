@@ -171,4 +171,23 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
     throw error;
   }
 };
+
+export const purchaseListing = async (listingId: number): Promise<void> => {
+  try {
+    const response = await fetch(`${API_URL}/listings/${listingId}/purchase`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to purchase listing');
+    }
+
+    // The backend will handle sending the email notification to the seller
+    return response.json();
+  } catch (error) {
+    console.error('Error purchasing listing:', error);
+    throw error;
+  }
+};
   
