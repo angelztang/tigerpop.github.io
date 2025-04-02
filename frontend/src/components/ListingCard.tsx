@@ -21,9 +21,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ item, userType, onEdit, onDel
   };
 
   const getStatus = () => {
-    if (userType === "buyer") {
-      return item.status || "saved";
-    } else if (userType === "seller") {
+    if (userType === "seller") {
       return item.status || "listed";
     }
     return "available";

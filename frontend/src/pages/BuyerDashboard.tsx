@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Listing, getListings } from '../services/listingService';
 import ListingCard from "../components/ListingCard";
 
-type FilterType = 'all' | 'saved' | 'pending' | 'purchased';
+type FilterType = 'all' | 'pending' | 'purchased';
 
 const BuyerDashboard: React.FC = () => {
   const [purchases, setPurchases] = useState<Listing[]>([]);
@@ -23,7 +23,6 @@ const BuyerDashboard: React.FC = () => {
 
   const filterTabs: { label: string; value: FilterType }[] = [
     { label: 'All', value: 'all' },
-    { label: 'Saved', value: 'saved' },
     { label: 'Pending', value: 'pending' },
     { label: 'Purchased', value: 'purchased' },
   ];
