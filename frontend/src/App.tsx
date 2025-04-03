@@ -1,31 +1,42 @@
-import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import MarketplacePage from './pages/MarketplacePage';
+import ProfilePage from './pages/ProfilePage';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
-import ProfilePage from './pages/ProfilePage';
 import Dashboard from './pages/Dashboard';
-import SellerDashboard from './pages/SellerDashboard';
-import { isAuthenticated } from './services/authService';
-
-const PrivateRoute: React.FC<{ element: React.ReactElement }> = ({ element }) => {
-  return isAuthenticated() ? element : <Navigate to="/login" />;
-};
+import { handleCasCallback } from './services/authService';
 
 const App: React.FC = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    // Handle CAS callback if there's a token in the URL
+    const params = new URLSearchParams(location.search);
+    const token = params.get('token');
+    
+    if (token) {
+      handleCasCallback(token);
+      // Remove token from URL and redirect to dashboard
+      navigate('/dashboard', { replace: true });
+    }
+  }, [location, navigate]);
+
   return (
     <div className="min-h-screen bg-gray-100">
       <Navbar />
-      <Routes>
-        <Route path="/" element={<Navigate to="/listings" replace />} />
-        <Route path="/listings" element={<MarketplacePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/signup" element={<SignupPage />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/seller" element={<SellerDashboard />} />
-      </Routes>
+      <main className="container mx-auto px-4 py-8">
+        <Routes>
+          <Route path="/" element={<MarketplacePage />} />
+          <Route path="/marketplace" element={<MarketplacePage />} />
+          <Route path="/profile" element={<ProfilePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/dashboard" element={<Dashboard />} />
+        </Routes>
+      </main>
     </div>
   );
 };
