@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
             <div className="flex items-center">
               <h1 
                 className="text-2xl font-bold cursor-pointer"
-                onClick={() => navigate('/listings')}
+                onClick={() => navigate('/marketplace')}
               >
                 <span className="text-orange-500">Tiger</span>
                 <span>Pop</span>
@@ -33,7 +33,7 @@ const Navbar: React.FC = () => {
             
             <div className="flex items-center space-x-6">
               <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">home</Link>
-              <Link to="/listings" className="text-orange-500 hover:text-orange-600">buy</Link>
+              <Link to="/marketplace" className="text-orange-500 hover:text-orange-600">buy</Link>
               <button
                 onClick={handleLogin}
                 className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
@@ -46,11 +46,11 @@ const Navbar: React.FC = () => {
           {/* Categories and search bar */}
           <div className="flex flex-col space-y-4">
             <div className="flex space-x-6">
-              <Link to="/listings?category=men" className="text-gray-600 hover:text-gray-900">men</Link>
-              <Link to="/listings?category=women" className="text-gray-600 hover:text-gray-900">women</Link>
-              <Link to="/listings?category=textbooks" className="text-gray-600 hover:text-gray-900">textbooks</Link>
-              <Link to="/listings?category=furniture" className="text-gray-600 hover:text-gray-900">furniture</Link>
-              <Link to="/listings?category=other" className="text-gray-600 hover:text-gray-900">other</Link>
+              <Link to="/marketplace?category=men" className="text-gray-600 hover:text-gray-900">men</Link>
+              <Link to="/marketplace?category=women" className="text-gray-600 hover:text-gray-900">women</Link>
+              <Link to="/marketplace?category=textbooks" className="text-gray-600 hover:text-gray-900">textbooks</Link>
+              <Link to="/marketplace?category=furniture" className="text-gray-600 hover:text-gray-900">furniture</Link>
+              <Link to="/marketplace?category=other" className="text-gray-600 hover:text-gray-900">other</Link>
             </div>
             
             <form onSubmit={handleSearch} className="flex">

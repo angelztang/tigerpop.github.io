@@ -60,25 +60,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
     setMessage(null);
     try {
       setUploading(true);
-      
-      let imageUrls: string[] = [];
-      
-      // Only attempt to upload images if they exist
-      if (selectedFiles.length > 0) {
-        try {
-          imageUrls = await uploadImages(selectedFiles);
-        } catch (error) {
-          console.error('Error uploading images:', error);
-          setMessage({ text: 'Failed to upload images. Please try again.', type: 'error' });
-          return;
-        }
-      }
 
+      // Create the listing with the selected files
       const response = await createListing({
         ...formData,
         price: parseFloat(formData.price),
-        image_urls: imageUrls,
-        user_id: 1 // Using default user ID for now
+        images: selectedFiles
       });
 
       // Clean up preview URLs
@@ -101,7 +88,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         if (onClose) {
           onClose();
         }
-        navigate('/listings');
+        navigate('/marketplace');
       }, 2000);
       
     } catch (error) {

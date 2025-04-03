@@ -1,10 +1,10 @@
+import os
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
-from .config import Config
-import os
+from .utils.cloudinary_config import init_cloudinary
 import logging
 import traceback
 
@@ -12,13 +12,41 @@ db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 
-def create_app(config_class=Config):
-    app = Flask(__name__, static_folder='../uploads', static_url_path='/uploads')
-    app.config.from_object(config_class)
+def create_app(test_config=None):
+    app = Flask(__name__)
     
-    # Configure logging
+    # Configure logging first
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
+    
+    if test_config is None:
+        # Load config from environment variables
+        database_url = os.environ.get('DATABASE_URL')
+        logger.info(f"Original DATABASE_URL: {database_url}")
+        
+        if not database_url:
+            logger.error("No DATABASE_URL environment variable found")
+            raise ValueError("DATABASE_URL environment variable is required")
+            
+        # Convert heroku postgres:// to postgresql://
+        if database_url.startswith('postgres://'):
+            database_url = database_url.replace('postgres://', 'postgresql://', 1)
+            logger.info(f"Converted DATABASE_URL to: {database_url}")
+            
+        app.config.from_mapping(
+            SECRET_KEY=os.environ.get('SECRET_KEY', 'dev'),
+            SQLALCHEMY_DATABASE_URI=database_url,
+            SQLALCHEMY_TRACK_MODIFICATIONS=False,
+            JWT_SECRET_KEY=os.environ.get('JWT_SECRET_KEY', 'dev')
+        )
+        
+        logger.info(f"Final SQLALCHEMY_DATABASE_URI: {app.config['SQLALCHEMY_DATABASE_URI']}")
+    else:
+        app.config.update(test_config)
+    
+    # Initialize Cloudinary
+    with app.app_context():
+        init_cloudinary()
     
     # Define allowed origins
     allowed_origins = [
@@ -38,12 +66,17 @@ def create_app(config_class=Config):
         }
     }, expose_headers=["Content-Type", "Authorization"])
     
-    db.init_app(app)
+    # Initialize database
+    try:
+        db.init_app(app)
+        logger.info("Successfully initialized database")
+    except Exception as e:
+        logger.error(f"Failed to initialize database: {str(e)}")
+        logger.exception("Full traceback:")
+        raise
+        
     migrate.init_app(app, db)
     jwt.init_app(app)
-    
-    # Print database URL for debugging (remove in production)
-    logger.info(f"Database URL: {app.config['SQLALCHEMY_DATABASE_URI']}")
     
     # Register blueprints
     from .routes import auth_routes, listing_routes

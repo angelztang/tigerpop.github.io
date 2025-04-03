@@ -12,13 +12,7 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"buyer" | "seller">("buyer");
   const [listings, setListings] = useState<Listing[]>([]);
-  const netid = getNetId();
-
-  useEffect(() => {
-    if (!netid) {
-      navigate('/login');
-    }
-  }, [netid, navigate]);
+  const netid = 'testuser'; // Set default user
 
   const handlePurchase = async (listing: Listing) => {
     try {
@@ -33,29 +27,20 @@ const Dashboard: React.FC = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <div className="text-gray-600">
-          Welcome, {netid}
-        </div>
+        <button
+          onClick={() => setMode(mode === "buyer" ? "seller" : "buyer")}
+          className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+        >
+          Switch to {mode === "buyer" ? "Seller" : "Buyer"} Mode
+        </button>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-xl font-semibold mb-4">My Purchases</h2>
-        <div className="space-y-4">
-          <div className="flex space-x-4 mb-4">
-            <button className="text-blue-600 font-medium">All</button>
-            <button className="text-gray-500 hover:text-blue-600">Pending</button>
-            <button className="text-gray-500 hover:text-blue-600">Purchased</button>
-          </div>
-
-          {listings.length === 0 ? (
-            <p className="text-gray-500">You haven't purchased anything yet.</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Listing cards would go here */}
-            </div>
-          )}
-        </div>
-      </div>
+      {/* Conditional Rendering based on mode */}
+      {mode === "buyer" ? (
+        <BuyerDashboard />
+      ) : (
+        <SellerDashboard />
+      )}
 
       <div className="mt-8">
         <button

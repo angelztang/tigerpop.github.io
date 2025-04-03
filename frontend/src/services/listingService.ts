@@ -23,6 +23,7 @@ export interface CreateListingData {
   category?: string;
   image_urls?: string[];
   user_id?: number;
+  images?: File[];
 }
 
 const getAuthHeaders = () => {
@@ -84,12 +85,23 @@ export const getListings = async (queryString: string = ''): Promise<Listing[]> 
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
   try {
+    // First, upload any images if they exist
+    let image_urls: string[] = [];
+    if (data.images && data.images.length > 0) {
+      image_urls = await uploadImages(data.images);
+    }
+
+    // Create the listing with the image URLs
     const response = await fetch(`${API_URL}/api/listings`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify({
+        ...data,
+        image_urls
+      })
     });
 
     if (!response.ok) {
@@ -201,29 +213,46 @@ export const getUserListings = async (): Promise<Listing[]> => {
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
   try {
+    console.log('Starting image upload process...'); // Debug log
+    console.log('Files to upload:', files.map(f => ({ name: f.name, type: f.type, size: f.size }))); // Debug log
+
     const formData = new FormData();
     files.forEach(file => {
       formData.append('images', file);
     });
 
-    const token = getToken();
+    console.log('Making request to:', `${API_URL}/api/listings/upload`); // Debug log
+
     const response = await fetch(`${API_URL}/api/listings/upload`, {
       method: 'POST',
-      headers: {
-        'Authorization': token ? `Bearer ${token}` : ''
-      },
-      body: formData
+      body: formData,
+      credentials: 'include', // Add credentials
     });
 
+    console.log('Upload response status:', response.status); // Debug log
+    console.log('Upload response headers:', Object.fromEntries(response.headers.entries())); // Debug log
+
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Failed to upload images');
+      const errorText = await response.text();
+      console.error('Server error response:', errorText); // Debug log
+      try {
+        const errorData = JSON.parse(errorText);
+        throw new Error(errorData.message || errorData.error || 'Failed to upload images');
+      } catch (parseError) {
+        throw new Error(`Failed to upload images: ${errorText}`);
+      }
     }
 
     const data = await response.json();
+    console.log('Upload successful, received URLs:', data.urls); // Debug log
     return data.urls;
-  } catch (error) {
+  } catch (error: any) { // Type error as any since we know it's an Error object
     console.error('Error uploading images:', error);
+    console.error('Error details:', {
+      message: error.message || 'Unknown error',
+      stack: error.stack || 'No stack trace',
+      url: `${API_URL}/api/listings/upload`
+    }); // Debug log
     throw error;
   }
 };
