@@ -24,7 +24,8 @@ def create_app(config_class=Config):
     allowed_origins = [
         "http://localhost:3000",
         "https://tigerpop-marketplace.herokuapp.com",
-        "https://tigerpop.github.io"
+        "https://tigerpop.github.io",
+        "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"
     ]
     
     # Initialize extensions with explicit CORS configuration
