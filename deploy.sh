@@ -49,7 +49,7 @@ http {
 
     server_tokens off;
 
-    log_format l2met 'measure#nginx.service=\$request_time request_id=\$http_x_request_id';
+    log_format l2met 'measure#nginx.service=$request_time request_id=$http_x_request_id';
     access_log /tmp/nginx.access.log l2met;
     error_log /tmp/nginx.error.log;
 
