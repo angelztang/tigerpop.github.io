@@ -8,7 +8,7 @@ interface ListingDetailModalProps {
   onClose: () => void;
   userType?: 'buyer' | 'seller';
   onEdit?: (listing: Listing) => void;
-  onDelete?: () => void;
+  onDelete?: (e: React.MouseEvent) => Promise<void>;
   onMarkAsSold?: () => void;
   onPurchase?: (listing: Listing) => void;
 }

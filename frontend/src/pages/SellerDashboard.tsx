@@ -49,13 +49,12 @@ const SellerDashboard: React.FC = () => {
   };
 
   const handleDelete = async (listingId: number) => {
-    if (window.confirm('Are you sure you want to delete this listing?')) {
-      try {
-        await deleteListing(listingId);
-        fetchListings(); // Refresh the listings after deletion
-      } catch (error) {
-        console.error('Error deleting listing:', error);
-      }
+    try {
+      await deleteListing(listingId);
+      fetchListings(); // Refresh the listings after deletion
+    } catch (error) {
+      console.error('Error deleting listing:', error);
+      // Let the ListingCard component handle the error display
     }
   };
 
@@ -103,14 +102,14 @@ const SellerDashboard: React.FC = () => {
         </nav>
       </div>
 
-      {/* Listings Grid */}
+      {/* Filtered Listings */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {listings.map((item) => (
           <div key={item.id} className="group relative">
             <ListingCard
               item={item}
               userType="seller"
-              onEdit={handleEditClick}
+              onEdit={() => handleEditClick(item)}
               onDelete={() => handleDelete(item.id)}
               onMarkAsSold={() => handleMarkAsSold(item.id)}
             />

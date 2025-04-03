@@ -22,6 +22,7 @@ const ListingCard: React.FC<ListingCardProps> = ({
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % item.images.length);
@@ -45,6 +46,19 @@ const ListingCard: React.FC<ListingCardProps> = ({
     }
     // Otherwise, prepend the API_URL
     return `${API_URL}${path}`;
+  };
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent modal from opening
+    if (window.confirm('Are you sure you want to delete this listing?')) {
+      try {
+        await onDelete?.();
+        setError(null);
+      } catch (error) {
+        console.error('Error deleting listing:', error);
+        setError('Failed to delete listing. Please try again.');
+      }
+    }
   };
 
   return (
@@ -88,27 +102,37 @@ const ListingCard: React.FC<ListingCardProps> = ({
         <p className="text-gray-600">${item.price}</p>
         <p className="text-sm text-gray-500 mt-2">{item.description}</p>
         <p className="text-sm font-semibold mt-2">Status: {getStatus()}</p>
+        
+        {error && (
+          <div className="mt-2 text-red-500 text-sm">
+            {error}
+          </div>
+        )}
+        
         {userType === "seller" && (
-          <div 
-            className="mt-4 flex space-x-2"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button 
-              onClick={() => onEdit?.(item)} 
-              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+          <div className="mt-4 flex gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit?.(item);
+              }}
+              className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
             >
               Edit
             </button>
-            <button 
-              onClick={onDelete} 
-              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            <button
+              onClick={handleDelete}
+              className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600"
             >
               Delete
             </button>
             {item.status !== "sold" && (
-              <button 
-                onClick={onMarkAsSold} 
-                className="bg-green-500 text-white px-3 py-1 rounded hover:bg-green-600"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onMarkAsSold?.();
+                }}
+                className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
               >
                 Mark as Sold
               </button>
@@ -116,14 +140,14 @@ const ListingCard: React.FC<ListingCardProps> = ({
           </div>
         )}
       </div>
-
+      
       {showModal && (
         <ListingDetailModal
           listing={item}
           onClose={() => setShowModal(false)}
           userType={userType}
           onEdit={onEdit}
-          onDelete={onDelete}
+          onDelete={handleDelete}
           onMarkAsSold={onMarkAsSold}
           onPurchase={onPurchase}
         />
