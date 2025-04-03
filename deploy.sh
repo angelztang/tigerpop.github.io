@@ -18,19 +18,19 @@ cat > package.json << EOL
   "engines": {
     "node": "20.x"
   },
+  "dependencies": {
+    "express": "^4.18.3"
+  },
   "scripts": {
-    "start": "echo 'Starting NGINX...'"
+    "start": "node server.js"
   }
 }
 EOL
 
-# Create Procfile for NGINX
-echo "web: bin/start-nginx-static" > Procfile
-
-# Ensure config directory exists
-mkdir -p config
+# Create Procfile for Node.js
+echo "web: npm start" > Procfile
 
 # Commit and push to Heroku
 git add .
-git commit -m "Update NGINX configuration to use /tmp for logs"
+git commit -m "Switch to Express server for static file serving"
 git push -f heroku main 
