@@ -8,7 +8,7 @@ npm run build
 # Move the build to the root directory
 cd ..
 rm -rf dist
-mv frontend/dist .
+mv frontend/build dist
 
 # Create a simple package.json for Heroku
 cat > package.json << EOL
@@ -23,6 +23,9 @@ cat > package.json << EOL
   }
 }
 EOL
+
+# Create Procfile for NGINX
+echo "web: bin/start-nginx-static" > Procfile
 
 # Commit and push to Heroku
 git add .
