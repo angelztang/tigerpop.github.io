@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Listing, getListings } from '../services/listingService';
+import { Listing, getListings, deleteListing, updateListingStatus } from '../services/listingService';
 import ListingForm from "../components/ListingForm";
 import ListingEditModal from "../components/ListingEditModal";
 import ListingCard from "../components/ListingCard";
@@ -38,16 +38,25 @@ const SellerDashboard: React.FC = () => {
   };
 
   const handleMarkAsSold = async (listingId: number) => {
-    try {
-      await updateListingStatus(listingId, 'sold');
-      fetchListings();
-    } catch (error) {
-      console.error('Error marking as sold:', error);
+    if (window.confirm('Are you sure you want to mark this item as sold?')) {
+      try {
+        await updateListingStatus(listingId, 'sold');
+        fetchListings(); // Refresh the listings after marking as sold
+      } catch (error) {
+        console.error('Error marking as sold:', error);
+      }
     }
   };
 
-  const updateListingStatus = async (listingId: number, status: string) => {
-    // Implement the function to update the listing status on the server
+  const handleDelete = async (listingId: number) => {
+    if (window.confirm('Are you sure you want to delete this listing?')) {
+      try {
+        await deleteListing(listingId);
+        fetchListings(); // Refresh the listings after deletion
+      } catch (error) {
+        console.error('Error deleting listing:', error);
+      }
+    }
   };
 
   const filterTabs: { label: string; value: FilterType }[] = [
@@ -100,9 +109,9 @@ const SellerDashboard: React.FC = () => {
           <div key={item.id} className="group relative">
             <ListingCard
               item={item}
-              userType="seller" // Pass 'seller' type
+              userType="seller"
               onEdit={handleEditClick}
-              onDelete={() => console.log('Delete Listing')}
+              onDelete={() => handleDelete(item.id)}
               onMarkAsSold={() => handleMarkAsSold(item.id)}
             />
           </div>

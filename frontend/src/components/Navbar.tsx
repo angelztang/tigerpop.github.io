@@ -3,12 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
-  const username = localStorage.getItem('username');
   const [searchQuery, setSearchQuery] = useState('');
-
-  const handleProfileClick = () => {
-    navigate('/profile');
-  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +15,7 @@ const Navbar: React.FC = () => {
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">
         <div className="flex flex-col py-4">
-          {/* Top bar with logo and profile */}
+          {/* Top bar with logo */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <h1 
@@ -35,26 +30,6 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-6">
               <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">home</Link>
               <Link to="/listings" className="text-orange-500 hover:text-orange-600">buy</Link>
-              <Link to="/seller" className="text-gray-600 hover:text-gray-900">sell</Link>
-              {username ? (
-                <div 
-                  className="flex items-center cursor-pointer"
-                  onClick={handleProfileClick}
-                >
-                  <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
-                    <span className="text-gray-600 font-semibold">
-                      {username[0].toUpperCase()}
-                    </span>
-                  </div>
-                </div>
-              ) : (
-                <button
-                  onClick={() => navigate('/login')}
-                  className="text-gray-600 hover:text-gray-900"
-                >
-                  Login
-                </button>
-              )}
             </div>
           </div>
 

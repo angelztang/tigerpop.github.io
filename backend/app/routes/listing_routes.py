@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 import os
@@ -19,6 +19,9 @@ if not os.path.exists(UPLOAD_FOLDER):
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+def get_full_url(path):
+    return path  # Return relative path instead of absolute URL
+
 @bp.route('/upload', methods=['POST'])
 def upload_images():
     if 'images' not in request.files:
@@ -36,8 +39,7 @@ def upload_images():
             file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
             file.save(file_path)
             
-            # In production, you would upload to a cloud storage service
-            # and get back a URL. For now, we'll use local path
+            # Generate relative URL for the image
             image_url = f"/uploads/{unique_filename}"
             image_urls.append(image_url)
     
@@ -49,11 +51,15 @@ def get_listings():
     # Get filter parameters
     max_price = request.args.get('max_price', type=float)
     category = request.args.get('category')
+    include_sold = request.args.get('include_sold', 'false').lower() == 'true'
     
-    print(f"Filter parameters - max_price: {max_price}, category: {category}")  # Debug log
+    print(f"Filter parameters - max_price: {max_price}, category: {category}, include_sold: {include_sold}")  # Debug log
     
     # Build query
     query = Listing.query
+    
+    if not include_sold:
+        query = query.filter(Listing.status != 'sold')
     
     if max_price is not None:
         query = query.filter(Listing.price <= max_price)
@@ -86,23 +92,35 @@ def create_listing():
         data = request.get_json()
         print("Received data:", data)  # Debug log
         
+        if not data:
+            print("No JSON data received")
+            return jsonify({'error': 'No data provided'}), 400
+        
         # Set a default user_id of 1 for now
         user_id = 1
         print("Using default user ID:", user_id)  # Debug log
         
-        if not data.get('title') or not data.get('description') or not data.get('price'):
-            print("Missing required fields:", {
-                'title': data.get('title'),
-                'description': data.get('description'),
-                'price': data.get('price')
-            })
-            return jsonify({'error': 'Missing required fields'}), 400
+        required_fields = ['title', 'description', 'price']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            error_msg = f"Missing required fields: {', '.join(missing_fields)}"
+            print(error_msg)
+            return jsonify({'error': error_msg}), 400
         
         try:
+            # Validate price
+            try:
+                price = float(data['price'])
+                if price <= 0:
+                    return jsonify({'error': 'Price must be greater than 0'}), 400
+            except ValueError:
+                return jsonify({'error': 'Invalid price format'}), 400
+            
             new_listing = Listing(
                 title=data['title'],
                 description=data['description'],
-                price=float(data['price']),
+                price=price,
                 category=data.get('category', 'other'),
                 user_id=user_id
             )
@@ -188,7 +206,18 @@ def delete_listing(id):
     if listing.user_id != user_id:
         return jsonify({'message': 'Unauthorized'}), 403
     
-    db.session.delete(listing)
-    db.session.commit()
-    
-    return jsonify({'message': 'Listing deleted successfully'})
+    try:
+        # Delete associated images from the filesystem
+        for image in listing.images:
+            image_path = os.path.join(UPLOAD_FOLDER, image.url.split('/')[-1])
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        # Delete the listing and its images from the database
+        db.session.delete(listing)
+        db.session.commit()
+        
+        return jsonify({'message': 'Listing deleted successfully'}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500

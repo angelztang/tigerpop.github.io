@@ -179,13 +179,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
         </div>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700">Images:</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Images (jpg, jpeg, png):
+        </label>
         <input
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
           multiple
-          accept="image/*"
+          accept=".jpg,.jpeg,.png"
           className="mt-1 block w-full text-sm text-gray-500
             file:mr-4 file:py-2 file:px-4
             file:rounded-md file:border-0
@@ -193,6 +195,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onClose }) => {
             file:bg-orange-50 file:text-orange-700
             hover:file:bg-orange-100"
         />
+        <p className="mt-1 text-sm text-gray-500">
+          Accepted formats: JPG, JPEG, PNG
+        </p>
         {previewUrls.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-4">
             {previewUrls.map((url, index) => (

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Listing } from "../services/listingService";
 import ListingDetailModal from "./ListingDetailModal";
+import { API_URL } from "../config";
 
 interface ListingCardProps {
   item: Listing;
@@ -37,6 +38,15 @@ const ListingCard: React.FC<ListingCardProps> = ({
     return "available";
   };
 
+  const getImageUrl = (path: string) => {
+    // If the path is already a full URL, return it as is
+    if (path.startsWith('http')) {
+      return path;
+    }
+    // Otherwise, prepend the API_URL
+    return `${API_URL}${path}`;
+  };
+
   return (
     <>
       <div 
@@ -44,11 +54,11 @@ const ListingCard: React.FC<ListingCardProps> = ({
         onClick={() => setShowModal(true)}
       >
         {item.images && item.images.length > 0 && (
-          <div className="relative">
+          <div className="relative aspect-w-4 aspect-h-3 mb-4">
             <img 
-              src={item.images[currentImageIndex]} 
+              src={getImageUrl(item.images[currentImageIndex])} 
               alt={item.title} 
-              className="w-full h-48 object-cover rounded-md mb-4"
+              className="w-full h-auto object-contain rounded-md"
             />
             {item.images.length > 1 && (
               <>

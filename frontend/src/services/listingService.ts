@@ -36,8 +36,8 @@ const getAuthHeaders = () => {
 export const getListings = async (queryString: string = ''): Promise<Listing[]> => {
   try {
     const url = queryString.startsWith('/api') 
-      ? `${API_URL}${queryString.substring(4)}` 
-      : `${API_URL}/listings${queryString}`;
+      ? `${API_URL}${queryString}` 
+      : `${API_URL}/api/listings${queryString}`;
     
     const response = await fetch(url, {
       headers: getAuthHeaders()
@@ -76,7 +76,7 @@ export const createListing = async (data: CreateListingData): Promise<Listing> =
 
 export const updateListing = async (id: number, data: Partial<CreateListingData>): Promise<Listing> => {
   try {
-    const response = await fetch(`${API_URL}/listings/${id}`, {
+    const response = await fetch(`${API_URL}/api/listings/${id}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data)
@@ -95,13 +95,22 @@ export const updateListing = async (id: number, data: Partial<CreateListingData>
 
 export const deleteListing = async (id: number): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/listings/${id}`, {
+    const token = getToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/api/listings/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
 
     if (!response.ok) {
-      throw new Error('Failed to delete listing');
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Failed to delete listing');
     }
   } catch (error) {
     console.error('Error deleting listing:', error);
@@ -111,14 +120,23 @@ export const deleteListing = async (id: number): Promise<void> => {
 
 export const updateListingStatus = async (id: number, status: string): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/listings/${id}/status`, {
+    const token = getToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${API_URL}/api/listings/${id}/status`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ status }),
     });
 
     if (!response.ok) {
-      throw new Error('Failed to update listing status');
+      const errorData = await response.json().catch(() => null);
+      throw new Error(errorData?.message || 'Failed to update listing status');
     }
   } catch (error) {
     console.error('Error updating listing status:', error);
@@ -128,7 +146,7 @@ export const updateListingStatus = async (id: number, status: string): Promise<v
 
 export const getUserListings = async (): Promise<Listing[]> => {
   try {
-    const response = await fetch(`${API_URL}/listings/user`, {
+    const response = await fetch(`${API_URL}/api/listings/user`, {
       headers: getAuthHeaders(),
     });
     

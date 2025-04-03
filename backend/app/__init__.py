@@ -19,8 +19,15 @@ def create_app(config_class=Config):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     
-    # Initialize extensions
-    CORS(app)
+    # Initialize extensions with explicit CORS configuration
+    CORS(app, resources={
+        r"/*": {
+            "origins": ["http://localhost:3000"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+            "allow_headers": ["Content-Type", "Authorization"],
+            "supports_credentials": True
+        }
+    }, expose_headers=["Content-Type", "Authorization"])
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
@@ -41,5 +48,14 @@ def create_app(config_class=Config):
         except Exception as e:
             logger.error(f"Error creating database tables: {str(e)}")
             raise
+    
+    # Serve static files with CORS headers
+    @app.after_request
+    def after_request(response):
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        return response
     
     return app
