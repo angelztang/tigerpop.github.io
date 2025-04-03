@@ -37,9 +37,12 @@ const getAuthHeaders = () => {
 
 export const getListings = async (queryString: string = ''): Promise<Listing[]> => {
   try {
-    const url = queryString.startsWith('/api') 
+    // Always include sold items in the query
+    const baseUrl = queryString.startsWith('/api') 
       ? `${API_URL}${queryString}` 
       : `${API_URL}/api/listings${queryString}`;
+    
+    const url = `${baseUrl}${baseUrl.includes('?') ? '&' : '?'}include_sold=true`;
     
     console.log('Fetching listings from:', url); // Debug log
     console.log('Current environment:', process.env.NODE_ENV); // Debug log
@@ -170,24 +173,27 @@ export const deleteListing = async (id: number): Promise<void> => {
 
 export const updateListingStatus = async (id: number, status: string): Promise<void> => {
   try {
-    const token = getToken();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
+    console.log('Updating listing status:', { id, status }); // Debug log
+    console.log('API URL:', API_URL); // Debug log
 
     const response = await fetch(`${API_URL}/api/listings/${id}/status`, {
       method: 'PATCH',
+      credentials: 'include',
       headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
       },
       body: JSON.stringify({ status }),
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Failed to update listing status');
+      const errorText = await response.text();
+      console.error('Server response:', errorText);
+      throw new Error(`Failed to update listing status: ${response.status} ${response.statusText}`);
     }
+
+    const data = await response.json();
+    console.log('Status update successful:', data); // Debug log
   } catch (error) {
     console.error('Error updating listing status:', error);
     throw error;

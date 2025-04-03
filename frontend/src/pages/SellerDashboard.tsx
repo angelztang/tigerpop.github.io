@@ -41,9 +41,11 @@ const SellerDashboard: React.FC = () => {
     if (window.confirm('Are you sure you want to mark this item as sold?')) {
       try {
         await updateListingStatus(listingId, 'sold');
-        fetchListings(); // Refresh the listings after marking as sold
+        // Refresh the listings to show the updated status
+        await fetchListings();
       } catch (error) {
         console.error('Error marking as sold:', error);
+        alert('Failed to mark item as sold. Please try again.');
       }
     }
   };
@@ -104,17 +106,28 @@ const SellerDashboard: React.FC = () => {
 
       {/* Filtered Listings */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {listings.map((item) => (
-          <div key={item.id} className="group relative">
-            <ListingCard
-              item={item}
-              userType="seller"
-              onEdit={() => handleEditClick(item)}
-              onDelete={() => handleDelete(item.id)}
-              onMarkAsSold={() => handleMarkAsSold(item.id)}
-            />
-          </div>
-        ))}
+        {listings
+          .filter(item => {
+            switch (activeFilter) {
+              case 'selling':
+                return item.status !== 'sold';
+              case 'sold':
+                return item.status === 'sold';
+              default:
+                return true;
+            }
+          })
+          .map((item) => (
+            <div key={item.id} className="group relative">
+              <ListingCard
+                item={item}
+                userType="seller"
+                onEdit={() => handleEditClick(item)}
+                onDelete={() => handleDelete(item.id)}
+                onMarkAsSold={() => handleMarkAsSold(item.id)}
+              />
+            </div>
+          ))}
       </div>
 
       {/* Create Listing Modal */}

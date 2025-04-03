@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { CAS_URL, CAS_SERVICE } from '../config';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();
@@ -12,7 +13,12 @@ const Navbar: React.FC = () => {
   };
 
   const handleLogin = () => {
-    window.location.href = 'https://fed.princeton.edu';
+    // Log the URLs for debugging
+    console.log('CAS URL:', CAS_URL);
+    console.log('Service URL:', CAS_SERVICE);
+    
+    // Redirect to CAS login with the service URL
+    window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(CAS_SERVICE)}`;
   };
 
   return (

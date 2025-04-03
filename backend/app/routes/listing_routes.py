@@ -220,20 +220,32 @@ def get_user_listings():
         'created_at': listing.created_at.isoformat()
     } for listing in listings])
 
-@bp.route('/<int:id>/status', methods=['PATCH'])
-@jwt_required()
+@bp.route('/<int:id>/status', methods=['PATCH', 'OPTIONS'])
 def update_listing_status(id):
-    user_id = get_jwt_identity()
-    listing = Listing.query.get_or_404(id)
-    
-    if listing.user_id != user_id:
-        return jsonify({'message': 'Unauthorized'}), 403
-    
-    data = request.get_json()
-    listing.status = data['status']
-    db.session.commit()
-    
-    return jsonify({'message': 'Status updated successfully'})
+    if request.method == 'OPTIONS':
+        # Handle preflight request
+        response = jsonify({'message': 'OK'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Methods', 'PATCH')
+        return response
+
+    try:
+        listing = Listing.query.get_or_404(id)
+        data = request.get_json()
+        if not data or 'status' not in data:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        listing.status = data['status']
+        db.session.commit()
+        
+        response = jsonify({'message': 'Status updated successfully'})
+        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        return response
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating listing status: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/<int:id>', methods=['DELETE'])
 @jwt_required()
