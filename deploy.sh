@@ -64,11 +64,11 @@ http {
         index index.html;
 
         location / {
-            try_files \$uri \$uri/ /index.html;
+            try_files $uri $uri/ /index.html;
             add_header Cache-Control "no-store, no-cache";
         }
 
-        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)\$ {
+        location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
             expires 1y;
             add_header Cache-Control "public, no-transform";
         }
