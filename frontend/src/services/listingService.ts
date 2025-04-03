@@ -124,17 +124,9 @@ export const updateListing = async (id: number, data: Partial<CreateListingData>
 
 export const deleteListing = async (id: number): Promise<void> => {
   try {
-    const token = getToken();
-    if (!token) {
-      throw new Error('No authentication token found');
-    }
-
     const response = await fetch(`${API_URL}/api/listings/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
