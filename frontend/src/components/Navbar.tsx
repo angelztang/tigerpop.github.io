@@ -11,6 +11,10 @@ const Navbar: React.FC = () => {
     console.log('Search:', searchQuery);
   };
 
+  const handleLogin = () => {
+    window.location.href = 'https://fed.princeton.edu';
+  };
+
   return (
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">
@@ -30,6 +34,12 @@ const Navbar: React.FC = () => {
             <div className="flex items-center space-x-6">
               <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">home</Link>
               <Link to="/listings" className="text-orange-500 hover:text-orange-600">buy</Link>
+              <button
+                onClick={handleLogin}
+                className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
+              >
+                Login
+              </button>
             </div>
           </div>
 
