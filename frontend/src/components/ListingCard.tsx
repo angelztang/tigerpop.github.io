@@ -40,8 +40,8 @@ const ListingCard: React.FC<ListingCardProps> = ({
   };
 
   const getImageUrl = (path: string) => {
-    // If the path is already a full URL, return it as is
-    if (path.startsWith('http')) {
+    // If the path is already a full URL (starts with http:// or https://), return it as is
+    if (path.startsWith('http://') || path.startsWith('https://')) {
       return path;
     }
     // Otherwise, prepend the API_URL
