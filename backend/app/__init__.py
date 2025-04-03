@@ -1,4 +1,4 @@
-from flask import Flask, request
+from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -6,6 +6,7 @@ from flask_cors import CORS
 from .config import Config
 import os
 import logging
+import traceback
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -55,7 +56,25 @@ def create_app(config_class=Config):
             logger.info("Database tables created successfully")
         except Exception as e:
             logger.error(f"Error creating database tables: {str(e)}")
+            logger.error(traceback.format_exc())
             raise
+    
+    # Error handlers
+    @app.errorhandler(404)
+    def not_found_error(error):
+        return jsonify({'error': 'Not found'}), 404
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        logger.error(f"Internal server error: {str(error)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': 'Internal server error'}), 500
+
+    @app.errorhandler(Exception)
+    def handle_exception(e):
+        logger.error(f"Unhandled exception: {str(e)}")
+        logger.error(traceback.format_exc())
+        return jsonify({'error': 'Internal server error'}), 500
     
     # Serve static files with CORS headers
     @app.after_request
