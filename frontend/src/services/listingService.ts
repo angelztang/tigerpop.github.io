@@ -39,15 +39,44 @@ export const getListings = async (queryString: string = ''): Promise<Listing[]> 
       ? `${API_URL}${queryString}` 
       : `${API_URL}/api/listings${queryString}`;
     
+    console.log('Fetching listings from:', url); // Debug log
+    console.log('Current environment:', process.env.NODE_ENV); // Debug log
+    console.log('API_URL:', API_URL); // Debug log
+    
+    const headers = {
+      ...getAuthHeaders(),
+      'Accept': 'application/json'
+    };
+    console.log('Request headers:', headers); // Debug log
+    
     const response = await fetch(url, {
-      headers: getAuthHeaders()
+      method: 'GET',
+      credentials: 'include',
+      headers: headers,
+      mode: 'cors' // Explicitly set CORS mode
     });
+    
+    console.log('Response status:', response.status); // Debug log
+    console.log('Response headers:', Object.fromEntries(response.headers.entries())); // Debug log
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch listings');
+      const errorText = await response.text();
+      console.error('Server response:', errorText);
+      throw new Error(`Failed to fetch listings: ${response.status} ${response.statusText}`);
     }
-    return response.json();
+    
+    const data = await response.json();
+    console.log('Received listings:', data); // Debug log
+    return data;
   } catch (error) {
     console.error('Error fetching listings:', error);
+    if (error instanceof TypeError) {
+      console.error('Network error details:', {
+        message: error.message,
+        stack: error.stack,
+        url: API_URL
+      });
+    }
     throw error;
   }
 };

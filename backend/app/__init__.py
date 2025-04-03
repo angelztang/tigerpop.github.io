@@ -1,4 +1,4 @@
-from flask import Flask
+from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -19,15 +19,23 @@ def create_app(config_class=Config):
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
     
+    # Define allowed origins
+    allowed_origins = [
+        "http://localhost:3000",
+        "https://tigerpop-marketplace.herokuapp.com",
+        "https://tigerpop.github.io"
+    ]
+    
     # Initialize extensions with explicit CORS configuration
     CORS(app, resources={
         r"/*": {
-            "origins": ["http://localhost:3000"],
+            "origins": allowed_origins,
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
             "allow_headers": ["Content-Type", "Authorization"],
             "supports_credentials": True
         }
     }, expose_headers=["Content-Type", "Authorization"])
+    
     db.init_app(app)
     migrate.init_app(app, db)
     jwt.init_app(app)
@@ -52,10 +60,12 @@ def create_app(config_class=Config):
     # Serve static files with CORS headers
     @app.after_request
     def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+        origin = request.headers.get('Origin')
+        if origin in allowed_origins:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+            response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+            response.headers.add('Access-Control-Allow-Credentials', 'true')
         return response
     
     return app
