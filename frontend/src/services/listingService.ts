@@ -124,15 +124,35 @@ export const updateListing = async (id: number, data: Partial<CreateListingData>
 
 export const deleteListing = async (id: number): Promise<void> => {
   try {
+    const token = getToken();
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    console.log('Deleting listing with ID:', id); // Debug log
+    console.log('Using token:', token); // Debug log
+
     const response = await fetch(`${API_URL}/api/listings/${id}`, {
       method: 'DELETE',
-      headers: getAuthHeaders()
+      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
+
+    console.log('Delete response status:', response.status); // Debug log
+    console.log('Delete response headers:', Object.fromEntries(response.headers.entries())); // Debug log
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => null);
-      throw new Error(errorData?.message || 'Failed to delete listing');
+      console.error('Delete error response:', errorData); // Debug log
+      throw new Error(errorData?.message || `Failed to delete listing: ${response.status} ${response.statusText}`);
     }
+
+    const result = await response.json();
+    console.log('Delete successful:', result); // Debug log
   } catch (error) {
     console.error('Error deleting listing:', error);
     throw error;
