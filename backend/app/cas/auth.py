@@ -82,27 +82,21 @@ def validate_cas_ticket(ticket):
         if response.status_code == 200:
             # Check if the response contains a successful authentication
             if '<cas:authenticationSuccess>' in response.text:
-                # Extract username from the response
-                username_match = re.search(r'<cas:user>(.*?)</cas:user>', response.text)
-                if username_match:
-                    return username_match.group(1)
+                # Extract netid from the response
+                netid_match = re.search(r'<cas:user>(.*?)</cas:user>', response.text)
+                if netid_match:
+                    return netid_match.group(1)
         return None
     except Exception as e:
         current_app.logger.error(f"CAS validation error: {str(e)}")
         return None
 
-def create_or_update_user(username):
-    """Create or update a user based on CAS username."""
-    user = User.query.filter_by(username=username).first()
+def create_or_update_user(netid):
+    """Create or update a user based on CAS netid."""
+    user = User.query.filter_by(netid=netid).first()
     if not user:
-        user = User(
-            username=username,
-            email=f"{username}@princeton.edu",  # Default email format
-            created_at=datetime.utcnow()
-        )
+        user = User(netid=netid)
         db.session.add(user)
-    else:
-        user.updated_at = datetime.utcnow()
     
     db.session.commit()
     return user
@@ -113,8 +107,7 @@ def generate_jwt_token(user):
     return create_access_token(
         identity=user.id,
         additional_claims={
-            'username': user.username,
-            'email': user.email
+            'netid': user.netid
         }
     )
 
@@ -133,12 +126,12 @@ def cas_login():
         return redirect(f'{login_url}?service={urllib.parse.quote(service_url)}')
     
     # Validate the ticket
-    username = validate_cas_ticket(ticket)
-    if not username:
+    netid = validate_cas_ticket(ticket)
+    if not netid:
         return redirect(f'{CAS_SERVICE}/login?error=invalid_ticket')
     
     # Create or update user
-    user = create_or_update_user(username)
+    user = create_or_update_user(netid)
     
     # Generate JWT token
     token = generate_jwt_token(user)

@@ -14,7 +14,7 @@ export interface SignupData {
 export interface AuthResponse {
   access_token: string;
   user_id: number;
-  username: string;
+  netid: string;
 }
 
 export const login = () => {
@@ -42,32 +42,36 @@ export const handleCasCallback = (token: string): AuthResponse => {
   const payload = JSON.parse(atob(token.split('.')[1]));
   localStorage.setItem('user_id', payload.sub);
   
-  // Get username from additional claims
-  const username = payload.username;
-  localStorage.setItem('username', username);
+  // Get netid from additional claims
+  const netid = payload.netid;
+  localStorage.setItem('netid', netid);
   
   return {
     access_token: token,
     user_id: payload.sub,
-    username: username
+    netid: netid
   };
 };
 
 export const logout = () => {
+  // Clear all stored data
   localStorage.removeItem('token');
   localStorage.removeItem('user_id');
-  localStorage.removeItem('username');
-  window.location.href = '/';
+  localStorage.removeItem('netid');
+  
+  // Redirect to login page
+  window.location.href = '/login';
 };
 
-export const getToken = () => {
-  return localStorage.getItem('token');
-};
+export const getToken = () => localStorage.getItem('token');
 
 export const getUserId = () => localStorage.getItem('user_id');
-export const getUsername = () => localStorage.getItem('username');
+
+export const getNetid = () => localStorage.getItem('netid');
+
 export const isAuthenticated = () => {
-  return !!getToken();
+  const token = getToken();
+  return !!token;
 };
 
 export const signup = async (data: SignupData): Promise<{ message: string }> => {

@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getUsername, logout } from '../services/authService';
+import { getNetid, logout } from '../services/authService';
 
 interface NavbarProps {
   authenticated: boolean;
-  username: string | null;
+  netid: string | null;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ authenticated, username }) => {
+const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -19,7 +19,8 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, username }) => {
   const handleLogout = () => {
     logout();
     setShowProfileMenu(false);
-    navigate('/listings');
+    // Force a page reload to ensure all state is cleared
+    window.location.reload();
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -56,21 +57,21 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, username }) => {
                   >
                     <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                       <span className="text-orange-600 font-semibold">
-                        {username?.[0].toUpperCase()}
+                        {netid?.[0].toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-gray-700">{username}</span>
+                    <span className="text-gray-700">{netid}</span>
                   </div>
                   
                   {/* Profile Dropdown Menu */}
                   {showProfileMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                       <Link
-                        to="/profile"
+                        to="/dashboard"
                         className="block px-4 py-2 text-gray-700 hover:bg-orange-50"
                         onClick={() => setShowProfileMenu(false)}
                       >
-                        My Profile
+                        My Dashboard
                       </Link>
                       <button
                         onClick={handleLogout}
@@ -82,12 +83,12 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, username }) => {
                   )}
                 </div>
               ) : (
-                <button
-                  onClick={() => navigate('/login')}
+                <Link
+                  to="/login"
                   className="text-gray-600 hover:text-gray-900"
                 >
                   Login
-                </button>
+                </Link>
               )}
             </div>
           </div>

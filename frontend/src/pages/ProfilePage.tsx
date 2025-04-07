@@ -4,13 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import ListingForm from '../components/ListingForm';
 import { getUserListings, Listing } from '../services/listingService';
 import ListingCard from '../components/ListingCard';
-import { getUsername, getUserId } from '../services/authService';
+import { getNetid, getUserId } from '../services/authService';
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const [username, setUsername] = useState<string>('');
+  const [netid, setNetid] = useState<string>('');
   const [userId, setUserId] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -22,10 +22,10 @@ const ProfilePage: React.FC = () => {
 
   useEffect(() => {
     // Get user info from localStorage
-    const storedUsername = getUsername();
+    const storedNetid = getNetid();
     const storedUserId = getUserId();
-    if (storedUsername) {
-      setUsername(storedUsername);
+    if (storedNetid) {
+      setNetid(storedNetid);
     }
     if (storedUserId) {
       setUserId(storedUserId);
@@ -90,11 +90,11 @@ const ProfilePage: React.FC = () => {
         <div className="flex items-center space-x-6">
           <div className="w-24 h-24 bg-orange-100 rounded-full flex items-center justify-center">
             <span className="text-3xl text-orange-600 font-bold">
-              {username ? username[0].toUpperCase() : '?'}
+              {netid ? netid[0].toUpperCase() : '?'}
             </span>
           </div>
           <div className="flex-1">
-            <h2 className="text-2xl font-semibold text-gray-900">{username}</h2>
+            <h2 className="text-2xl font-semibold text-gray-900">{netid}</h2>
             <p className="text-gray-600">Princeton Student</p>
             <p className="text-sm text-gray-500">User ID: {userId}</p>
           </div>

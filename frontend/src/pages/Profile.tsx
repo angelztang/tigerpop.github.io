@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { API_URL } from '../config';
-import { getToken, getUsername } from '../services/authService';
+import { getToken, getNetid } from '../services/authService';
 
 interface User {
   id: number;
-  username: string;
+  netid: string;
   email: string;
 }
 
@@ -14,7 +14,7 @@ const Profile: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const token = getToken();
-  const username = getUsername();
+  const netid = getNetid();
 
   useEffect(() => {
     if (!token) {
@@ -24,7 +24,7 @@ const Profile: React.FC = () => {
 
     const fetchUser = async () => {
       try {
-        const response = await fetch(`${API_URL}/users/${username}`, {
+        const response = await fetch(`${API_URL}/users/${netid}`, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
@@ -40,7 +40,7 @@ const Profile: React.FC = () => {
     };
 
     fetchUser();
-  }, [token, username, navigate]);
+  }, [token, netid, navigate]);
 
   if (loading) return <div>Loading...</div>;
   if (!user) return <div>User not found</div>;
@@ -50,8 +50,8 @@ const Profile: React.FC = () => {
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
       <div className="bg-white rounded-lg shadow-md p-6">
         <div className="mb-4">
-          <h2 className="text-xl font-semibold mb-2">Username</h2>
-          <p className="text-gray-600">{user.username}</p>
+          <h2 className="text-xl font-semibold mb-2">Netid</h2>
+          <p className="text-gray-600">{user.netid}</p>
         </div>
         <div className="mb-4">
           <h2 className="text-xl font-semibold mb-2">Email</h2>
