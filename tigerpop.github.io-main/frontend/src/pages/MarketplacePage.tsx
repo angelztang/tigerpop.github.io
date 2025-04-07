@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
-import { Listing, getListings, ListingFilters } from '../services/listingService';
+import { Listing, getListings } from '../services/listingService';
 
 interface PriceRange {
   label: string;
@@ -13,10 +13,8 @@ interface Category {
   slug: string;
 }
 
-const Marketplace: React.FC = () => {
+const ListingsPage: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
@@ -38,25 +36,25 @@ const Marketplace: React.FC = () => {
 
   const fetchListings = async () => {
     try {
-      setLoading(true);
-      const filters: ListingFilters = {};
+      let url = '/api/listings';
+      const params = new URLSearchParams();
       
       if (selectedPrice) {
-        filters.max_price = selectedPrice;
+        params.append('max_price', selectedPrice.toString());
       }
       
       if (selectedCategory) {
-        filters.category = selectedCategory;
+        params.append('category', selectedCategory);
       }
       
-      const data = await getListings(filters);
+      if (params.toString()) {
+        url += `?${params.toString()}`;
+      }
+      
+      const data = await getListings(url);
       setListings(data);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch listings');
-      console.error('Error fetching listings:', err);
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching listings:', error);
     }
   };
 
@@ -73,13 +71,7 @@ const Marketplace: React.FC = () => {
     setSelectedPrice(selectedPrice === max ? null : max);
   };
 
-  if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-12 text-red-600">{error}</div>;
-  }
+  const filteredListings = listings;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -153,8 +145,8 @@ const Marketplace: React.FC = () => {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+            {filteredListings.map((listing) => (
+              <ListingCard key={listing.id} item={listing} />
             ))}
           </div>
         </div>
@@ -166,7 +158,7 @@ const Marketplace: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">All Items</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard key={listing.id} item={listing} />
             ))}
           </div>
         </div>
@@ -175,4 +167,4 @@ const Marketplace: React.FC = () => {
   );
 };
 
-export default Marketplace; 
+export default ListingsPage; 
