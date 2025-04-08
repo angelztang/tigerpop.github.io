@@ -31,7 +31,7 @@ export const login = () => {
   // Get the current URL without any existing parameters
   const currentUrl = window.location.origin + window.location.pathname;
   const redirectUri = encodeURIComponent(currentUrl);
-  const serviceUrl = `${API_URL}/auth/cas/login?redirect_uri=${redirectUri}`;
+  const serviceUrl = `${API_URL}/api/auth/cas/login?redirect_uri=${redirectUri}`;
   
   // Redirect to CAS login, which will handle Duo Security
   window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;

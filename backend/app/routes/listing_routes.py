@@ -125,7 +125,7 @@ def get_listings():
             'status': listing.status,
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': []  # Add image URLs here if you have them
+            'images': [image.filename for image in listing.images]  # Include image URLs
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
@@ -173,7 +173,7 @@ def create_listing():
                     image_urls = json.loads(images)
                     for url in image_urls:
                         image = ListingImage(filename=url, listing_id=new_listing.id)
-                        new_listing.images.append(image)
+                        db.session.add(image)
                     db.session.commit()
                 except json.JSONDecodeError:
                     current_app.logger.error("Failed to parse image URLs")
@@ -188,8 +188,7 @@ def create_listing():
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
                 'images': image_urls,
-                'created_at': new_listing.created_at.isoformat(),
-                'updated_at': new_listing.updated_at.isoformat()
+                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
 
         except Exception as db_error:

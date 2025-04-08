@@ -23,6 +23,7 @@ def create_app(config_class=Config):
     from app.routes.auth_routes import bp as auth_bp
     from app.routes.listing_routes import bp as listing_bp
     from app.routes.user_routes import bp as user_bp
+    from app.cas.auth import cas_bp
 
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(listing_bp, url_prefix='/api/listing')
