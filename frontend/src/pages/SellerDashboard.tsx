@@ -6,6 +6,8 @@ import { Listing } from '../services/listingService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
 
+type FilterTab = 'all' | 'selling' | 'sold';
+
 const SellerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
@@ -13,6 +15,7 @@ const SellerDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
 
   useEffect(() => {
     fetchListings();
@@ -58,6 +61,13 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const filteredListings = listings.filter(listing => {
+    if (activeFilter === 'all') return true;
+    if (activeFilter === 'selling') return listing.status === 'available';
+    if (activeFilter === 'sold') return listing.status === 'sold';
+    return true;
+  });
+
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
@@ -82,29 +92,50 @@ const SellerDashboard: React.FC = () => {
         )}
 
         {showForm && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 w-full max-w-2xl">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-2xl font-bold">Create New Listing</h2>
-                <button
-                  onClick={() => setShowForm(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <ListingForm
-                onSubmit={handleListingCreated}
-                isSubmitting={isSubmitting}
-              />
-            </div>
-          </div>
+          <ListingForm
+            onSubmit={handleListingCreated}
+            isSubmitting={isSubmitting}
+            onClose={() => setShowForm(false)}
+          />
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {listings.map(listing => (
+        <div className="mb-6 border-b border-gray-200">
+          <nav className="-mb-px flex space-x-8" aria-label="Tabs">
+            <button
+              onClick={() => setActiveFilter('all')}
+              className={`${
+                activeFilter === 'all'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setActiveFilter('selling')}
+              className={`${
+                activeFilter === 'selling'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Selling
+            </button>
+            <button
+              onClick={() => setActiveFilter('sold')}
+              className={`${
+                activeFilter === 'sold'
+                  ? 'border-orange-500 text-orange-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+            >
+              Sold
+            </button>
+          </nav>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredListings.map(listing => (
             <ListingCard
               key={listing.id}
               listing={listing}

@@ -5,18 +5,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Listing, createListing, updateListing, uploadImages, CreateListingData } from '../services/listingService';
 
+interface ListingFormProps {
+  onSubmit: (data: ListingFormData) => void;
+  isSubmitting?: boolean;
+  initialData?: Partial<ListingFormData>;
+  onClose?: () => void;
+}
+
 interface ListingFormData {
   title: string;
   description: string;
   price: string;
   category: string;
   images: string[];
-}
-
-interface ListingFormProps {
-  onSubmit: (data: ListingFormData) => void;
-  isSubmitting?: boolean;
-  initialData?: Partial<ListingFormData>;
 }
 
 const categories = [
@@ -27,7 +28,7 @@ const categories = [
   'Other'
 ];
 
-const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {} }) => {
+const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
   const [formData, setFormData] = useState<ListingFormData>({
     title: initialData.title || '',
     description: initialData.description || '',
@@ -53,8 +54,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
       <div className="relative bg-white rounded-lg p-8 m-4 max-w-xl w-full">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-3xl font-bold">Create New Listing</h2>
+          <h2 className="text-2xl font-bold">Create New Listing</h2>
           <button
+            onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
             aria-label="Close"
           >
@@ -64,10 +66,10 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700">
-              Title
+            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+              Title:
             </label>
             <input
               type="text"
@@ -81,8 +83,29 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700">
-              Description
+            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
+              Category:
+            </label>
+            <select
+              id="category"
+              name="category"
+              value={formData.category}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            >
+              <option value="">Select a category</option>
+              {categories.map(category => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+              Description:
             </label>
             <textarea
               id="description"
@@ -96,8 +119,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
           </div>
 
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-              Price
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+              Price:
             </label>
             <div className="mt-1 relative rounded-md shadow-sm">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -117,27 +140,29 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
           </div>
 
           <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700">
-              Category
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Images (jpg, jpeg, png):
             </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            >
-              <option value="">Select a category</option>
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <div className="mt-1">
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              >
+                Choose Files
+              </button>
+              <span className="ml-3 text-sm text-gray-500">No file chosen</span>
+            </div>
+            <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={isSubmitting}
@@ -147,7 +172,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   : 'bg-orange-500 hover:bg-orange-600'
               } transition-colors`}
             >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              Create Listing
             </button>
           </div>
         </form>

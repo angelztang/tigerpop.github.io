@@ -30,12 +30,12 @@ const MarketplacePage: React.FC = () => {
   ];
 
   const categories: Category[] = [
-    { name: 'Tops', image: '/images/placeholder.svg', slug: 'tops' },
-    { name: 'Bottoms', image: '/images/placeholder.svg', slug: 'bottoms' },
-    { name: 'Shoes', image: '/images/placeholder.svg', slug: 'shoes' },
-    { name: 'Dresses', image: '/images/placeholder.svg', slug: 'dresses' },
-    { name: 'Fridges', image: '/images/placeholder.svg', slug: 'fridges' },
-    { name: 'Couches', image: '/images/placeholder.svg', slug: 'couches' },
+    { name: 'Tops', image: '/category-placeholder.jpg', slug: 'tops' },
+    { name: 'Bottoms', image: '/category-placeholder.jpg', slug: 'bottoms' },
+    { name: 'Shoes', image: '/category-placeholder.jpg', slug: 'shoes' },
+    { name: 'Dresses', image: '/category-placeholder.jpg', slug: 'dresses' },
+    { name: 'Furniture', image: '/category-placeholder.jpg', slug: 'furniture' },
+    { name: 'Other', image: '/category-placeholder.jpg', slug: 'other' },
   ];
 
   const fetchListings = async () => {
@@ -80,23 +80,11 @@ const MarketplacePage: React.FC = () => {
     setSelectedPrice(selectedPrice === max ? null : max);
   };
 
-  const handlePurchase = async (listing: Listing) => {
-    try {
-      // TODO: Implement purchase logic
-      console.log('Purchasing listing:', listing.id);
-      setSelectedListing(null);
-      fetchListings();
-    } catch (err) {
-      setError('Failed to purchase listing');
-      console.error('Error purchasing listing:', err);
-    }
-  };
-
-  const filteredListings = selectedCategory
-    ? listings.filter(listing => listing.category === selectedCategory)
-    : selectedPrice
-    ? listings.filter(listing => listing.price <= selectedPrice)
-    : listings;
+  const filteredListings = listings.filter(listing => {
+    if (selectedCategory && listing.category.toLowerCase() !== selectedCategory) return false;
+    if (selectedPrice && listing.price > selectedPrice) return false;
+    return true;
+  });
 
   if (loading) {
     return (
@@ -116,21 +104,19 @@ const MarketplacePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Marketplace</h1>
-      
       {/* Price Filters */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Price Range</h2>
-        <div className="flex flex-wrap gap-2">
+        <h2 className="text-xl font-bold mb-4">Shop By Price</h2>
+        <div className="flex flex-wrap gap-3">
           {priceRanges.map((range) => (
             <button
               key={range.max}
               onClick={() => handlePriceClick(range.max)}
-              className={`px-4 py-2 rounded-full ${
+              className={`px-6 py-2 rounded-lg ${
                 selectedPrice === range.max
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200'
-              }`}
+                  ? 'bg-orange-100 text-orange-700'
+                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
+              } transition-colors duration-200`}
             >
               {range.label}
             </button>
@@ -138,87 +124,54 @@ const MarketplacePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Filters */}
-      <div className="mb-8">
-        <h2 className="text-xl font-semibold mb-4">Categories</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      {/* Category Cards */}
+      <div className="mb-12">
+        <h2 className="text-xl font-bold mb-4">Shop By Piece</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {categories.map((category) => (
             <button
               key={category.slug}
               onClick={() => handleCategoryClick(category.slug)}
-              className={`p-4 rounded-lg text-center ${
+              className={`relative overflow-hidden rounded-lg aspect-[4/3] group ${
                 selectedCategory === category.slug
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-gray-100 hover:bg-gray-200'
+                  ? 'ring-2 ring-orange-500'
+                  : ''
               }`}
             >
+              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-60"></div>
               <img
                 src={category.image}
                 alt={category.name}
-                className="w-16 h-16 mx-auto mb-2"
+                className="w-full h-full object-cover"
               />
-              <span>{category.name}</span>
+              <span className="absolute bottom-4 left-4 text-white text-xl font-medium">
+                {category.name}
+              </span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Filtered Listings */}
-      {(selectedPrice || selectedCategory) && (
-        <div className="mt-12">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-semibold">
-              {selectedCategory
-                ? `${selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)}`
-                : selectedPrice
-                ? `Items Under $${selectedPrice}`
-                : 'All Items'}
-            </h2>
-            {(selectedPrice || selectedCategory) && (
-              <button
-                onClick={() => {
-                  setSelectedPrice(null);
-                  setSelectedCategory(null);
-                }}
-                className="text-orange-500 hover:text-orange-600"
-              >
-                Clear Filters
-              </button>
-            )}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredListings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                onDelete={() => {}}
-              />
-            ))}
-          </div>
+      {/* All Items Section */}
+      <div>
+        <h2 className="text-xl font-bold mb-6">All Items</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredListings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              onDelete={() => {}}
+            />
+          ))}
         </div>
-      )}
+      </div>
 
-      {/* All Listings */}
-      {!selectedPrice && !selectedCategory && (
-        <div className="mt-12">
-          <h2 className="text-xl font-semibold mb-4">All Items</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                onDelete={() => {}}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
+      {/* Listing Detail Modal */}
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
           onClose={() => setSelectedListing(null)}
-          onPurchase={() => handlePurchase(selectedListing)}
+          onPurchase={() => {}}
         />
       )}
     </div>

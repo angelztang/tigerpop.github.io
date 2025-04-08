@@ -98,7 +98,6 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
             <div className="flex space-x-6">
               <Link to="/marketplace?category=men" className="text-gray-600 hover:text-gray-900">men</Link>
               <Link to="/marketplace?category=women" className="text-gray-600 hover:text-gray-900">women</Link>
-              <Link to="/marketplace?category=textbooks" className="text-gray-600 hover:text-gray-900">textbooks</Link>
               <Link to="/marketplace?category=furniture" className="text-gray-600 hover:text-gray-900">furniture</Link>
               <Link to="/marketplace?category=other" className="text-gray-600 hover:text-gray-900">other</Link>
             </div>

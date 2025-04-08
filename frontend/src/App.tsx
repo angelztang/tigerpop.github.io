@@ -6,7 +6,6 @@ import MarketplacePage from './pages/MarketplacePage';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import ListingDetail from './pages/ListingDetail';
-import CreateListing from './pages/CreateListing';
 import './index.css';
 
 const App: React.FC = () => {
@@ -57,10 +56,6 @@ const App: React.FC = () => {
             element={authenticated ? <Dashboard /> : <Navigate to="/login" />} 
           />
           <Route path="/listings/:id" element={<ListingDetail />} />
-          <Route 
-            path="/create-listing" 
-            element={authenticated ? <CreateListing /> : <Navigate to="/login" />} 
-          />
         </Routes>
       </main>
     </div>
