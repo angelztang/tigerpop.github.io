@@ -36,6 +36,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     category: initialData.category || '',
     images: initialData.images || []
   });
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -45,9 +48,58 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const files = Array.from(e.target.files);
+      setSelectedFiles(files);
+      
+      // Create preview URLs
+      const urls = files.map(file => URL.createObjectURL(file));
+      setPreviewUrls(urls);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Upload images first
+    if (selectedFiles.length > 0) {
+      try {
+        const uploadFormData = new FormData();
+        selectedFiles.forEach(file => {
+          uploadFormData.append('images', file);
+        });
+
+        const response = await fetch(`${API_URL}/api/listing/upload`, {
+          method: 'POST',
+          body: uploadFormData,
+          credentials: 'include',
+          headers: {
+            // Don't set Content-Type, let the browser set it with the boundary
+          }
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to upload images');
+        }
+
+        const data = await response.json();
+        if (!data.urls || !Array.isArray(data.urls)) {
+          throw new Error('Invalid response format from server');
+        }
+
+        onSubmit({
+          ...formData,
+          images: data.urls
+        });
+      } catch (error) {
+        console.error('Error uploading images:', error);
+        setError(error instanceof Error ? error.message : 'Failed to upload images');
+      }
+    } else {
+      onSubmit(formData);
+    }
   };
 
   return (
@@ -144,14 +196,37 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               Images (jpg, jpeg, png):
             </label>
             <div className="mt-1">
-              <button
-                type="button"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              <input
+                type="file"
+                accept="image/jpeg,image/png"
+                multiple
+                onChange={handleFileChange}
+                className="hidden"
+                id="file-upload"
+              />
+              <label
+                htmlFor="file-upload"
+                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 cursor-pointer"
               >
                 Choose Files
-              </button>
-              <span className="ml-3 text-sm text-gray-500">No file chosen</span>
+              </label>
+              <span className="ml-3 text-sm text-gray-500">
+                {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No file chosen'}
+              </span>
             </div>
+            {previewUrls.length > 0 && (
+              <div className="mt-4 grid grid-cols-3 gap-4">
+                {previewUrls.map((url, index) => (
+                  <div key={index} className="relative">
+                    <img
+                      src={url}
+                      alt={`Preview ${index + 1}`}
+                      className="w-full h-32 object-cover rounded-md"
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
             <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
           </div>
 

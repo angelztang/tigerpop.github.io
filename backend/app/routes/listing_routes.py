@@ -98,8 +98,34 @@ def test_upload():
 @bp.route('/', methods=['GET'])
 def get_listings():
     try:
-        listings = Listing.query.all()
-        return jsonify([listing.to_dict() for listing in listings])
+        # Get query parameters for filtering
+        max_price = request.args.get('max_price', type=float)
+        category = request.args.get('category')
+        
+        # Start with base query
+        query = Listing.query
+        
+        # Apply filters if they exist
+        if max_price:
+            query = query.filter(Listing.price <= max_price)
+        if category:
+            query = query.filter(Listing.category.ilike(category))
+            
+        # Get all listings
+        listings = query.order_by(Listing.created_at.desc()).all()
+        
+        # Convert to dictionary format
+        return jsonify([{
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'user_id': listing.user_id,
+            'created_at': listing.created_at.isoformat() if listing.created_at else None,
+            'images': []  # Add image URLs here if you have them
+        } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch listings'}), 500
@@ -112,10 +138,7 @@ def create_listing():
         if not data:
             return jsonify({'error': 'No data provided'}), 400
         
-        # Set a default user_id of 1 for now (since we're not requiring authentication)
-        user_id = 1
-        
-        required_fields = ['title', 'description', 'price']
+        required_fields = ['title', 'description', 'price', 'user_id']
         missing_fields = [field for field in required_fields if not data.get(field)]
         
         if missing_fields:
@@ -133,8 +156,8 @@ def create_listing():
                 description=data['description'],
                 price=price,
                 category=data.get('category', 'other'),
-                condition=data.get('condition', 'new'),
-                seller_id=user_id
+                status='available',  # Set default status
+                user_id=data['user_id']
             )
             
             # Add images
@@ -152,9 +175,8 @@ def create_listing():
                 'description': new_listing.description,
                 'price': new_listing.price,
                 'category': new_listing.category,
-                'condition': new_listing.condition,
                 'status': new_listing.status,
-                'seller_id': new_listing.seller_id,
+                'user_id': new_listing.user_id,
                 'images': [image.filename for image in new_listing.images],
                 'created_at': new_listing.created_at.isoformat(),
                 'updated_at': new_listing.updated_at.isoformat()
@@ -162,9 +184,11 @@ def create_listing():
             
         except Exception as db_error:
             db.session.rollback()
+            current_app.logger.error(f"Database error: {str(db_error)}")
             return jsonify({'error': f'Database error: {str(db_error)}'}), 500
             
     except Exception as e:
+        current_app.logger.error(f"Error creating listing: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
 @bp.route('/categories', methods=['GET'])
@@ -177,22 +201,31 @@ def get_categories():
 
 @bp.route('/user', methods=['GET'])
 def get_user_listings():
-    user_id = 1  # Default user_id for testing
-    listings = Listing.query.filter_by(seller_id=user_id).order_by(Listing.created_at.desc()).all()
-    
-    return jsonify([{
-        'id': listing.id,
-        'title': listing.title,
-        'description': listing.description,
-        'price': listing.price,
-        'condition': listing.condition,
-        'category': listing.category,
-        'status': listing.status,
-        'created_at': listing.created_at.isoformat(),
-        'updated_at': listing.updated_at.isoformat(),
-        'seller_id': listing.seller_id,
-        'images': [image.filename for image in listing.images]
-    } for listing in listings])
+    try:
+        # Get the user_id from the query parameters
+        user_id = request.args.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+            
+        # Get all listings for this user
+        listings = Listing.query.filter_by(seller_id=user_id).order_by(Listing.created_at.desc()).all()
+        
+        # Convert to dictionary format
+        return jsonify([{
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'seller_id': listing.seller_id,
+            'created_at': listing.created_at.isoformat() if listing.created_at else None,
+            'images': [image.filename for image in listing.images]
+        } for listing in listings])
+    except Exception as e:
+        current_app.logger.error(f"Error fetching user listings: {str(e)}")
+        return jsonify({'error': 'Failed to fetch user listings'}), 500
 
 @bp.route('/<int:id>/buy', methods=['POST'])
 def request_to_buy(id):

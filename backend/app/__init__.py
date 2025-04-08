@@ -1,10 +1,14 @@
 from flask import Flask
+from flask_cors import CORS
 from app.config import Config
 from app.extensions import db, migrate, init_extensions
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Enable CORS
+    CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 
     # Initialize extensions
     init_extensions(app)

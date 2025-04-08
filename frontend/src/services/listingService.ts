@@ -22,6 +22,7 @@ export interface CreateListingData {
   price: number;
   category: string;
   images: string[];
+  user_id: number;
 }
 
 export interface ListingFilters {
@@ -82,8 +83,8 @@ export const getCategories = async (): Promise<string[]> => {
   return response.data;
 };
 
-export const getUserListings = async (): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user`);
+export const getUserListings = async (userId: string): Promise<Listing[]> => {
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`);
   return response.data;
 };
 

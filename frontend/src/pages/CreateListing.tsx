@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ListingForm from '../components/ListingForm';
-import { createListing } from '../services/listingService';
+import { createListing, CreateListingData } from '../services/listingService';
+import { getUserId } from '../services/authService';
 
 const CreateListing: React.FC = () => {
   const navigate = useNavigate();
@@ -12,10 +13,19 @@ const CreateListing: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await createListing({
+      const userId = getUserId();
+      if (!userId) {
+        setError('User not authenticated');
+        return;
+      }
+
+      const listingData: CreateListingData = {
         ...formData,
-        price: parseFloat(formData.price)
-      });
+        price: parseFloat(formData.price),
+        user_id: parseInt(userId)
+      };
+
+      await createListing(listingData);
       navigate('/dashboard');
     } catch (err) {
       setError('Failed to create listing. Please try again.');
@@ -27,19 +37,24 @@ const CreateListing: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h1 className="text-2xl font-bold mb-6">Create New Listing</h1>
-          {error && (
-            <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
-          <ListingForm
-            onSubmit={handleSubmit}
-            isSubmitting={isSubmitting}
-          />
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Create New Listing</h1>
+          <p className="mt-2 text-sm text-gray-600">
+            Fill out the form below to create your listing
+          </p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
+
+        <ListingForm
+          onSubmit={handleSubmit}
+          isSubmitting={isSubmitting}
+        />
       </div>
     </div>
   );

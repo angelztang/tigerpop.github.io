@@ -1,8 +1,8 @@
 // Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getListings, createListing, deleteListing } from '../services/listingService';
-import { Listing } from '../services/listingService';
+import { getListings, createListing, deleteListing, Listing, CreateListingData } from '../services/listingService';
+import { getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
 
@@ -37,15 +37,31 @@ const SellerDashboard: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await createListing({
+      const userId = getUserId();
+      if (!userId) {
+        setError('User not authenticated');
+        return;
+      }
+
+      const listingData: CreateListingData = {
         ...formData,
-        price: parseFloat(formData.price)
-      });
-      setShowForm(false);
-      fetchListings();
+        price: parseFloat(formData.price),
+        user_id: parseInt(userId)
+      };
+
+      const response = await createListing(listingData);
+      if (response) {
+        setShowForm(false);
+        setTimeout(() => {
+          navigate('/marketplace', { replace: true });
+        }, 0);
+      }
     } catch (err) {
-      setError('Failed to create listing');
-      console.error('Error creating listing:', err);
+      console.error('Error in listing creation response:', err);
+      setShowForm(false);
+      setTimeout(() => {
+        navigate('/marketplace', { replace: true });
+      }, 0);
     } finally {
       setIsSubmitting(false);
     }

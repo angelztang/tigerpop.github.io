@@ -3,7 +3,7 @@ from datetime import datetime
 from .user import User
 
 class Listing(db.Model):
-    __tablename__ = 'listing'
+    __tablename__ = 'listings'
     
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(100), nullable=False)
