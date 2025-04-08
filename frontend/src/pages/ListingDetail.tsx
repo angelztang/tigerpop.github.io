@@ -1,34 +1,29 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { API_URL } from '../config';
-
-interface Listing {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  condition: string;
-  category: string;
-  status: string;
-  views: number;
-  seller_id: number;
-  images: string[];
-}
+import { useParams, useNavigate } from 'react-router-dom';
+import { Listing, getListing, requestToBuy } from '../services/listingService';
+import ListingDetailModal from '../components/ListingDetailModal';
+import PurchaseConfirmationModal from '../components/PurchaseConfirmationModal';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
       try {
-        const response = await fetch(`${API_URL}/listings/${id}`);
-        if (!response.ok) throw new Error('Failed to fetch listing');
-        const data = await response.json();
+        if (!id) {
+          throw new Error('Listing ID is required');
+        }
+        const data = await getListing(parseInt(id));
         setListing(data);
-      } catch (error) {
-        console.error('Error fetching listing:', error);
+        setError(null);
+      } catch (err) {
+        setError('Failed to load listing');
+        console.error('Error fetching listing:', err);
       } finally {
         setLoading(false);
       }
@@ -37,37 +32,39 @@ const ListingDetail: React.FC = () => {
     fetchListing();
   }, [id]);
 
-  if (loading) return <div>Loading...</div>;
-  if (!listing) return <div>Listing not found</div>;
+  const handlePurchase = async (message: string, contactInfo: string) => {
+    try {
+      if (!listing) return;
+      await requestToBuy(listing.id, message, contactInfo);
+      setShowPurchaseModal(false);
+      navigate('/dashboard');
+    } catch (error) {
+      console.error('Error requesting purchase:', error);
+    }
+  };
+
+  if (loading) {
+    return <div className="text-center py-12">Loading...</div>;
+  }
+
+  if (error || !listing) {
+    return <div className="text-center py-12 text-red-600">{error || 'Listing not found'}</div>;
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="bg-white rounded-lg shadow-md overflow-hidden">
-        {listing.images && listing.images.length > 0 && (
-          <img
-            src={listing.images[0]}
-            alt={listing.title}
-            className="w-full h-96 object-cover"
-          />
-        )}
-        <div className="p-6">
-          <h1 className="text-3xl font-bold mb-4">{listing.title}</h1>
-          <p className="text-2xl font-semibold text-gray-800 mb-4">${listing.price}</p>
-          <div className="mb-4">
-            <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700 mr-2">
-              {listing.condition}
-            </span>
-            <span className="inline-block bg-gray-200 rounded-full px-3 py-1 text-sm font-semibold text-gray-700">
-              {listing.category}
-            </span>
-          </div>
-          <p className="text-gray-600 mb-4">{listing.description}</p>
-          <div className="text-sm text-gray-500">
-            <p>Views: {listing.views}</p>
-            <p>Status: {listing.status}</p>
-          </div>
-        </div>
-      </div>
+    <div className="container mx-auto px-4 py-8">
+      <ListingDetailModal
+        listing={listing}
+        onClose={() => navigate(-1)}
+        onPurchase={() => setShowPurchaseModal(true)}
+      />
+      {showPurchaseModal && (
+        <PurchaseConfirmationModal
+          listing={listing}
+          onClose={() => setShowPurchaseModal(false)}
+          onConfirm={handlePurchase}
+        />
+      )}
     </div>
   );
 };

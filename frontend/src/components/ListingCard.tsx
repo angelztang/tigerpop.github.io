@@ -1,43 +1,30 @@
 // Displays individual listing with status & update button
-import React, { useState } from "react";
-import { Listing } from "../services/listingService";
-import PurchaseRequestForm from './PurchaseRequestForm';
+import React from 'react';
+import { Listing } from '../services/listingService';
+import { useNavigate } from 'react-router-dom';
 
-interface Props {
+interface ListingCardProps {
   listing: Listing;
-  onStatusUpdate?: (id: number, status: Listing['status']) => void;
+  onDelete: () => void;
 }
 
-const ListingCard: React.FC<Props> = ({ listing, onStatusUpdate }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showPurchaseForm, setShowPurchaseForm] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete }) => {
+  const navigate = useNavigate();
 
-  const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % listing.images.length);
+  const handleCardClick = () => {
+    navigate(`/listings/${listing.id}`);
   };
 
-  const previousImage = () => {
-    setCurrentImageIndex((prev) => 
-      prev === 0 ? listing.images.length - 1 : prev - 1
-    );
+  const handleButtonClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/listings/${listing.id}`);
   };
 
-  const handlePurchaseSuccess = () => {
-    setShowPurchaseForm(false);
-    setShowSuccessMessage(true);
-    setTimeout(() => setShowSuccessMessage(false), 3000);
-  };
-
-  const getStatusColor = (status: Listing['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active':
+      case 'available':
         return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
       case 'sold':
-        return 'bg-gray-100 text-gray-800';
-      case 'removed':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -45,54 +32,47 @@ const ListingCard: React.FC<Props> = ({ listing, onStatusUpdate }) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden">
-      {listing.images && listing.images.length > 0 && (
-        <div className="relative h-48">
-          <img
-            src={`${process.env.REACT_APP_API_URL}/uploads/${listing.images[0]}`}
-            alt={listing.title}
-            className="w-full h-full object-cover"
-          />
-        </div>
-      )}
-      
-      <div className="p-4">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-lg font-semibold text-gray-900">{listing.title}</h3>
-          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(listing.status || 'active')}`}>
-            {listing.status || 'active'}
+    <div
+      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
+      onClick={handleCardClick}
+    >
+      <div className="relative aspect-w-16 aspect-h-9">
+        <img
+          src={listing.images?.[0] || "https://via.placeholder.com/300"}
+          alt={listing.title}
+          className="w-full h-full object-cover"
+        />
+        <div className="absolute top-2 right-2">
+          <span
+            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+              listing.status
+            )}`}
+          >
+            {listing.status}
           </span>
-        </div>
-        
-        <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
-        
-        <div className="flex justify-between items-center">
-          <span className="text-lg font-bold text-blue-600">${listing.price}</span>
-          
-          {listing.status === 'active' && (
-            <button
-              onClick={() => setShowPurchaseForm(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Request to Buy
-            </button>
-          )}
         </div>
       </div>
 
-      {showPurchaseForm && (
-        <PurchaseRequestForm
-          listingId={listing.id!}
-          onSuccess={handlePurchaseSuccess}
-          onCancel={() => setShowPurchaseForm(false)}
-        />
-      )}
-
-      {showSuccessMessage && (
-        <div className="fixed bottom-4 right-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded">
-          <p>Purchase request sent successfully!</p>
+      <div className="p-4">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
+            <p className="text-gray-600 text-sm mb-2">{listing.category}</p>
+            <p className="text-gray-900 font-bold">${listing.price}</p>
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete();
+            }}
+            className="text-red-500 hover:text-red-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+          </button>
         </div>
-      )}
+      </div>
     </div>
   );
 };

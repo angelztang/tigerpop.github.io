@@ -1,6 +1,7 @@
 // this should be buyer's purchase history, similar to SellerDashboard
 import React, { useState, useEffect } from 'react';
-import { getListings, Listing, ListingFilters } from '../services/listingService';
+import { getListings } from '../services/listingService';
+import { Listing } from '../services/listingService';
 import ListingCard from '../components/ListingCard';
 
 const BuyerDashboard: React.FC = () => {
@@ -8,44 +9,44 @@ const BuyerDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    fetchListings();
+  }, []);
+
   const fetchListings = async () => {
     try {
-      setLoading(true);
-      const data = await getListings({}); // Pass empty filters object instead of string
+      const data = await getListings();
       setListings(data);
-      setError(null);
     } catch (err) {
-      setError('Failed to fetch listings');
+      setError('Failed to load listings');
       console.error('Error fetching listings:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchListings();
-  }, []);
-
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="text-center py-12 text-red-600">{error}</div>;
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <nav className="bg-orange-500 text-white p-4 shadow-md">
-        <div className="container mx-auto">
-          <h1 className="text-2xl font-bold">TigerPop Marketplace</h1>
-        </div>
-      </nav>
-      
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-3xl font-bold mb-8">Available Listings</h1>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {listings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} />
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              onDelete={() => {}}
+            />
           ))}
         </div>
       </div>

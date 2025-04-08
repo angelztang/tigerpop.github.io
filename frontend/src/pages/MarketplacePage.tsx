@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
-import { Listing, getListings, ListingFilters } from '../services/listingService';
+import { Listing, getListings } from '../services/listingService';
+import ListingDetailModal from '../components/ListingDetailModal';
 
 interface PriceRange {
   label: string;
@@ -13,12 +14,13 @@ interface Category {
   slug: string;
 }
 
-const Marketplace: React.FC = () => {
+const MarketplacePage: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   const priceRanges: PriceRange[] = [
     { label: 'Under $10', max: 10 },
@@ -39,22 +41,27 @@ const Marketplace: React.FC = () => {
   const fetchListings = async () => {
     try {
       setLoading(true);
-      const filters: ListingFilters = {};
+      setError(null);
+      let url = '';
+      const params = new URLSearchParams();
       
       if (selectedPrice) {
-        filters.max_price = selectedPrice;
+        params.append('max_price', selectedPrice.toString());
       }
       
       if (selectedCategory) {
-        filters.category = selectedCategory;
+        params.append('category', selectedCategory);
       }
       
-      const data = await getListings(filters);
+      if (params.toString()) {
+        url = `?${params.toString()}`;
+      }
+      
+      const data = await getListings(url);
       setListings(data);
-      setError(null);
-    } catch (err) {
-      setError('Failed to fetch listings');
-      console.error('Error fetching listings:', err);
+    } catch (error) {
+      console.error('Error fetching listings:', error);
+      setError('Failed to load listings. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -73,58 +80,85 @@ const Marketplace: React.FC = () => {
     setSelectedPrice(selectedPrice === max ? null : max);
   };
 
+  const handlePurchase = async (listing: Listing) => {
+    try {
+      // TODO: Implement purchase logic
+      console.log('Purchasing listing:', listing.id);
+      setSelectedListing(null);
+      fetchListings();
+    } catch (err) {
+      setError('Failed to purchase listing');
+      console.error('Error purchasing listing:', err);
+    }
+  };
+
+  const filteredListings = selectedCategory
+    ? listings.filter(listing => listing.category === selectedCategory)
+    : selectedPrice
+    ? listings.filter(listing => listing.price <= selectedPrice)
+    : listings;
+
   if (loading) {
-    return <div className="text-center py-12">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-xl">Loading listings...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-center py-12 text-red-600">{error}</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-xl text-red-600">{error}</div>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      {/* Shop By Price */}
-      <div className="mb-12">
-        <h2 className="text-xl font-semibold mb-4">Shop By Price</h2>
-        <div className="flex space-x-4">
+      <h1 className="text-3xl font-bold mb-8">Marketplace</h1>
+      
+      {/* Price Filters */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Price Range</h2>
+        <div className="flex flex-wrap gap-2">
           {priceRanges.map((range) => (
             <button
               key={range.max}
               onClick={() => handlePriceClick(range.max)}
-              className={`px-6 py-3 rounded-lg transition-colors ${
+              className={`px-4 py-2 rounded-full ${
                 selectedPrice === range.max
-                  ? 'bg-orange-200 text-orange-800'
-                  : 'bg-orange-100 bg-opacity-50 text-gray-700 hover:bg-orange-200'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200'
               }`}
             >
-              Under ${range.max}
+              {range.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Shop By Piece */}
-      <div>
-        <h2 className="text-xl font-semibold mb-4">Shop By Piece</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
+      {/* Category Filters */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Categories</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {categories.map((category) => (
-            <div
+            <button
               key={category.slug}
               onClick={() => handleCategoryClick(category.slug)}
-              className={`relative aspect-[4/3] rounded-lg overflow-hidden cursor-pointer group transition-transform transform hover:scale-105 ${
-                selectedCategory === category.slug ? 'ring-2 ring-orange-500' : ''
+              className={`p-4 rounded-lg text-center ${
+                selectedCategory === category.slug
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-gray-100 hover:bg-gray-200'
               }`}
             >
               <img
                 src={category.image}
                 alt={category.name}
-                className="w-full h-full object-cover"
+                className="w-16 h-16 mx-auto mb-2"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent group-hover:from-black/60" />
-              <div className="absolute bottom-4 left-4 text-white text-lg font-semibold">
-                {category.name}
-              </div>
-            </div>
+              <span>{category.name}</span>
+            </button>
           ))}
         </div>
       </div>
@@ -153,8 +187,12 @@ const Marketplace: React.FC = () => {
             )}
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+            {filteredListings.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                onDelete={() => {}}
+              />
             ))}
           </div>
         </div>
@@ -166,13 +204,25 @@ const Marketplace: React.FC = () => {
           <h2 className="text-xl font-semibold mb-4">All Items</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                onDelete={() => {}}
+              />
             ))}
           </div>
         </div>
+      )}
+
+      {selectedListing && (
+        <ListingDetailModal
+          listing={selectedListing}
+          onClose={() => setSelectedListing(null)}
+          onPurchase={() => handlePurchase(selectedListing)}
+        />
       )}
     </div>
   );
 };
 
-export default Marketplace; 
+export default MarketplacePage; 

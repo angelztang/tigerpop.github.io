@@ -3,32 +3,38 @@ from datetime import datetime
 from .user import User
 
 class Listing(db.Model):
-    __tablename__ = 'listings'
+    __tablename__ = 'listing'
     
     id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
+    title = db.Column(db.String(100), nullable=False)
+    description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    condition = db.Column(db.String(20), default='new')
-    status = db.Column(db.String(20), default='active')  # active, sold, removed
-    seller_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    buyer_message = db.Column(db.Text)
-    buyer_contact = db.Column(db.String(200))
+    category = db.Column(db.String(50))
+    status = db.Column(db.String(20), default='available')
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    views = db.Column(db.Integer, default=0)
     
-    # Relationships
-    seller = db.relationship('User', foreign_keys=[seller_id], backref='listings')
-    buyer = db.relationship('User', foreign_keys=[buyer_id])
-    images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
+    def __init__(self, title, description, price, category, status, user_id, created_at=None):
+        self.title = title
+        self.description = description
+        self.price = price
+        self.category = category
+        self.status = status
+        self.user_id = user_id
+        if created_at:
+            self.created_at = created_at
     
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description,
+            'price': self.price,
+            'category': self.category,
+            'status': self.status,
+            'user_id': self.user_id,
+            'created_at': self.created_at.isoformat() if self.created_at else None
+        }
     
     def __repr__(self):
         return f'<Listing {self.title}>'

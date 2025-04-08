@@ -1,143 +1,102 @@
 // Handles fetching, creating, and updating listings (API calls)
 
-import { API_URL } from '../config';
+import axios from 'axios';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 export interface Listing {
-  id?: number;
+  id: number;
   title: string;
   description: string;
   price: number;
-  condition: string;
   category: string;
-  created_at?: string;
-  updated_at?: string;
-  seller_id?: number;
+  status: string;
+  user_id: number;
+  created_at: string;
   images: string[];
-  status?: 'active' | 'pending' | 'sold' | 'removed';
-  views?: number;
+}
+
+export interface CreateListingData {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  images: string[];
 }
 
 export interface ListingFilters {
-  category?: string;
-  min_price?: number;
   max_price?: number;
+  min_price?: number;
+  category?: string;
   condition?: string;
   search?: string;
+  include_sold?: boolean;
 }
 
-export const getListings = async (filters?: ListingFilters): Promise<Listing[]> => {
-  const queryParams = new URLSearchParams();
-  if (filters?.category) queryParams.append('category', filters.category);
-  if (filters?.min_price) queryParams.append('min_price', filters.min_price.toString());
-  if (filters?.max_price) queryParams.append('max_price', filters.max_price.toString());
-  if (filters?.condition) queryParams.append('condition', filters.condition);
-  if (filters?.search) queryParams.append('search', filters.search);
-
-  const response = await fetch(`${API_URL}/listings?${queryParams.toString()}`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch listings');
-  }
-  return response.json();
+export const getListings = async (filters?: string): Promise<Listing[]> => {
+  const url = filters ? `${API_URL}/api/listing${filters}` : `${API_URL}/api/listing`;
+  const response = await axios.get<Listing[]>(url);
+  return response.data;
 };
 
-export const createListing = async (listing: Omit<Listing, 'id' | 'created_at' | 'updated_at'>): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/listings`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(listing),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to create listing');
-  }
-  return response.json();
+export const getListing = async (id: number): Promise<Listing> => {
+  const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`);
+  return response.data;
 };
 
-export const updateListing = async (id: number, listing: Partial<Listing>): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/listings/${id}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(listing),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to update listing');
-  }
-  return response.json();
+export const createListing = async (data: CreateListingData): Promise<Listing> => {
+  const response = await axios.post<Listing>(`${API_URL}/api/listing`, data);
+  return response.data;
+};
+
+export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
+  const response = await axios.put<Listing>(`${API_URL}/api/listing/${id}`, data);
+  return response.data;
+};
+
+export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
+  const response = await axios.patch<Listing>(`${API_URL}/api/listings/${id}/status`, { status });
+  return response.data;
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  const response = await fetch(`${API_URL}/listings/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) {
-    throw new Error('Failed to delete listing');
-  }
-};
-
-export const updateListingStatus = async (id: number, status: Listing['status']): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/listings/${id}/status`, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ status }),
-  });
-  if (!response.ok) {
-    throw new Error('Failed to update listing status');
-  }
-  return response.json();
-};
-
-export const getUserListings = async (): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/listings/user`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch user listings');
-  }
-  return response.json();
+  await axios.delete(`${API_URL}/api/listing/${id}`);
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
   const formData = new FormData();
   files.forEach(file => {
-    formData.append('files[]', file);
+    formData.append('images', file);
   });
 
-  const response = await fetch(`${API_URL}/listings/upload`, {
-    method: 'POST',
-    body: formData,
-  });
-  if (!response.ok) {
-    throw new Error('Failed to upload images');
-  }
-  const data = await response.json();
-  return data.files;
-};
-
-export const requestToBuy = async (id: number, message: string, contactInfo: string): Promise<{ message: string; listing: Listing }> => {
-  const response = await fetch(`${API_URL}/listings/${id}/buy`, {
-    method: 'POST',
+  const response = await axios.post<{ urls: string[] }>(`${API_URL}/api/upload`, formData, {
     headers: {
-      'Content-Type': 'application/json',
+      'Content-Type': 'multipart/form-data',
     },
-    body: JSON.stringify({
-      message,
-      contact_info: contactInfo,
-    }),
   });
-  if (!response.ok) {
-    throw new Error('Failed to send purchase request');
-  }
-  return response.json();
+  return response.data.urls;
 };
 
 export const getCategories = async (): Promise<string[]> => {
-  const response = await fetch(`${API_URL}/listings/categories`);
-  if (!response.ok) {
-    throw new Error('Failed to fetch categories');
-  }
-  return response.json();
+  const response = await axios.get<string[]>(`${API_URL}/api/categories`);
+  return response.data;
+};
+
+export const getUserListings = async (): Promise<Listing[]> => {
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user`);
+  return response.data;
+};
+
+export const requestToBuy = async (listingId: number, message: string, contactInfo: string): Promise<Listing> => {
+  const response = await axios.post<Listing>(`${API_URL}/api/listings/${listingId}/request`, {
+    message,
+    contact_info: contactInfo,
+  });
+  return response.data;
+};
+
+export const getUserPurchases = async (): Promise<Listing[]> => {
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/purchases`);
+  return response.data;
 };
   

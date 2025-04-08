@@ -6,8 +6,12 @@ from ..models import Listing, ListingImage, User
 from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_mail import Message
+from ..utils.cloudinary_config import upload_image
+import base64
+import io
+from PIL import Image
 
-bp = Blueprint('listings', __name__)
+bp = Blueprint('listing', __name__)
 
 # Configure upload settings
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads')
@@ -21,110 +25,155 @@ def allowed_file(filename):
 
 @bp.route('/upload', methods=['POST'])
 def upload_images():
-    if 'files[]' not in request.files:
-        return jsonify({'error': 'No files provided'}), 400
-    
-    files = request.files.getlist('files[]')
-    uploaded_files = []
-    
-    for file in files:
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            unique_filename = f"{timestamp}_{filename}"
-            file_path = os.path.join(current_app.config['UPLOAD_FOLDER'], unique_filename)
-            file.save(file_path)
-            uploaded_files.append(unique_filename)
-    
-    return jsonify({'files': uploaded_files})
+    try:
+        current_app.logger.info("Starting image upload process...")
+        
+        # Get the image data from the request
+        files = request.files.getlist('images')
+        current_app.logger.info(f"Received {len(files)} files")
+        
+        if not files:
+            current_app.logger.warning("No images provided in request")
+            return jsonify({'error': 'No images provided'}), 400
 
-@bp.route('', methods=['GET'])
+        image_urls = []
+        for file in files:
+            current_app.logger.info(f"Processing file: {file.filename}")
+            if file and allowed_file(file.filename):
+                try:
+                    # Upload to Cloudinary using our utility function
+                    current_app.logger.info(f"Uploading {file.filename} to Cloudinary...")
+                    upload_result = upload_image(file)
+                    secure_url = upload_result['secure_url']
+                    current_app.logger.info(f"Upload successful, URL: {secure_url}")
+                    image_urls.append(secure_url)
+                except Exception as upload_error:
+                    current_app.logger.error(f"Failed to upload {file.filename}: {str(upload_error)}")
+                    raise upload_error
+            else:
+                current_app.logger.warning(f"Invalid file type for {file.filename}")
+                return jsonify({'error': f'Invalid file type for {file.filename}'}), 400
+        
+        current_app.logger.info(f"Successfully uploaded {len(image_urls)} images")
+        return jsonify({'urls': image_urls}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error uploading images: {str(e)}")
+        current_app.logger.exception("Full traceback:")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/test-upload', methods=['POST'])
+def test_upload():
+    try:
+        # Get the base64 image data from the request
+        image_data = request.json.get('image')
+        if not image_data:
+            return jsonify({'error': 'No image data provided'}), 400
+
+        # Convert base64 to image file
+        image_bytes = base64.b64decode(image_data.split(',')[1] if ',' in image_data else image_data)
+        image = Image.open(io.BytesIO(image_bytes))
+        
+        # Convert to RGB if necessary
+        if image.mode != 'RGB':
+            image = image.convert('RGB')
+        
+        # Save to a temporary BytesIO object
+        temp_buffer = io.BytesIO()
+        image.save(temp_buffer, format='JPEG')
+        temp_buffer.seek(0)
+
+        # Upload to Cloudinary using our utility function
+        upload_result = upload_image(temp_buffer)
+        
+        return jsonify({
+            'message': 'Image uploaded successfully',
+            'url': upload_result['secure_url'],
+            'public_id': upload_result['public_id']
+        }), 200
+
+    except Exception as e:
+        current_app.logger.error(f"Error uploading image: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/', methods=['GET'])
 def get_listings():
-    # Get query parameters
-    category = request.args.get('category')
-    min_price = request.args.get('min_price')
-    max_price = request.args.get('max_price')
-    condition = request.args.get('condition')
-    search = request.args.get('search')
-    
-    # Start with base query
-    query = Listing.query.filter_by(status='active')
-    
-    # Apply filters
-    if category:
-        query = query.filter(Listing.category == category)
-    if min_price:
-        query = query.filter(Listing.price >= float(min_price))
-    if max_price:
-        query = query.filter(Listing.price <= float(max_price))
-    if condition:
-        query = query.filter(Listing.condition == condition)
-    if search:
-        search_term = f"%{search}%"
-        query = query.filter(
-            or_(
-                Listing.title.ilike(search_term),
-                Listing.description.ilike(search_term)
-            )
-        )
-    
-    # Execute query
-    listings = query.order_by(Listing.created_at.desc()).all()
-    
-    # Format response
-    return jsonify([{
-        'id': listing.id,
-        'title': listing.title,
-        'description': listing.description,
-        'price': listing.price,
-        'condition': listing.condition,
-        'category': listing.category,
-        'created_at': listing.created_at.isoformat(),
-        'updated_at': listing.updated_at.isoformat(),
-        'seller_id': listing.seller_id,
-        'images': [image.filename for image in listing.images]
-    } for listing in listings])
+    try:
+        listings = Listing.query.all()
+        return jsonify([listing.to_dict() for listing in listings])
+    except Exception as e:
+        current_app.logger.error(f"Error fetching listings: {str(e)}")
+        return jsonify({'error': 'Failed to fetch listings'}), 500
 
 @bp.route('', methods=['POST'])
 def create_listing():
-    data = request.get_json()
-    
-    # Create new listing with a default seller_id for testing
-    listing = Listing(
-        title=data['title'],
-        description=data['description'],
-        price=float(data['price']),
-        condition=data.get('condition', 'new'),
-        category=data['category'],
-        seller_id=1  # Default seller_id for testing
-    )
-    
-    # Add images if provided
-    if 'images' in data:
-        for filename in data['images']:
-            image = ListingImage(filename=filename, listing_id=listing.id)
-            listing.images.append(image)
-    
-    db.session.add(listing)
-    db.session.commit()
-    
-    return jsonify({
-        'id': listing.id,
-        'title': listing.title,
-        'description': listing.description,
-        'price': listing.price,
-        'condition': listing.condition,
-        'category': listing.category,
-        'created_at': listing.created_at.isoformat(),
-        'updated_at': listing.updated_at.isoformat(),
-        'seller_id': listing.seller_id,
-        'images': [image.filename for image in listing.images]
-    }), 201
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+        
+        # Set a default user_id of 1 for now (since we're not requiring authentication)
+        user_id = 1
+        
+        required_fields = ['title', 'description', 'price']
+        missing_fields = [field for field in required_fields if not data.get(field)]
+        
+        if missing_fields:
+            error_msg = f"Missing required fields: {', '.join(missing_fields)}"
+            return jsonify({'error': error_msg}), 400
+        
+        try:
+            # Validate price
+            price = float(data['price'])
+            if price <= 0:
+                return jsonify({'error': 'Price must be greater than 0'}), 400
+            
+            new_listing = Listing(
+                title=data['title'],
+                description=data['description'],
+                price=price,
+                category=data.get('category', 'other'),
+                condition=data.get('condition', 'new'),
+                seller_id=user_id
+            )
+            
+            # Add images
+            if 'images' in data and isinstance(data['images'], list):
+                for filename in data['images']:
+                    image = ListingImage(filename=filename, listing_id=new_listing.id)
+                    new_listing.images.append(image)
+            
+            db.session.add(new_listing)
+            db.session.commit()
+            
+            return jsonify({
+                'id': new_listing.id,
+                'title': new_listing.title,
+                'description': new_listing.description,
+                'price': new_listing.price,
+                'category': new_listing.category,
+                'condition': new_listing.condition,
+                'status': new_listing.status,
+                'seller_id': new_listing.seller_id,
+                'images': [image.filename for image in new_listing.images],
+                'created_at': new_listing.created_at.isoformat(),
+                'updated_at': new_listing.updated_at.isoformat()
+            }), 201
+            
+        except Exception as db_error:
+            db.session.rollback()
+            return jsonify({'error': f'Database error: {str(db_error)}'}), 500
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/categories', methods=['GET'])
 def get_categories():
-    categories = db.session.query(Listing.category).distinct().all()
-    return jsonify([category[0] for category in categories])
+    categories = [
+        'tops', 'bottoms', 'shoes', 'dresses',
+        'fridges', 'couches', 'textbooks', 'other'
+    ]
+    return jsonify(categories)
 
 @bp.route('/user', methods=['GET'])
 def get_user_listings():
@@ -138,6 +187,7 @@ def get_user_listings():
         'price': listing.price,
         'condition': listing.condition,
         'category': listing.category,
+        'status': listing.status,
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
         'seller_id': listing.seller_id,
@@ -225,3 +275,11 @@ def delete_listing(id):
     db.session.commit()
     
     return '', 204
+
+@bp.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
