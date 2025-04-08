@@ -1,4 +1,7 @@
-import { API_URL, CAS_URL } from '../config';
+import axios from 'axios';
+import { CAS_URL } from '../config';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 export interface LoginData {
   username: string;

@@ -1,5 +1,6 @@
 // working
 import { API_URL } from '../config';
+import { getUserId } from '../services/authService';
 // Popup Modal that appears when users click "Create Listing"
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -61,44 +62,51 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     
-    // Upload images first
-    if (selectedFiles.length > 0) {
-      try {
-        const uploadFormData = new FormData();
-        selectedFiles.forEach(file => {
-          uploadFormData.append('images', file);
-        });
+    try {
+      const formDataToSend = new FormData();
+      
+      // Add listing data
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('description', formData.description);
+      formDataToSend.append('price', formData.price);
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('user_id', getUserId() || '0');
 
-        const response = await fetch(`${API_URL}/api/listing/upload`, {
-          method: 'POST',
-          body: uploadFormData,
-          credentials: 'include',
-          headers: {
-            // Don't set Content-Type, let the browser set it with the boundary
-          }
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to upload images');
+      // Upload images first if any
+      let imageUrls: string[] = [];
+      if (selectedFiles.length > 0) {
+        try {
+          imageUrls = await uploadImages(selectedFiles);
+          formDataToSend.append('images', JSON.stringify(imageUrls));
+        } catch (uploadError) {
+          console.error('Error uploading images:', uploadError);
+          setError('Failed to upload images. Please try again.');
+          return;
         }
-
-        const data = await response.json();
-        if (!data.urls || !Array.isArray(data.urls)) {
-          throw new Error('Invalid response format from server');
-        }
-
-        onSubmit({
-          ...formData,
-          images: data.urls
-        });
-      } catch (error) {
-        console.error('Error uploading images:', error);
-        setError(error instanceof Error ? error.message : 'Failed to upload images');
       }
-    } else {
-      onSubmit(formData);
+
+      // Send the request
+      const response = await fetch(`${API_URL}/listing`, {
+        method: 'POST',
+        body: formDataToSend,
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to create listing');
+      }
+
+      const data = await response.json();
+      onSubmit({
+        ...formData,
+        images: imageUrls
+      });
+    } catch (error) {
+      console.error('Error in listing creation:', error);
+      setError(error instanceof Error ? error.message : 'Failed to create listing');
     }
   };
 

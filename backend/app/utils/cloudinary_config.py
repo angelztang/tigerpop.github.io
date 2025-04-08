@@ -11,13 +11,13 @@ cloudinary.config(
 
 def upload_image(image_file):
     """
-    Upload an image to Cloudinary and return the URL
+    Upload an image to Cloudinary and return the result
     """
     try:
         # Upload the image
         result = cloudinary.uploader.upload(image_file)
-        # Return the secure URL of the uploaded image
-        return result['secure_url']
+        # Return the full result object
+        return result
     except Exception as e:
         print(f"Error uploading image to Cloudinary: {str(e)}")
-        return None 
+        raise e  # Re-raise the exception to handle it in the route 

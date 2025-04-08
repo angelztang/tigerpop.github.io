@@ -10,6 +10,7 @@ from ..utils.cloudinary_config import upload_image
 import base64
 import io
 from PIL import Image
+import json
 
 bp = Blueprint('listing', __name__)
 
@@ -133,42 +134,51 @@ def get_listings():
 @bp.route('', methods=['POST'])
 def create_listing():
     try:
-        data = request.get_json()
-        
-        if not data:
-            return jsonify({'error': 'No data provided'}), 400
-        
-        required_fields = ['title', 'description', 'price', 'user_id']
-        missing_fields = [field for field in required_fields if not data.get(field)]
-        
-        if missing_fields:
-            error_msg = f"Missing required fields: {', '.join(missing_fields)}"
-            return jsonify({'error': error_msg}), 400
-        
+        # Get form data
+        title = request.form.get('title')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        category = request.form.get('category', 'other')
+        user_id = request.form.get('user_id')
+        images = request.form.get('images')
+
+        # Validate required fields
+        if not all([title, description, price, user_id]):
+            return jsonify({'error': 'Missing required fields'}), 400
+
         try:
             # Validate price
-            price = float(data['price'])
+            price = float(price)
             if price <= 0:
                 return jsonify({'error': 'Price must be greater than 0'}), 400
-            
+
+            # Create new listing
             new_listing = Listing(
-                title=data['title'],
-                description=data['description'],
+                title=title,
+                description=description,
                 price=price,
-                category=data.get('category', 'other'),
-                status='available',  # Set default status
-                user_id=data['user_id']
+                category=category,
+                status='available',
+                user_id=user_id
             )
-            
-            # Add images
-            if 'images' in data and isinstance(data['images'], list):
-                for filename in data['images']:
-                    image = ListingImage(filename=filename, listing_id=new_listing.id)
-                    new_listing.images.append(image)
-            
+
+            # Add listing to database first to get the ID
             db.session.add(new_listing)
             db.session.commit()
-            
+
+            # Handle images if provided
+            image_urls = []
+            if images:
+                try:
+                    image_urls = json.loads(images)
+                    for url in image_urls:
+                        image = ListingImage(filename=url, listing_id=new_listing.id)
+                        new_listing.images.append(image)
+                    db.session.commit()
+                except json.JSONDecodeError:
+                    current_app.logger.error("Failed to parse image URLs")
+                    # Don't fail the listing creation if image parsing fails
+
             return jsonify({
                 'id': new_listing.id,
                 'title': new_listing.title,
@@ -177,16 +187,16 @@ def create_listing():
                 'category': new_listing.category,
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
-                'images': [image.filename for image in new_listing.images],
+                'images': image_urls,
                 'created_at': new_listing.created_at.isoformat(),
                 'updated_at': new_listing.updated_at.isoformat()
             }), 201
-            
+
         except Exception as db_error:
             db.session.rollback()
             current_app.logger.error(f"Database error: {str(db_error)}")
             return jsonify({'error': f'Database error: {str(db_error)}'}), 500
-            
+
     except Exception as e:
         current_app.logger.error(f"Error creating listing: {str(e)}")
         return jsonify({'error': str(e)}), 500

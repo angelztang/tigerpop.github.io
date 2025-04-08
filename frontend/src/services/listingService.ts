@@ -2,7 +2,7 @@
 
 import axios from 'axios';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 export interface Listing {
   id: number;
@@ -56,7 +56,7 @@ export const updateListing = async (id: number, data: Partial<Listing>): Promise
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await axios.patch<Listing>(`${API_URL}/api/listings/${id}/status`, { status });
+  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status });
   return response.data;
 };
 
@@ -65,21 +65,31 @@ export const deleteListing = async (id: number): Promise<void> => {
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
-  const formData = new FormData();
-  files.forEach(file => {
-    formData.append('images', file);
-  });
+  try {
+    const formData = new FormData();
+    files.forEach(file => {
+      formData.append('images', file);
+    });
 
-  const response = await axios.post<{ urls: string[] }>(`${API_URL}/api/upload`, formData, {
-    headers: {
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-  return response.data.urls;
+    const response = await axios.post<{ urls: string[] }>(`${API_URL}/api/listing/upload`, formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    if (!response.data.urls || !Array.isArray(response.data.urls)) {
+      throw new Error('Invalid response format from server');
+    }
+
+    return response.data.urls;
+  } catch (error) {
+    console.error('Error uploading images:', error);
+    throw error;
+  }
 };
 
 export const getCategories = async (): Promise<string[]> => {
-  const response = await axios.get<string[]>(`${API_URL}/api/categories`);
+  const response = await axios.get<string[]>(`${API_URL}/api/listing/categories`);
   return response.data;
 };
 
