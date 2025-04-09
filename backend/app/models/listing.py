@@ -12,6 +12,7 @@ class Listing(db.Model):
     category = db.Column(db.String(50))
     status = db.Column(db.String(20), default='available')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     # Add relationship with ListingImage
@@ -36,6 +37,7 @@ class Listing(db.Model):
             'category': self.category,
             'status': self.status,
             'user_id': self.user_id,
+            'buyer_id': self.buyer_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'images': [image.filename for image in self.images]
         }

@@ -236,35 +236,76 @@ def get_user_listings():
         current_app.logger.error(f"Error fetching user listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch user listings'}), 500
 
+@bp.route('/buyer', methods=['GET'])
+def get_buyer_listings():
+    try:
+        # Get the user_id from the query parameters
+        user_id = request.args.get('user_id')
+        
+        if not user_id:
+            return jsonify({'error': 'User ID is required'}), 400
+            
+        # Convert user_id to integer
+        try:
+            user_id = int(user_id)
+        except ValueError:
+            current_app.logger.error(f"Invalid user_id format: {user_id}")
+            return jsonify({'error': 'Invalid user ID format'}), 400
+            
+        # Get all listings where this user is the buyer
+        listings = Listing.query.filter_by(buyer_id=user_id).order_by(Listing.created_at.desc()).all()
+        
+        # Convert to dictionary format
+        return jsonify([{
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'user_id': listing.user_id,
+            'created_at': listing.created_at.isoformat() if listing.created_at else None,
+            'images': [image.filename for image in listing.images]
+        } for listing in listings])
+    except Exception as e:
+        current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
+        return jsonify({'error': 'Failed to fetch buyer listings'}), 500
+
 @bp.route('/<int:id>/buy', methods=['POST'])
 def request_to_buy(id):
     listing = Listing.query.get_or_404(id)
     data = request.get_json()
     
+    # Convert buyer_id to integer if it's not already
+    buyer_id = data.get('buyer_id')
+    try:
+        buyer_id = int(buyer_id)
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid buyer ID format'}), 400
+    
     # Update listing with buyer information
-    listing.buyer_id = data.get('buyer_id')
-    listing.buyer_message = data.get('message')
-    listing.buyer_contact = data.get('contact_info')
+    listing.buyer_id = buyer_id
     listing.status = 'pending'
     db.session.commit()
     
     # Get seller's email
-    seller = User.query.get(listing.seller_id)
+    seller = User.query.get(listing.user_id)
     
     # Send email to seller
     msg = Message(
-        subject=f'New Purchase Request for {listing.title}',
-        recipients=[seller.email],
-        body=f'''
-        Someone wants to buy your item: {listing.title}
-        
-        Message from buyer:
-        {listing.buyer_message}
-        
-        Contact information:
-        {listing.buyer_contact}
-        
-        You can respond to this email to contact the buyer.
+        subject=f'TigerPop: New Interest in Your Listing - {listing.title}',
+        recipients=[f'{seller.netid}@princeton.edu'],
+        body=f'Someone is interested in your listing "{listing.title}"', 
+        html=f'''
+            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+                <h2 style="color: #4A90E2;">🎉 Someone is interested in your listing!</h2>
+                <p><strong>Title:</strong> {listing.title}</p>
+                <p><strong>Price:</strong> ${listing.price}</p>
+                <p><strong>Category:</strong> {listing.category}</p>
+                <hr style="margin: 20px 0;">
+                <p>You can <a href="http://localhost:3000/listings/{listing.id}" style="color: #4A90E2;">view and manage your listing here</a>.</p>
+                <p>– The <strong>TigerPop</strong> Team 🐯</p>
+            </div>
         '''
     )
     
@@ -301,12 +342,9 @@ def update_listing_status(id):
 @bp.route('/<int:id>', methods=['DELETE'])
 def delete_listing(id):
     listing = Listing.query.get_or_404(id)
-    user_id = request.args.get('user_id')
+    user_id = 1  # Default user_id for testing
     
-    if not user_id:
-        return jsonify({'error': 'User ID is required'}), 400
-    
-    if listing.user_id != int(user_id):
+    if listing.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
     
     # Delete associated images
@@ -368,8 +406,6 @@ def notify_seller(id):
             </div>
             '''
         )
-
-        
         # Send email
         mail.send(msg)
         

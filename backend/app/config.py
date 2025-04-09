@@ -26,7 +26,7 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'tigerpopmarketplace@gmail.com'
     MAIL_PASSWORD = 'vvtb vsht wwro tvlb'
-    MAIL_DEFAULT_SENDER = 'tigerpopmarketplace@gmail.com'
+    MAIL_DEFAULT_SENDER = ('TigerPop', "tigerpopmarketplace@gmail.com")
 
     
     # Ensure upload directory exists

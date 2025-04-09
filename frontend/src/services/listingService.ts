@@ -106,7 +106,15 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
   try {
-    const response = await axios.post(`${API_URL}/api/listing/${listingId}/notify`);
+    const userId = getUserId();
+    if (!userId) {
+      throw new Error('User not authenticated');
+    }
+    const response = await axios.post(`${API_URL}/api/listing/${listingId}/buy`, {
+      buyer_id: userId,
+      message: 'I am interested in this item',
+      contact_info: 'Please contact me via email'
+    });
     return response.data;
   } catch (error) {
     console.error('Error sending notification:', error);
@@ -116,6 +124,11 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
 
 export const getUserPurchases = async (): Promise<Listing[]> => {
   const response = await axios.get<Listing[]>(`${API_URL}/api/listing/purchases`);
+  return response.data;
+};
+
+export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/buyer?user_id=${userId}`);
   return response.data;
 };
   

@@ -44,6 +44,19 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
     }
   };
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-100 text-green-800';
+      case 'sold':
+        return 'bg-red-100 text-red-800';
+      case 'pending':
+        return 'bg-white text-gray-800 border border-gray-300';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -123,11 +136,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
               </div>
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Status</h3>
-                <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                  listing.status === 'available' 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
                   {listing.status}
                 </span>
               </div>
