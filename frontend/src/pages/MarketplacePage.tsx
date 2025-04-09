@@ -32,9 +32,11 @@ const MarketplacePage: React.FC = () => {
   const categories: Category[] = [
     { name: 'Tops', image: '/category-placeholder.jpg', slug: 'tops' },
     { name: 'Bottoms', image: '/category-placeholder.jpg', slug: 'bottoms' },
-    { name: 'Shoes', image: '/category-placeholder.jpg', slug: 'shoes' },
     { name: 'Dresses', image: '/category-placeholder.jpg', slug: 'dresses' },
+    { name: 'Shoes', image: '/category-placeholder.jpg', slug: 'shoes' },
     { name: 'Furniture', image: '/category-placeholder.jpg', slug: 'furniture' },
+    { name: 'Appliances', image: '/category-placeholder.jpg', slug: 'appliances' },
+    { name: 'Books', image: '/category-placeholder.jpg', slug: 'books' },
     { name: 'Other', image: '/category-placeholder.jpg', slug: 'other' },
   ];
 
@@ -127,7 +129,7 @@ const MarketplacePage: React.FC = () => {
       {/* Category Cards */}
       <div className="mb-12">
         <h2 className="text-xl font-bold mb-4">Shop By Piece</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {categories.map((category) => (
             <button
               key={category.slug}

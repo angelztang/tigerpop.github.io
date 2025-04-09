@@ -22,11 +22,14 @@ interface ListingFormData {
 }
 
 const categories = [
-  'Books',
-  'Electronics',
-  'Furniture',
-  'Clothing',
-  'Other'
+  'tops',
+  'bottoms',
+  'dresses',
+  'shoes',
+  'furniture',
+  'appliances', 
+  'books',
+  'other'
 ];
 
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {

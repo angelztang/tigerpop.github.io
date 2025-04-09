@@ -203,8 +203,8 @@ def create_listing():
 @bp.route('/categories', methods=['GET'])
 def get_categories():
     categories = [
-        'tops', 'bottoms', 'shoes', 'dresses',
-        'fridges', 'couches', 'textbooks', 'other'
+        'tops', 'bottoms', 'dresses', 'shoes',
+        'furniture', 'appliances', 'books', 'other'
     ]
     return jsonify(categories)
 
