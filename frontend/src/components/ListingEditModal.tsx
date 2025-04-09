@@ -34,6 +34,23 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  const handleDelete = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await deleteListing(listing.id);
+      onUpdate();
+      onClose();
+    } catch (err) {
+      setError('Failed to delete listing. Please try again.');
+      console.error('Error deleting listing:', err);
+    } finally {
+      setIsSubmitting(false);
+      setShowDeleteConfirm(false);
+    }
+  };
+
+
   const handleSubmit = async (formData: ListingFormData) => {
     setIsSubmitting(true);
     setError(null);
@@ -108,12 +125,12 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
                 </button>
                 <button
                   onClick={() => {
-                    // TODO: Implement delete functionality
-                    setShowDeleteConfirm(false);
+                    handleDelete();
                   }}
                   className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                  disabled={isSubmitting}
                 >
-                  Delete
+                  {isSubmitting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </div>

@@ -301,9 +301,12 @@ def update_listing_status(id):
 @bp.route('/<int:id>', methods=['DELETE'])
 def delete_listing(id):
     listing = Listing.query.get_or_404(id)
-    user_id = 1  # Default user_id for testing
+    user_id = request.args.get('user_id')
     
-    if listing.seller_id != user_id:
+    if not user_id:
+        return jsonify({'error': 'User ID is required'}), 400
+    
+    if listing.user_id != int(user_id):
         return jsonify({'error': 'Unauthorized'}), 403
     
     # Delete associated images

@@ -1,6 +1,7 @@
 // Handles fetching, creating, and updating listings (API calls)
 
 import axios from 'axios';
+import { getUserId } from './authService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
@@ -62,7 +63,11 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  await axios.delete(`${API_URL}/api/listing/${id}`);
+  const userId = getUserId();
+  if (!userId) {
+    throw new Error('User not authenticated');
+  }
+  await axios.delete(`${API_URL}/api/listing/${id}?user_id=${userId}`);
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
