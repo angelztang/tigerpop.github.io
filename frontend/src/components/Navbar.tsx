@@ -96,8 +96,10 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
           {/* Categories and search bar */}
           <div className="flex flex-col space-y-4">
             <div className="flex space-x-6">
-              <Link to="/marketplace?category=men" className="text-gray-600 hover:text-gray-900">men</Link>
-              <Link to="/marketplace?category=women" className="text-gray-600 hover:text-gray-900">women</Link>
+              <Link to="/marketplace?category=tops" className="text-gray-600 hover:text-gray-900">tops</Link>
+              <Link to="/marketplace?category=bottoms" className="text-gray-600 hover:text-gray-900">bottoms</Link>
+              <Link to="/marketplace?category=dresses" className="text-gray-600 hover:text-gray-900">dresses</Link>
+              <Link to="/marketplace?category=shoes" className="text-gray-600 hover:text-gray-900">shoes</Link>
               <Link to="/marketplace?category=furniture" className="text-gray-600 hover:text-gray-900">furniture</Link>
               <Link to="/marketplace?category=appliances" className="text-gray-600 hover:text-gray-900">appliances</Link>
               <Link to="/marketplace?category=books" className="text-gray-600 hover:text-gray-900">books</Link>
