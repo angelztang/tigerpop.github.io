@@ -1,18 +1,28 @@
 // Main dashboard with Buyer/Seller mode toggle
+<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getNetId } from '../services/authService';
+=======
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getNetid } from '../services/authService';
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 import { Listing } from '../services/listingService';
 import SellerDashboard from "./SellerDashboard";
 import BuyerDashboard from "./BuyerDashboard";
 import Marketplace from "./MarketplacePage";
+<<<<<<< HEAD
 import { purchaseListing } from "../services/listingService";
+=======
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"buyer" | "seller">("buyer");
   const [listings, setListings] = useState<Listing[]>([]);
   const netid = 'testuser'; // Set default user
+<<<<<<< HEAD
 
   const handlePurchase = async (listing: Listing) => {
     try {
@@ -22,6 +32,8 @@ const Dashboard: React.FC = () => {
       // Handle error (show error message to user)
     }
   };
+=======
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -41,6 +53,7 @@ const Dashboard: React.FC = () => {
       ) : (
         <SellerDashboard />
       )}
+<<<<<<< HEAD
 
       <div className="mt-8">
         <button
@@ -49,6 +62,9 @@ const Dashboard: React.FC = () => {
         >
           Browse Marketplace
         </button>
+=======
+      <div className="mt-8">
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
       </div>
     </div>
   );

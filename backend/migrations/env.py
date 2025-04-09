@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 from __future__ import with_statement
 
+=======
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 import logging
 from logging.config import fileConfig
 
@@ -16,15 +19,41 @@ config = context.config
 fileConfig(config.config_file_name)
 logger = logging.getLogger('alembic.env')
 
+<<<<<<< HEAD
+=======
+
+def get_engine():
+    try:
+        # this works with Flask-SQLAlchemy<3 and Alchemical
+        return current_app.extensions['migrate'].db.get_engine()
+    except (TypeError, AttributeError):
+        # this works with Flask-SQLAlchemy>=3
+        return current_app.extensions['migrate'].db.engine
+
+
+def get_engine_url():
+    try:
+        return get_engine().url.render_as_string(hide_password=False).replace(
+            '%', '%%')
+    except AttributeError:
+        return str(get_engine().url).replace('%', '%%')
+
+
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
+<<<<<<< HEAD
 config.set_main_option(
     'sqlalchemy.url',
     str(current_app.extensions['migrate'].db.get_engine().url).replace(
         '%', '%%'))
 target_metadata = current_app.extensions['migrate'].db.metadata
+=======
+config.set_main_option('sqlalchemy.url', get_engine_url())
+target_db = current_app.extensions['migrate'].db
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -32,6 +61,15 @@ target_metadata = current_app.extensions['migrate'].db.metadata
 # ... etc.
 
 
+<<<<<<< HEAD
+=======
+def get_metadata():
+    if hasattr(target_db, 'metadatas'):
+        return target_db.metadatas[None]
+    return target_db.metadata
+
+
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 def run_migrations_offline():
     """Run migrations in 'offline' mode.
 
@@ -46,7 +84,11 @@ def run_migrations_offline():
     """
     url = config.get_main_option("sqlalchemy.url")
     context.configure(
+<<<<<<< HEAD
         url=url, target_metadata=target_metadata, literal_binds=True
+=======
+        url=url, target_metadata=get_metadata(), literal_binds=True
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
     )
 
     with context.begin_transaction():
@@ -71,14 +113,27 @@ def run_migrations_online():
                 directives[:] = []
                 logger.info('No changes in schema detected.')
 
+<<<<<<< HEAD
     connectable = current_app.extensions['migrate'].db.get_engine()
+=======
+    conf_args = current_app.extensions['migrate'].configure_args
+    if conf_args.get("process_revision_directives") is None:
+        conf_args["process_revision_directives"] = process_revision_directives
+
+    connectable = get_engine()
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
+<<<<<<< HEAD
             target_metadata=target_metadata,
             process_revision_directives=process_revision_directives,
             **current_app.extensions['migrate'].configure_args
+=======
+            target_metadata=get_metadata(),
+            **conf_args
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
         )
 
         with context.begin_transaction():

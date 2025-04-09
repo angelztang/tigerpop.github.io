@@ -1,4 +1,7 @@
-import { API_URL } from '../config';
+import axios from 'axios';
+import { CAS_URL } from '../config';
+
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 export interface LoginData {
   username: string;
@@ -14,7 +17,10 @@ export interface SignupData {
 export interface AuthResponse {
   access_token: string;
   user_id: number;
+<<<<<<< HEAD
   username: string;
+=======
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
   netid: string;
 }
 
@@ -22,6 +28,7 @@ export const login = () => {
   // Check if we already have a token
   const token = localStorage.getItem('token');
   if (token) {
+<<<<<<< HEAD
     window.location.href = '/dashboard';
     return;
   }
@@ -34,6 +41,59 @@ export const login = () => {
   
   // Redirect to CAS login with our service URL
   window.location.href = `https://fed.princeton.edu/cas/login?service=${encodeURIComponent(serviceUrl)}`;
+=======
+    window.location.href = '/';
+    return;
+  }
+
+  // Get the current URL without any existing parameters
+  const currentUrl = window.location.origin + window.location.pathname;
+  const redirectUri = encodeURIComponent(currentUrl);
+  const serviceUrl = `${API_URL}/api/auth/cas/login?redirect_uri=${redirectUri}`;
+  
+  // Redirect to CAS login, which will handle Duo Security
+  window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
+};
+
+export const handleCasCallback = (token: string): AuthResponse => {
+  // Store the token
+  localStorage.setItem('token', token);
+  
+  // Decode the JWT token to get user info
+  const payload = JSON.parse(atob(token.split('.')[1]));
+  localStorage.setItem('user_id', payload.sub);
+  
+  // Get netid from additional claims
+  const netid = payload.netid;
+  localStorage.setItem('netid', netid);
+  
+  return {
+    access_token: token,
+    user_id: payload.sub,
+    netid: netid
+  };
+};
+
+export const logout = () => {
+  // Clear all stored data
+  localStorage.removeItem('token');
+  localStorage.removeItem('user_id');
+  localStorage.removeItem('netid');
+  
+  // Redirect to login page
+  window.location.href = '/login';
+};
+
+export const getToken = () => localStorage.getItem('token');
+
+export const getUserId = () => localStorage.getItem('user_id');
+
+export const getNetid = () => localStorage.getItem('netid');
+
+export const isAuthenticated = () => {
+  const token = getToken();
+  return !!token;
+>>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 };
 
 export const handleCasCallback = (token: string): AuthResponse => {
