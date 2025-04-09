@@ -20,11 +20,11 @@ interface ListingFormData {
 const categories = [
   'tops',
   'bottoms',
-  'shoes',
   'dresses',
-  'fridges',
-  'couches',
-  'textbooks',
+  'shoes',
+  'furniture',
+  'appliances', 
+  'books',
   'other'
 ];
 

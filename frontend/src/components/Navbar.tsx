@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-<<<<<<< HEAD
-import { CAS_URL, CAS_SERVICE } from '../config';
-=======
 import { getNetid, logout } from '../services/authService';
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
 
 interface NavbarProps {
   authenticated: boolean;
@@ -16,8 +12,6 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-<<<<<<< HEAD
-=======
   const handleProfileClick = () => {
     setShowProfileMenu(!showProfileMenu);
   };
@@ -29,27 +23,17 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
     window.location.reload();
   };
 
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: Implement search functionality
     console.log('Search:', searchQuery);
   };
 
-  const handleLogin = () => {
-    // Log the URLs for debugging
-    console.log('CAS URL:', CAS_URL);
-    console.log('Service URL:', CAS_SERVICE);
-    
-    // Redirect to CAS login with the service URL
-    window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(CAS_SERVICE)}`;
-  };
-
   return (
     <nav className="bg-white shadow-md">
       <div className="container mx-auto px-4">
         <div className="flex flex-col py-4">
-          {/* Top bar with logo */}
+          {/* Top bar with logo and profile */}
           <div className="flex justify-between items-center mb-4">
             <div className="flex items-center">
               <h1 
@@ -62,16 +46,6 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
             </div>
             
             <div className="flex items-center space-x-6">
-<<<<<<< HEAD
-              <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">home</Link>
-              <Link to="/marketplace" className="text-orange-500 hover:text-orange-600">buy</Link>
-              <button
-                onClick={handleLogin}
-                className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
-              >
-                Login
-              </button>
-=======
               {/* <Link to="/listings" className="text-gray-600 hover:text-gray-900">home</Link>
               <Link to="/listings" className="text-orange-500 hover:text-orange-600">buy</Link>
               <Link to="/dashboard" className="text-gray-600 hover:text-gray-900">sell</Link> */}
@@ -116,7 +90,6 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
                   Login
                 </Link>
               )}
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
             </div>
           </div>
 
@@ -125,11 +98,9 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
             <div className="flex space-x-6">
               <Link to="/marketplace?category=men" className="text-gray-600 hover:text-gray-900">men</Link>
               <Link to="/marketplace?category=women" className="text-gray-600 hover:text-gray-900">women</Link>
-<<<<<<< HEAD
-              <Link to="/marketplace?category=textbooks" className="text-gray-600 hover:text-gray-900">textbooks</Link>
-=======
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
               <Link to="/marketplace?category=furniture" className="text-gray-600 hover:text-gray-900">furniture</Link>
+              <Link to="/marketplace?category=appliances" className="text-gray-600 hover:text-gray-900">appliances</Link>
+              <Link to="/marketplace?category=books" className="text-gray-600 hover:text-gray-900">books</Link>
               <Link to="/marketplace?category=other" className="text-gray-600 hover:text-gray-900">other</Link>
             </div>
             

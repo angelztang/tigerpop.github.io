@@ -22,11 +22,14 @@ interface ListingFormData {
 }
 
 const categories = [
-  'Books',
-  'Electronics',
-  'Furniture',
-  'Clothing',
-  'Other'
+  'tops',
+  'bottoms',
+  'dresses',
+  'shoes',
+  'furniture',
+  'appliances', 
+  'books',
+  'other'
 ];
 
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
@@ -65,15 +68,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     setError(null);
     
     try {
-<<<<<<< HEAD
-      setUploading(true);
-
-      // Create the listing with the selected files
-      const response = await createListing({
-        ...formData,
-        price: parseFloat(formData.price),
-        images: selectedFiles
-=======
       const formDataToSend = new FormData();
       
       // Add listing data
@@ -101,7 +95,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         method: 'POST',
         body: formDataToSend,
         credentials: 'include'
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
       });
 
       if (!response.ok) {
@@ -114,23 +107,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         ...formData,
         images: imageUrls
       });
-<<<<<<< HEAD
-      setSelectedFiles([]);
-      setPreviewUrls([]);
-      
-      // Show success message
-      setMessage({ text: 'Listing created successfully!', type: 'success' });
-      
-      // Wait for 2 seconds to show the success message before redirecting
-      setTimeout(() => {
-        if (onClose) {
-          onClose();
-        }
-        navigate('/marketplace');
-      }, 2000);
-      
-=======
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
     } catch (error) {
       console.error('Error in listing creation:', error);
       setError(error instanceof Error ? error.message : 'Failed to create listing');
@@ -138,125 +114,10 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   };
 
   return (
-<<<<<<< HEAD
-    <form onSubmit={handleSubmit} className="space-y-4">
-      {message && (
-        <div className={`p-4 rounded-md ${
-          message.type === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-          {message.text}
-        </div>
-      )}
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Title:</label>
-        <input
-          type="text"
-          name="title"
-          value={formData.title}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Category:</label>
-        <select
-          name="category"
-          value={formData.category}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-        >
-          <option value="">Select a category</option>
-          {categories.map(category => (
-            <option key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Description:</label>
-        <textarea
-          name="description"
-          value={formData.description}
-          onChange={handleChange}
-          required
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-          rows={4}
-        />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">Price:</label>
-        <div className="mt-1 relative rounded-md shadow-sm">
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <span className="text-gray-500 sm:text-sm">$</span>
-          </div>
-          <input
-            type="number"
-            name="price"
-            value={formData.price}
-            onChange={handleChange}
-            required
-            min="0"
-            step="0.01"
-            className="pl-7 mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700">
-          Images (jpg, jpeg, png):
-        </label>
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          multiple
-          accept=".jpg,.jpeg,.png"
-          className="mt-1 block w-full text-sm text-gray-500
-            file:mr-4 file:py-2 file:px-4
-            file:rounded-md file:border-0
-            file:text-sm file:font-semibold
-            file:bg-orange-50 file:text-orange-700
-            hover:file:bg-orange-100"
-        />
-        <p className="mt-1 text-sm text-gray-500">
-          Accepted formats: JPG, JPEG, PNG
-        </p>
-        {previewUrls.length > 0 && (
-          <div className="mt-4 grid grid-cols-3 gap-4">
-            {previewUrls.map((url, index) => (
-              <div key={index} className="relative">
-                <img
-                  src={url}
-                  alt={`Preview ${index + 1}`}
-                  className="w-full h-24 object-cover rounded-md"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    URL.revokeObjectURL(url);
-                    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
-                    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-                  }}
-                  className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-      <div className="flex justify-end space-x-2">
-        {onClose && (
-=======
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center">
       <div className="relative bg-white rounded-lg p-8 m-4 max-w-xl w-full">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Create New Listing</h2>
->>>>>>> c4d72ccc050220ad09ebb324fa9247b67b9a7908
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
