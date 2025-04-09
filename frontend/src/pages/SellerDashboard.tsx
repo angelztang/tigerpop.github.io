@@ -1,7 +1,7 @@
 // Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings } from '../services/listingService';
+import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings, updateListingStatus } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
@@ -82,6 +82,18 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
+  const handleMarkAsSold = async (id: number) => {
+    try {
+      await updateListingStatus(id, 'sold');
+      setListings(listings.map(listing => 
+        listing.id === id ? { ...listing, status: 'sold' } : listing
+      ));
+    } catch (err) {
+      setError('Failed to mark listing as sold');
+      console.error('Error marking listing as sold:', err);
+    }
+  };
+
   const filteredListings = listings.filter(listing => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'selling') return listing.status === 'available';
@@ -157,11 +169,13 @@ const SellerDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredListings.length > 0 ? (
-            filteredListings.map(listing => (
+            filteredListings.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
                 onDelete={() => handleDeleteListing(listing.id)}
+                onMarkAsSold={() => handleMarkAsSold(listing.id)}
+                isSellerMode={true}
               />
             ))
           ) : (

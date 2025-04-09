@@ -95,6 +95,7 @@ const MarketplacePage: React.FC = () => {
   const filteredListings = listings.filter(listing => {
     if (selectedCategory && listing.category.toLowerCase() !== selectedCategory) return false;
     if (selectedPrice && listing.price > selectedPrice) return false;
+    if (listing.status !== 'available') return false;
     return true;
   });
 

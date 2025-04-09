@@ -286,7 +286,7 @@ def update_listing_status(id):
     listing = Listing.query.get_or_404(id)
     user_id = 1  # Default user_id for testing
     
-    if listing.seller_id != user_id:
+    if listing.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
