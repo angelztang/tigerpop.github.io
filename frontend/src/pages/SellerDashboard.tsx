@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
-import ListingCard from '../components/ListingCard';
+import ListingCard from '../components/ListingCard'
 
 type FilterTab = 'all' | 'selling' | 'sold';
 
