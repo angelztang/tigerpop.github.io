@@ -70,6 +70,15 @@ const MarketplacePage: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    fetchListings();
+  }, [selectedPrice, selectedCategory]);
+
+  const handleListingUpdated = () => {
+    fetchListings();
+    setSelectedListing(null); // Close any open modals
+  };
+
   const location = useLocation();
 
   useEffect(() => {
@@ -78,10 +87,6 @@ const MarketplacePage: React.FC = () => {
     setSelectedCategory(categoryParam);
     setSelectedPrice(null); // Reset price when URL changes category
   }, [location.search]);
-
-  useEffect(() => {
-    fetchListings();
-  }, [selectedPrice, selectedCategory]);
 
   const handleCategoryClick = (slug: string) => {
     setSelectedCategory(selectedCategory === slug ? null : slug);
@@ -93,6 +98,7 @@ const MarketplacePage: React.FC = () => {
   };
 
   const filteredListings = listings.filter(listing => {
+    if (listing.status !== 'available') return false;
     if (selectedCategory && listing.category.toLowerCase() !== selectedCategory) return false;
     if (selectedPrice && listing.price > selectedPrice) return false;
     return true;
@@ -173,6 +179,7 @@ const MarketplacePage: React.FC = () => {
               key={listing.id}
               listing={listing}
               onDelete={() => {}}
+              onClick={() => setSelectedListing(listing)}
             />
           ))}
         </div>
@@ -183,6 +190,7 @@ const MarketplacePage: React.FC = () => {
         <ListingDetailModal
           listing={selectedListing}
           onClose={() => setSelectedListing(null)}
+          onListingUpdated={handleListingUpdated}
         />
       )}
     </div>

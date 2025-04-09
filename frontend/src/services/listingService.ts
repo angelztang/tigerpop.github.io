@@ -67,7 +67,7 @@ export const updateListing = async (id: number, data: Partial<Listing>): Promise
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status }, getAuthHeaders());
+  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status });
   return response.data;
 };
 

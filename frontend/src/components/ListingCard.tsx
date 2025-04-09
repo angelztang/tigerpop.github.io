@@ -44,11 +44,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick })
       onClick={handleCardClick}
     >
       <div className="relative aspect-w-16 aspect-h-9">
-        <img
-          src={listing.images?.[0] || "https://via.placeholder.com/300"}
-          alt={listing.title}
-          className="w-full h-full object-cover"
-        />
+        {listing.images?.[0] && (
+          <img
+            src={listing.images[0]}
+            alt={listing.title}
+            className="w-full h-full object-cover"
+          />
+        )}
         <div className="absolute top-2 right-2">
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(

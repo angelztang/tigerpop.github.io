@@ -324,20 +324,23 @@ def request_to_buy(id):
 
 @bp.route('/<int:id>/status', methods=['PATCH'])
 def update_listing_status(id):
-    listing = Listing.query.get_or_404(id)
-    user_id = 1  # Default user_id for testing
-    
-    if listing.seller_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    data = request.get_json()
-    listing.status = data['status']
-    db.session.commit()
-    
-    return jsonify({
-        'id': listing.id,
-        'status': listing.status
-    })
+    try:
+        listing = Listing.query.get_or_404(id)
+        data = request.get_json()
+        
+        if 'status' not in data:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        listing.status = data['status']
+        db.session.commit()
+        
+        return jsonify({
+            'id': listing.id,
+            'status': listing.status
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error updating listing status: {str(e)}")
+        return jsonify({'error': 'Failed to update listing status'}), 500
 
 @bp.route('/<int:id>', methods=['DELETE'])
 def delete_listing(id):
@@ -494,6 +497,6 @@ def update_listing(id):
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response

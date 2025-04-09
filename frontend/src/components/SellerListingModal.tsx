@@ -80,6 +80,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
       const updatedListing = await updateListingStatus(listing.id, 'sold');
       onUpdate(updatedListing);
       setShowSoldModal(false);
+      onClose();
     } catch (error: any) {
       console.error('Error marking listing as sold:', error);
       setError(error.response?.data?.error || 'Failed to mark listing as sold');
@@ -135,11 +136,13 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
             {/* Image Carousel */}
             <div className="relative mb-6">
               <div className="h-96 w-full">
-                <img
-                  src={listing.images[currentImageIndex] || "https://via.placeholder.com/300"}
-                  alt={listing.title}
-                  className="w-full h-full object-contain rounded-lg bg-gray-100"
-                />
+                {listing.images?.[currentImageIndex] && (
+                  <img
+                    src={listing.images[currentImageIndex]}
+                    alt={listing.title}
+                    className="w-full h-full object-contain rounded-lg bg-gray-100"
+                  />
+                )}
               </div>
               {listing.images.length > 1 && (
                 <>

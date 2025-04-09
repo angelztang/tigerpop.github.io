@@ -5,9 +5,10 @@ import { requestToBuy } from '../services/listingService';
 interface ListingDetailModalProps {
   listing: Listing;
   onClose: () => void;
+  onListingUpdated?: () => void;
 }
 
-const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose }) => {
+const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose, onListingUpdated }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
@@ -31,6 +32,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
     try {
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
+      if (onListingUpdated) {
+        onListingUpdated();
+      }
       setTimeout(() => {
         onClose();
       }, 2000);
@@ -76,11 +80,13 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
           {/* Image Carousel */}
           <div className="relative mb-6">
             <div className="h-96 w-full">
-              <img
-                src={listing.images[currentImageIndex] || "https://via.placeholder.com/300"}
-                alt={listing.title}
-                className="w-full h-full object-contain rounded-lg bg-gray-100"
-              />
+              {listing.images?.[currentImageIndex] && (
+                <img
+                  src={listing.images[currentImageIndex]}
+                  alt={listing.title}
+                  className="w-full h-full object-contain rounded-lg bg-gray-100"
+                />
+              )}
             </div>
             {listing.images.length > 1 && (
               <>
