@@ -10,10 +10,12 @@ def create_app(config_class=Config):
     # Enable CORS with credentials
     CORS(app, 
          resources={r"/api/*": {
-             "origins": "http://localhost:3000",
+             "origins": ["http://localhost:3000", "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
              "supports_credentials": True,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization"]
+             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+             "expose_headers": ["Content-Type", "Authorization"],
+             "max_age": 3600
          }})
 
     # Initialize extensions
@@ -28,5 +30,6 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(listing_bp, url_prefix='/api/listing')
     app.register_blueprint(user_bp, url_prefix='/api/user')
+    app.register_blueprint(cas_bp, url_prefix='/api/auth/cas')
 
     return app

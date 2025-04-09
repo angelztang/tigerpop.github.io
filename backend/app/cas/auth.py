@@ -19,14 +19,15 @@ import os
 #-----------------------------------------------------------------------
 
 _CAS_URL = 'https://fed.princeton.edu/cas/'  # Princeton CAS server
-_BACKEND_URL = 'http://localhost:8000'  # Backend URL
+_BACKEND_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'  # Backend URL
 
 logger = logging.getLogger(__name__)
 
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'http://localhost:3000'  # Frontend URL
+# Support both local and production frontend
+CAS_SERVICE = 'http://localhost:3000'  # Default to local frontend for testing
 
 #-----------------------------------------------------------------------
 
@@ -66,10 +67,8 @@ def get_cas_ticket():
 def validate_cas_ticket(ticket):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    # Use the backend URL as the service since that's where CAS redirected to
-    service_url = f'{_BACKEND_URL}/api/auth/cas/login'
-    if request.args.get('redirect_uri'):
-        service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
+    redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000')
+    service_url = f'{_BACKEND_URL}/api/auth/cas/login?redirect_uri={urllib.parse.quote(redirect_uri)}'
     
     try:
         response = requests.get(validate_url, params={
@@ -80,9 +79,7 @@ def validate_cas_ticket(ticket):
         current_app.logger.info(f"CAS validation response: {response.text}")
         
         if response.status_code == 200:
-            # Check if the response contains a successful authentication
             if '<cas:authenticationSuccess>' in response.text:
-                # Extract netid from the response
                 netid_match = re.search(r'<cas:user>(.*?)</cas:user>', response.text)
                 if netid_match:
                     return netid_match.group(1)
@@ -115,20 +112,17 @@ def generate_jwt_token(user):
 def cas_login():
     """Handle CAS login."""
     ticket = get_cas_ticket()
+    redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000')
     
     if not ticket:
         # If no ticket, redirect to CAS login
-        login_url = f'{CAS_SERVER}/login'
-        # Use the backend URL as the service
-        service_url = f'{_BACKEND_URL}/api/auth/cas/login'
-        if request.args.get('redirect_uri'):
-            service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
-        return redirect(f'{login_url}?service={urllib.parse.quote(service_url)}')
+        service_url = f'{_BACKEND_URL}/api/auth/cas/login?redirect_uri={urllib.parse.quote(redirect_uri)}'
+        return redirect(f'{CAS_SERVER}/login?service={urllib.parse.quote(service_url)}')
     
     # Validate the ticket
     netid = validate_cas_ticket(ticket)
     if not netid:
-        return redirect(f'{CAS_SERVICE}/login?error=invalid_ticket')
+        return redirect(f'{redirect_uri}/login?error=invalid_ticket')
     
     # Create or update user
     user = create_or_update_user(netid)
@@ -137,7 +131,6 @@ def cas_login():
     token = generate_jwt_token(user)
     
     # Redirect back to frontend with token
-    redirect_uri = request.args.get('redirect_uri', CAS_SERVICE)
     return redirect(f'{redirect_uri}?token={token}')
 
 @cas_bp.route('/logout')

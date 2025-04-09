@@ -1,7 +1,8 @@
 import axios from 'axios';
 import { CAS_URL } from '../config';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+// Always use Heroku backend URL for testing
+const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
 
 export interface LoginData {
   username: string;
@@ -28,13 +29,12 @@ export const login = () => {
     return;
   }
 
-  // Get the current URL without any existing parameters
-  const currentUrl = window.location.origin + window.location.pathname;
-  const redirectUri = encodeURIComponent(currentUrl);
-  const serviceUrl = `${API_URL}/api/auth/cas/login?redirect_uri=${redirectUri}`;
-  
-  // Redirect to CAS login, which will handle Duo Security
-  window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
+  // Store the current URL as the return URL in localStorage
+  const returnUrl = window.location.origin + window.location.pathname;
+  localStorage.setItem('returnUrl', returnUrl);
+
+  // Redirect directly to the backend's CAS login endpoint
+  window.location.href = `${API_URL}/api/auth/cas/login?redirect_uri=${encodeURIComponent(returnUrl)}`;
 };
 
 export const handleCasCallback = (token: string): AuthResponse => {

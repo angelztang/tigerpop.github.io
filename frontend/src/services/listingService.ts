@@ -4,6 +4,14 @@ import axios from 'axios';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+// Create axios instance with default config
+const api = axios.create({
+  withCredentials: true,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
+
 export interface Listing {
   id: number;
   title: string;
@@ -37,80 +45,65 @@ export interface ListingFilters {
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
   const url = filters ? `${API_URL}/api/listing${filters}` : `${API_URL}/api/listing`;
-  const response = await axios.get<Listing[]>(url);
+  const response = await api.get<Listing[]>(url);
   return response.data;
 };
 
 export const getListing = async (id: number): Promise<Listing> => {
-  const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`);
+  const response = await api.get<Listing>(`${API_URL}/api/listing/${id}`);
   return response.data;
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  const response = await axios.post<Listing>(`${API_URL}/api/listing`, data);
+  const response = await api.post<Listing>(`${API_URL}/api/listing`, data);
   return response.data;
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
-  const response = await axios.put<Listing>(`${API_URL}/api/listing/${id}`, data);
+  const response = await api.put<Listing>(`${API_URL}/api/listing/${id}`, data);
   return response.data;
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status });
+  const response = await api.put<Listing>(`${API_URL}/api/listing/${id}/status`, { status });
   return response.data;
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  await axios.delete(`${API_URL}/api/listing/${id}`);
+  await api.delete(`${API_URL}/api/listing/${id}`);
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
-  try {
-    const formData = new FormData();
-    files.forEach(file => {
-      formData.append('images', file);
-    });
+  const formData = new FormData();
+  files.forEach(file => {
+    formData.append('images', file);
+  });
 
-    const response = await axios.post<{ urls: string[] }>(`${API_URL}/api/listing/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-
-    if (!response.data.urls || !Array.isArray(response.data.urls)) {
-      throw new Error('Invalid response format from server');
-    }
-
-    return response.data.urls;
-  } catch (error) {
-    console.error('Error uploading images:', error);
-    throw error;
-  }
+  const response = await api.post(`${API_URL}/api/listing/upload`, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
 
 export const getCategories = async (): Promise<string[]> => {
-  const response = await axios.get<string[]>(`${API_URL}/api/listing/categories`);
+  const response = await api.get<string[]>(`${API_URL}/api/listing/categories`);
   return response.data;
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`);
+  const response = await api.get<Listing[]>(`${API_URL}/api/listing/user/${userId}`);
   return response.data;
 };
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
-  try {
-    const response = await axios.post(`${API_URL}/api/listing/${listingId}/notify`);
-    return response.data;
-  } catch (error) {
-    console.error('Error sending notification:', error);
-    throw error;
-  }
+  const response = await api.post(`${API_URL}/api/listing/${listingId}/request`);
+  return response.data;
 };
 
 export const getUserPurchases = async (): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/purchases`);
+  const response = await api.get<Listing[]>(`${API_URL}/api/listing/purchases`);
   return response.data;
 };
   
