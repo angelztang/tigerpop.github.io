@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import ListingCard from '../components/ListingCard';
 import { Listing, getListings } from '../services/listingService';
 import ListingDetailModal from '../components/ListingDetailModal';
@@ -69,6 +70,15 @@ const MarketplacePage: React.FC = () => {
     }
   };
 
+  const location = useLocation();
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(location.search);
+    const categoryParam = queryParams.get('category');
+    setSelectedCategory(categoryParam);
+    setSelectedPrice(null); // Reset price when URL changes category
+  }, [location.search]);
+  
   useEffect(() => {
     fetchListings();
   }, [selectedPrice, selectedCategory]);
