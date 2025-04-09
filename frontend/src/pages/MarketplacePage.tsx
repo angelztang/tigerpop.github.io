@@ -31,14 +31,14 @@ const MarketplacePage: React.FC = () => {
   ];
 
   const categories: Category[] = [
-    { name: 'Tops', image: '/category-placeholder.jpg', slug: 'tops' },
-    { name: 'Bottoms', image: '/category-placeholder.jpg', slug: 'bottoms' },
-    { name: 'Dresses', image: '/category-placeholder.jpg', slug: 'dresses' },
-    { name: 'Shoes', image: '/category-placeholder.jpg', slug: 'shoes' },
-    { name: 'Furniture', image: '/category-placeholder.jpg', slug: 'furniture' },
-    { name: 'Appliances', image: '/category-placeholder.jpg', slug: 'appliances' },
-    { name: 'Books', image: '/category-placeholder.jpg', slug: 'books' },
-    { name: 'Other', image: '/category-placeholder.jpg', slug: 'other' },
+    { name: 'Tops', image: '/categories/tops.png', slug: 'tops' },
+    { name: 'Bottoms', image: '/categories/bottoms.png', slug: 'bottoms' },
+    { name: 'Dresses', image: '/categories/dresses.png', slug: 'dresses' },
+    { name: 'Shoes', image: '/categories/shoes.png', slug: 'shoes' },
+    { name: 'Furniture', image: '/categories/furniture.png', slug: 'furniture' },
+    { name: 'Appliances', image: '/categories/appliances.png', slug: 'appliances' },
+    { name: 'Books', image: '/categories/books.png', slug: 'books' },
+    { name: 'Other', image: '/categories/other.png', slug: 'other' },
   ];
 
   const fetchListings = async () => {
@@ -78,7 +78,7 @@ const MarketplacePage: React.FC = () => {
     setSelectedCategory(categoryParam);
     setSelectedPrice(null); // Reset price when URL changes category
   }, [location.search]);
-  
+
   useEffect(() => {
     fetchListings();
   }, [selectedPrice, selectedCategory]);
