@@ -1,10 +1,11 @@
 // Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings } from '../services/listingService';
+import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings, updateListing } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
+import SellerListingModal from '../components/SellerListingModal';
 
 type FilterTab = 'all' | 'selling' | 'sold';
 
@@ -16,6 +17,7 @@ const SellerDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   useEffect(() => {
     fetchListings();
@@ -76,9 +78,22 @@ const SellerDashboard: React.FC = () => {
     try {
       await deleteListing(id);
       setListings(listings.filter(listing => listing.id !== id));
+      setSelectedListing(null);
     } catch (err) {
       setError('Failed to delete listing');
       console.error('Error deleting listing:', err);
+    }
+  };
+
+  const handleUpdateListing = async (updatedListing: Listing) => {
+    try {
+      setListings(listings.map(listing => 
+        listing.id === updatedListing.id ? updatedListing : listing
+      ));
+      setSelectedListing(null);
+    } catch (err) {
+      setError('Failed to update listing');
+      console.error('Error updating listing:', err);
     }
   };
 
@@ -117,6 +132,15 @@ const SellerDashboard: React.FC = () => {
             onSubmit={handleListingCreated}
             isSubmitting={isSubmitting}
             onClose={() => setShowForm(false)}
+          />
+        )}
+
+        {selectedListing && (
+          <SellerListingModal
+            listing={selectedListing}
+            onClose={() => setSelectedListing(null)}
+            onUpdate={handleUpdateListing}
+            onDelete={handleDeleteListing}
           />
         )}
 
@@ -161,7 +185,7 @@ const SellerDashboard: React.FC = () => {
               <ListingCard
                 key={listing.id}
                 listing={listing}
-                onDelete={() => handleDeleteListing(listing.id)}
+                onClick={() => setSelectedListing(listing)}
               />
             ))
           ) : (

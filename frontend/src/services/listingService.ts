@@ -5,6 +5,15 @@ import { getUserId } from './authService';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
+const getAuthHeaders = () => {
+  const token = localStorage.getItem('token'); // Assuming token is stored in localStorage
+  return {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  };
+};
+
 export interface Listing {
   id: number;
   title: string;
@@ -38,27 +47,27 @@ export interface ListingFilters {
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
   const url = filters ? `${API_URL}/api/listing${filters}` : `${API_URL}/api/listing`;
-  const response = await axios.get<Listing[]>(url);
+  const response = await axios.get<Listing[]>(url, getAuthHeaders());
   return response.data;
 };
 
 export const getListing = async (id: number): Promise<Listing> => {
-  const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`);
+  const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`, getAuthHeaders());
   return response.data;
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  const response = await axios.post<Listing>(`${API_URL}/api/listing`, data);
+  const response = await axios.post<Listing>(`${API_URL}/api/listing`, data, getAuthHeaders());
   return response.data;
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
-  const response = await axios.put<Listing>(`${API_URL}/api/listing/${id}`, data);
+  const response = await axios.put<Listing>(`${API_URL}/api/listing/${id}`, data, getAuthHeaders());
   return response.data;
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status });
+  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status }, getAuthHeaders());
   return response.data;
 };
 
@@ -67,7 +76,7 @@ export const deleteListing = async (id: number): Promise<void> => {
   if (!userId) {
     throw new Error('User not authenticated');
   }
-  await axios.delete(`${API_URL}/api/listing/${id}?user_id=${userId}`);
+  await axios.delete(`${API_URL}/api/listing/${id}?user_id=${userId}`, getAuthHeaders());
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
@@ -80,6 +89,7 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
     const response = await axios.post<{ urls: string[] }>(`${API_URL}/api/listing/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
+        ...getAuthHeaders().headers,
       },
     });
 
@@ -95,12 +105,12 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
 };
 
 export const getCategories = async (): Promise<string[]> => {
-  const response = await axios.get<string[]>(`${API_URL}/api/listing/categories`);
+  const response = await axios.get<string[]>(`${API_URL}/api/listing/categories`, getAuthHeaders());
   return response.data;
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`);
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`, getAuthHeaders());
   return response.data;
 };
 
@@ -114,7 +124,7 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
       buyer_id: userId,
       message: 'I am interested in this item',
       contact_info: 'Please contact me via email'
-    });
+    }, getAuthHeaders());
     return response.data;
   } catch (error) {
     console.error('Error sending notification:', error);
@@ -123,12 +133,12 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
 };
 
 export const getUserPurchases = async (): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/purchases`);
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/purchases`, getAuthHeaders());
   return response.data;
 };
 
 export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/buyer?user_id=${userId}`);
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/buyer?user_id=${userId}`, getAuthHeaders());
   return response.data;
 };
   
