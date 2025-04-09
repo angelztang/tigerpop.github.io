@@ -1,8 +1,5 @@
 import axios from 'axios';
-import { CAS_URL } from '../config';
-
-// Always use Heroku backend URL for testing
-const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
+import { API_URL, CAS_URL } from '../config';
 
 export interface LoginData {
   username: string;
@@ -20,6 +17,14 @@ export interface AuthResponse {
   user_id: number;
   netid: string;
 }
+
+// Create an axios instance with the base URL
+const api = axios.create({
+  baseURL: API_URL,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
 
 export const login = () => {
   // Check if we already have a token
@@ -66,27 +71,16 @@ export const logout = () => {
   window.location.href = '/login';
 };
 
-export const getToken = () => localStorage.getItem('token');
+export const getUserId = (): string | null => localStorage.getItem('user_id');
 
-export const getUserId = () => localStorage.getItem('user_id');
+export const getNetid = (): string | null => localStorage.getItem('netid');
 
-export const getNetid = () => localStorage.getItem('netid');
-
-export const isAuthenticated = () => {
-  const token = getToken();
-  return !!token;
+export const isAuthenticated = (): boolean => {
+  const netid = getNetid();
+  return !!netid;
 };
 
 export const signup = async (data: SignupData): Promise<{ message: string }> => {
-  const response = await fetch(`${API_URL}/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    throw new Error('Signup failed');
-  }
-
-  return response.json();
+  const response = await api.post('/api/signup', data);
+  return response.data as { message: string };
 }; 

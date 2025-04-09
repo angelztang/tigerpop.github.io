@@ -1,7 +1,7 @@
 // Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings } from '../services/listingService';
+import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings, updateListing, updateListingStatus } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
@@ -16,6 +16,7 @@ const SellerDashboard: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
+  const [editingListing, setEditingListing] = useState<Listing | null>(null);
 
   useEffect(() => {
     fetchListings();
@@ -56,17 +57,40 @@ const SellerDashboard: React.FC = () => {
 
       const response = await createListing(listingData);
       if (response) {
+        setListings([response, ...listings]);
         setShowForm(false);
-        setTimeout(() => {
-          navigate('/marketplace', { replace: true });
-        }, 0);
       }
     } catch (err) {
       console.error('Error in listing creation response:', err);
+      setError('Failed to create listing. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleListingUpdated = async (formData: { title: string; description: string; price: string; category: string; images: string[]; id?: number }) => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      if (!editingListing) {
+        setError('No listing selected for editing');
+        return;
+      }
+
+      const listingId = formData.id || editingListing.id;
+      const updatedListing = await updateListing(listingId, {
+        ...formData,
+        price: parseFloat(formData.price)
+      });
+
+      setListings(listings.map(listing => 
+        listing.id === updatedListing.id ? updatedListing : listing
+      ));
+      setEditingListing(null);
       setShowForm(false);
-      setTimeout(() => {
-        navigate('/marketplace', { replace: true });
-      }, 0);
+    } catch (err) {
+      setError('Failed to update listing');
+      console.error('Error updating listing:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -80,6 +104,23 @@ const SellerDashboard: React.FC = () => {
       setError('Failed to delete listing');
       console.error('Error deleting listing:', err);
     }
+  };
+
+  const handleMarkAsSold = async (id: number) => {
+    try {
+      await updateListingStatus(id, 'sold');
+      setListings(listings.map(listing => 
+        listing.id === id ? { ...listing, status: 'sold' } : listing
+      ));
+    } catch (err) {
+      setError('Failed to mark listing as sold');
+      console.error('Error marking listing as sold:', err);
+    }
+  };
+
+  const handleEditListing = (listing: Listing) => {
+    setEditingListing(listing);
+    setShowForm(true);
   };
 
   const filteredListings = listings.filter(listing => {
@@ -99,7 +140,10 @@ const SellerDashboard: React.FC = () => {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">My Listings</h1>
           <button
-            onClick={() => setShowForm(true)}
+            onClick={() => {
+              setEditingListing(null);
+              setShowForm(true);
+            }}
             className="bg-orange-500 text-white px-4 py-2 rounded-md hover:bg-orange-600 transition-colors"
           >
             Create New Listing
@@ -114,9 +158,21 @@ const SellerDashboard: React.FC = () => {
 
         {showForm && (
           <ListingForm
-            onSubmit={handleListingCreated}
+            onSubmit={editingListing ? handleListingUpdated : handleListingCreated}
             isSubmitting={isSubmitting}
-            onClose={() => setShowForm(false)}
+            onClose={() => {
+              setShowForm(false);
+              setEditingListing(null);
+            }}
+            initialData={editingListing ? {
+              id: editingListing.id,
+              title: editingListing.title,
+              description: editingListing.description,
+              price: editingListing.price.toString(),
+              category: editingListing.category,
+              images: editingListing.images
+            } : undefined}
+            isEditMode={!!editingListing}
           />
         )}
 
@@ -157,18 +213,24 @@ const SellerDashboard: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredListings.length > 0 ? (
-            filteredListings.map(listing => (
+            filteredListings.map((listing) => (
               <ListingCard
                 key={listing.id}
                 listing={listing}
                 onDelete={() => handleDeleteListing(listing.id)}
+                onMarkAsSold={() => handleMarkAsSold(listing.id)}
+                onEdit={() => handleEditListing(listing)}
+                isSellerMode={true}
               />
             ))
           ) : (
             <div className="col-span-full text-center py-12">
               <p className="text-xl text-gray-600">You have no listings yet</p>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => {
+                  setEditingListing(null);
+                  setShowForm(true);
+                }}
                 className="mt-4 bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition-colors"
               >
                 Create Your First Listing

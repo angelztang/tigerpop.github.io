@@ -286,7 +286,7 @@ def update_listing_status(id):
     listing = Listing.query.get_or_404(id)
     user_id = 1  # Default user_id for testing
     
-    if listing.seller_id != user_id:
+    if listing.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
@@ -303,7 +303,7 @@ def delete_listing(id):
     listing = Listing.query.get_or_404(id)
     user_id = 1  # Default user_id for testing
     
-    if listing.seller_id != user_id:
+    if listing.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
     
     # Delete associated images
@@ -393,6 +393,72 @@ def notify_seller(id):
                 'error': 'Failed to send notification',
                 'details': 'An unexpected error occurred'
             }), 500
+
+@bp.route('/<int:id>', methods=['PUT'])
+def update_listing(id):
+    try:
+        listing = Listing.query.get_or_404(id)
+        user_id = request.form.get('user_id')
+        
+        if not user_id or int(user_id) != listing.user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Get form data
+        title = request.form.get('title')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        category = request.form.get('category')
+        images = request.form.get('images')
+
+        # Update listing fields if provided
+        if title:
+            listing.title = title
+        if description:
+            listing.description = description
+        if price:
+            try:
+                price = float(price)
+                if price <= 0:
+                    return jsonify({'error': 'Price must be greater than 0'}), 400
+                listing.price = price
+            except ValueError:
+                return jsonify({'error': 'Invalid price format'}), 400
+        if category:
+            listing.category = category
+
+        # Handle images if provided
+        if images:
+            try:
+                image_urls = json.loads(images)
+                # Delete existing images
+                for image in listing.images:
+                    db.session.delete(image)
+                # Add new images
+                for url in image_urls:
+                    image = ListingImage(filename=url, listing_id=listing.id)
+                    db.session.add(image)
+            except json.JSONDecodeError:
+                current_app.logger.error("Failed to parse image URLs")
+                return jsonify({'error': 'Invalid image data format'}), 400
+
+        db.session.commit()
+
+        return jsonify({
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'user_id': listing.user_id,
+            'images': [image.filename for image in listing.images],
+            'created_at': listing.created_at.isoformat() if listing.created_at else None
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating listing: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @bp.after_request
 def after_request(response):
