@@ -19,8 +19,10 @@ export interface Listing {
   title: string;
   description: string;
   price: number;
+  image: string;
   category: string;
   status: string;
+  isHearted?: boolean;
   user_id: number;
   user_netid: string;
   created_at: string;
@@ -140,5 +142,39 @@ export const getUserPurchases = async (): Promise<Listing[]> => {
 export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
   const response = await axios.get<Listing[]>(`${API_URL}/api/listing/buyer?user_id=${userId}`, getAuthHeaders());
   return response.data;
+};
+
+export const heartListing = async (id: number): Promise<void> => {
+  try {
+    await axios.post(`${API_URL}/api/listing/${id}/heart`, {}, getAuthHeaders());
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new Error('Please log in to heart listings');
+    }
+    throw new Error('Failed to heart listing');
+  }
+};
+
+export const unheartListing = async (id: number): Promise<void> => {
+  try {
+    await axios.delete(`${API_URL}/api/listing/${id}/heart`, getAuthHeaders());
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new Error('Please log in to unheart listings');
+    }
+    throw new Error('Failed to unheart listing');
+  }
+};
+
+export const getHeartedListings = async (): Promise<Listing[]> => {
+  try {
+    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/hearted`, getAuthHeaders());
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new Error('Please log in to view hearted listings');
+    }
+    throw new Error('Failed to fetch hearted listings');
+  }
 };
   

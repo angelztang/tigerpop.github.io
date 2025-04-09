@@ -2,14 +2,18 @@
 import React from 'react';
 import { Listing } from '../services/listingService';
 import { useNavigate } from 'react-router-dom';
+import { HeartIcon } from '@heroicons/react/24/outline';
+import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
 
 interface ListingCardProps {
   listing: Listing;
   onDelete?: () => void;
   onClick?: () => void;
+  isHearted?: boolean;
+  onHeartClick?: (id: number) => void;
 }
 
-const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick }) => {
+const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, isHearted = false, onHeartClick }) => {
   const navigate = useNavigate();
 
   const handleCardClick = () => {
@@ -82,6 +86,19 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick })
               </svg>
             </button>
           )}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onHeartClick?.(listing.id);
+            }}
+            className="text-red-500 hover:text-red-600 focus:outline-none"
+          >
+            {isHearted ? (
+              <HeartSolidIcon className="h-6 w-6" />
+            ) : (
+              <HeartIcon className="h-6 w-6" />
+            )}
+          </button>
         </div>
       </div>
     </div>

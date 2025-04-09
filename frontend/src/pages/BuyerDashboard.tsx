@@ -1,16 +1,17 @@
 // this should be buyer's purchase history, similar to SellerDashboard
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Listing, getBuyerListings } from '../services/listingService';
+import { Listing, getBuyerListings, getHeartedListings, heartListing, unheartListing } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
 
-type FilterTab = 'all' | 'pending' | 'purchased';
+type FilterTab = 'all' | 'pending' | 'purchased' | 'hearted';
 
 const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
+  const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
@@ -18,25 +19,53 @@ const BuyerDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchListings();
-  }, []);
+  }, [activeFilter]);
 
   const fetchListings = async () => {
     try {
       const userId = getUserId();
       if (!userId) {
-        console.error('No user ID found');
-        setError('User not authenticated');
+        navigate('/login');
         return;
       }
       console.log('Fetching listings for user:', userId);
-      const data = await getBuyerListings(userId);
+      let data: Listing[];
+      
+      if (activeFilter === 'hearted') {
+        data = await getHeartedListings();
+      } else {
+        data = await getBuyerListings(userId);
+      }
+      
       console.log('Received listings:', data);
       setListings(data);
+      
+      // Update hearted list
+      const heartedData = await getHeartedListings();
+      setHeartedListings(heartedData.map(listing => listing.id));
     } catch (err) {
       console.error('Detailed error in fetchListings:', err);
-      setError('Failed to load listings. Please try again later.');
+      setError('Failed to load listings');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleHeartClick = async (id: number) => {
+    try {
+      const isHearted = heartedListings.includes(id);
+      if (isHearted) {
+        await unheartListing(id);
+        setHeartedListings(prev => prev.filter(listingId => listingId !== id));
+      } else {
+        await heartListing(id);
+        setHeartedListings(prev => [...prev, id]);
+      }
+      if (activeFilter === 'hearted') {
+        fetchListings();
+      }
+    } catch (error) {
+      console.error('Error toggling heart:', error);
     }
   };
 
@@ -44,7 +73,8 @@ const BuyerDashboard: React.FC = () => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'pending') return listing.status === 'pending';
     if (activeFilter === 'purchased') return listing.status === 'sold';
-    return true;
+    if (activeFilter === 'hearted') return true; // Already filtered by API
+    return false;
   });
 
   if (loading) {
@@ -94,6 +124,16 @@ const BuyerDashboard: React.FC = () => {
             >
               Purchased
             </button>
+            <button
+              onClick={() => setActiveFilter('hearted')}
+              className={`px-4 py-2 rounded-md ${
+                activeFilter === 'hearted'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-white text-gray-700 hover:bg-gray-100'
+              }`}
+            >
+              Hearted
+            </button>
           </div>
         </div>
 
@@ -103,6 +143,8 @@ const BuyerDashboard: React.FC = () => {
               <ListingCard
                 key={listing.id}
                 listing={listing}
+                isHearted={heartedListings.includes(listing.id)}
+                onHeartClick={handleHeartClick}
                 onDelete={() => {}}
                 onClick={() => setSelectedListing(listing)}
               />
@@ -114,7 +156,9 @@ const BuyerDashboard: React.FC = () => {
                   ? "You haven't made any purchases yet"
                   : activeFilter === 'pending'
                   ? "You don't have any pending purchases"
-                  : "You haven't completed any purchases yet"}
+                  : activeFilter === 'purchased'
+                  ? "You haven't completed any purchases yet"
+                  : "You haven't hearted any listings yet"}
               </p>
             </div>
           )}
