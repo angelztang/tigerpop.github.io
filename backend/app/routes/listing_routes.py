@@ -218,7 +218,7 @@ def get_user_listings():
             return jsonify({'error': 'User ID is required'}), 400
             
         # Get all listings for this user
-        listings = Listing.query.filter_by(seller_id=user_id).order_by(Listing.created_at.desc()).all()
+        listings = Listing.query.filter_by(user_id=user_id).order_by(Listing.created_at.desc()).all()
         
         # Convert to dictionary format
         return jsonify([{
@@ -228,7 +228,7 @@ def get_user_listings():
             'price': listing.price,
             'category': listing.category,
             'status': listing.status,
-            'seller_id': listing.seller_id,
+            'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
             'images': [image.filename for image in listing.images]
         } for listing in listings])
@@ -317,6 +317,80 @@ def delete_listing(id):
     db.session.commit()
     
     return '', 204
+
+@bp.route('/<int:id>', methods=['GET'])
+def get_single_listing(id):
+    try:
+        listing = Listing.query.get_or_404(id)
+        user = User.query.get(listing.user_id)
+        return jsonify({
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'user_id': listing.user_id,
+            'user_netid': user.netid if user else None,
+            'created_at': listing.created_at.isoformat() if listing.created_at else None,
+            'images': [image.filename for image in listing.images]
+        })
+    except Exception as e:
+        current_app.logger.error(f"Error fetching listing {id}: {str(e)}")
+        return jsonify({'error': 'Failed to fetch listing'}), 500
+
+@bp.route('/<int:id>/notify', methods=['POST'])
+def notify_seller(id):
+    try:
+        listing = Listing.query.get_or_404(id)
+        seller = User.query.get(listing.user_id)
+        
+        if not seller or not seller.netid:
+            return jsonify({'error': 'Seller not found or no email address available'}), 404
+            
+        # Create email message
+        msg = Message(
+            subject=f'TigerPop: New Interest in Your Listing - {listing.title}',
+            recipients=[f'{seller.netid}@princeton.edu'],
+            body=f'''
+            Someone is interested in your listing: {listing.title}
+            
+            Price: ${listing.price}
+            Category: {listing.category}
+            
+            You can view and manage your listing at: http://localhost:3000/listings/{listing.id}
+            
+            Best regards,
+            TigerPop Team
+            '''
+        )
+        
+        # Send email
+        mail.send(msg)
+        
+        return jsonify({
+            'message': 'Notification sent successfully',
+            'details': f'Email sent to {seller.netid}@princeton.edu'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error sending notification: {str(e)}")
+        error_message = str(e)
+        if "BadCredentials" in error_message:
+            return jsonify({
+                'error': 'Email service configuration error',
+                'details': 'Please contact the administrator to fix the email settings'
+            }), 500
+        elif "Connection refused" in error_message:
+            return jsonify({
+                'error': 'Email service unavailable',
+                'details': 'Please try again later'
+            }), 500
+        else:
+            return jsonify({
+                'error': 'Failed to send notification',
+                'details': 'An unexpected error occurred'
+            }), 500
 
 @bp.after_request
 def after_request(response):

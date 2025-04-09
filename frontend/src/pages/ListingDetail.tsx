@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Listing, getListing, requestToBuy } from '../services/listingService';
+import { Listing, getListing } from '../services/listingService';
 import ListingDetailModal from '../components/ListingDetailModal';
-import PurchaseConfirmationModal from '../components/PurchaseConfirmationModal';
 
 const ListingDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -10,7 +9,6 @@ const ListingDetail: React.FC = () => {
   const [listing, setListing] = useState<Listing | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -32,17 +30,6 @@ const ListingDetail: React.FC = () => {
     fetchListing();
   }, [id]);
 
-  const handlePurchase = async (message: string, contactInfo: string) => {
-    try {
-      if (!listing) return;
-      await requestToBuy(listing.id, message, contactInfo);
-      setShowPurchaseModal(false);
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Error requesting purchase:', error);
-    }
-  };
-
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
   }
@@ -52,19 +39,13 @@ const ListingDetail: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <ListingDetailModal
-        listing={listing}
-        onClose={() => navigate(-1)}
-        onPurchase={() => setShowPurchaseModal(true)}
-      />
-      {showPurchaseModal && (
-        <PurchaseConfirmationModal
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <ListingDetailModal
           listing={listing}
-          onClose={() => setShowPurchaseModal(false)}
-          onConfirm={handlePurchase}
+          onClose={() => navigate(-1)}
         />
-      )}
+      </div>
     </div>
   );
 };

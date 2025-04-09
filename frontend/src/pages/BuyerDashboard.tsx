@@ -3,11 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { getListings } from '../services/listingService';
 import { Listing } from '../services/listingService';
 import ListingCard from '../components/ListingCard';
+import ListingDetailModal from '../components/ListingDetailModal';
 
 const BuyerDashboard: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   useEffect(() => {
     fetchListings();
@@ -46,9 +48,17 @@ const BuyerDashboard: React.FC = () => {
               key={listing.id}
               listing={listing}
               onDelete={() => {}}
+              onClick={() => setSelectedListing(listing)}
             />
           ))}
         </div>
+
+        {selectedListing && (
+          <ListingDetailModal
+            listing={selectedListing}
+            onClose={() => setSelectedListing(null)}
+          />
+        )}
       </div>
     </div>
   );

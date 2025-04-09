@@ -6,13 +6,18 @@ import { useNavigate } from 'react-router-dom';
 interface ListingCardProps {
   listing: Listing;
   onDelete: () => void;
+  onClick?: () => void;
 }
 
-const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete }) => {
+const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick }) => {
   const navigate = useNavigate();
 
   const handleCardClick = () => {
-    navigate(`/listings/${listing.id}`);
+    if (onClick) {
+      onClick();
+    } else {
+      navigate(`/listings/${listing.id}`);
+    }
   };
 
   const handleButtonClick = (e: React.MouseEvent) => {

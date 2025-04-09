@@ -1,7 +1,7 @@
 // Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getListings, createListing, deleteListing, Listing, CreateListingData } from '../services/listingService';
+import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
@@ -23,7 +23,12 @@ const SellerDashboard: React.FC = () => {
 
   const fetchListings = async () => {
     try {
-      const data = await getListings();
+      const userId = getUserId();
+      if (!userId) {
+        setError('User not authenticated');
+        return;
+      }
+      const data = await getUserListings(userId);
       setListings(data);
     } catch (err) {
       setError('Failed to load listings');
@@ -151,13 +156,25 @@ const SellerDashboard: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredListings.map(listing => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              onDelete={() => handleDeleteListing(listing.id)}
-            />
-          ))}
+          {filteredListings.length > 0 ? (
+            filteredListings.map(listing => (
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                onDelete={() => handleDeleteListing(listing.id)}
+              />
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-xl text-gray-600">You have no listings yet</p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-4 bg-orange-500 text-white px-6 py-2 rounded-md hover:bg-orange-600 transition-colors"
+              >
+                Create Your First Listing
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

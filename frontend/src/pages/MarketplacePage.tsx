@@ -173,7 +173,6 @@ const MarketplacePage: React.FC = () => {
         <ListingDetailModal
           listing={selectedListing}
           onClose={() => setSelectedListing(null)}
-          onPurchase={() => {}}
         />
       )}
     </div>

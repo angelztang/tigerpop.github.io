@@ -12,6 +12,7 @@ export interface Listing {
   category: string;
   status: string;
   user_id: number;
+  user_netid: string;
   created_at: string;
   images: string[];
 }
@@ -98,12 +99,14 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
   return response.data;
 };
 
-export const requestToBuy = async (listingId: number, message: string, contactInfo: string): Promise<Listing> => {
-  const response = await axios.post<Listing>(`${API_URL}/api/listings/${listingId}/request`, {
-    message,
-    contact_info: contactInfo,
-  });
-  return response.data;
+export const requestToBuy = async (listingId: number): Promise<any> => {
+  try {
+    const response = await axios.post(`${API_URL}/api/listing/${listingId}/notify`);
+    return response.data;
+  } catch (error) {
+    console.error('Error sending notification:', error);
+    throw error;
+  }
 };
 
 export const getUserPurchases = async (): Promise<Listing[]> => {
