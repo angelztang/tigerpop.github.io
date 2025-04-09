@@ -433,6 +433,63 @@ def notify_seller(id):
                 'details': 'An unexpected error occurred'
             }), 500
 
+@bp.route('/<int:id>', methods=['PUT'])
+def update_listing(id):
+    try:
+        listing = Listing.query.get_or_404(id)
+        
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+        
+        # Update listing fields if provided
+        if 'title' in data:
+            listing.title = data['title']
+        if 'description' in data:
+            listing.description = data['description']
+        if 'price' in data:
+            try:
+                price = float(data['price'])
+                if price <= 0:
+                    return jsonify({'error': 'Price must be greater than 0'}), 400
+                listing.price = price
+            except ValueError:
+                return jsonify({'error': 'Invalid price format'}), 400
+        if 'category' in data:
+            listing.category = data['category']
+        if 'images' in data:
+            # Clear existing images
+            ListingImage.query.filter_by(listing_id=listing.id).delete()
+            # Add new images
+            try:
+                image_urls = json.loads(data['images']) if isinstance(data['images'], str) else data['images']
+                for image_url in image_urls:
+                    image = ListingImage(filename=image_url, listing_id=listing.id)
+                    db.session.add(image)
+            except json.JSONDecodeError:
+                current_app.logger.error("Failed to parse image URLs")
+                return jsonify({'error': 'Invalid image data format'}), 400
+        
+        db.session.commit()
+        
+        return jsonify({
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'user_id': listing.user_id,
+            'created_at': listing.created_at.isoformat() if listing.created_at else None,
+            'images': [image.filename for image in listing.images]
+        })
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error updating listing: {str(e)}")
+        return jsonify({'error': 'Failed to update listing'}), 500
+
 @bp.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
