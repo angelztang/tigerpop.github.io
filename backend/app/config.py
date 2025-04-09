@@ -25,8 +25,9 @@ class Config:
     MAIL_PORT = 587
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'tigerpopmarketplace@gmail.com'
-    MAIL_PASSWORD = 'angelemilyhannah'
+    MAIL_PASSWORD = 'vvtb vsht wwro tvlb'
     MAIL_DEFAULT_SENDER = 'tigerpopmarketplace@gmail.com'
+
     
     # Ensure upload directory exists
     if not os.path.exists(UPLOAD_FOLDER):

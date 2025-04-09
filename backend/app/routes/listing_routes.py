@@ -348,22 +348,24 @@ def notify_seller(id):
         if not seller or not seller.netid:
             return jsonify({'error': 'Seller not found or no email address available'}), 404
             
-        # Create email message
+        # Change email message here!!
         msg = Message(
             subject=f'TigerPop: New Interest in Your Listing - {listing.title}',
             recipients=[f'{seller.netid}@princeton.edu'],
-            body=f'''
-            Someone is interested in your listing: {listing.title}
-            
-            Price: ${listing.price}
-            Category: {listing.category}
-            
-            You can view and manage your listing at: http://localhost:3000/listings/{listing.id}
-            
-            Best regards,
-            TigerPop Team
+            body=f'Someone is interested in your listing "{listing.title}"', 
+            html=f'''
+            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
+                <h2 style="color: #4A90E2;">🎉 Someone is interested in your listing!</h2>
+                <p><strong>Title:</strong> {listing.title}</p>
+                <p><strong>Price:</strong> ${listing.price}</p>
+                <p><strong>Category:</strong> {listing.category}</p>
+                <hr style="margin: 20px 0;">
+                <p>You can <a href="http://localhost:3000/listings/{listing.id}" style="color: #4A90E2;">view and manage your listing here</a>.</p>
+                <p>– The <strong>TigerPop</strong> Team 🐯</p>
+            </div>
             '''
         )
+
         
         # Send email
         mail.send(msg)
