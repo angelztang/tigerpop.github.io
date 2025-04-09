@@ -11,6 +11,7 @@ import base64
 import io
 from PIL import Image
 import json
+from flask_jwt_extended import jwt_required, get_jwt_identity
 
 bp = Blueprint('listing', __name__)
 
@@ -282,9 +283,10 @@ def request_to_buy(id):
     })
 
 @bp.route('/<int:id>/status', methods=['PATCH'])
+@jwt_required()
 def update_listing_status(id):
     listing = Listing.query.get_or_404(id)
-    user_id = 1  # Default user_id for testing
+    user_id = get_jwt_identity()
     
     if listing.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
@@ -299,9 +301,10 @@ def update_listing_status(id):
     })
 
 @bp.route('/<int:id>', methods=['DELETE'])
+@jwt_required()
 def delete_listing(id):
     listing = Listing.query.get_or_404(id)
-    user_id = 1  # Default user_id for testing
+    user_id = get_jwt_identity()
     
     if listing.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403

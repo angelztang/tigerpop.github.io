@@ -12,7 +12,7 @@ def create_app(config_class=Config):
          resources={r"/api/*": {
              "origins": "http://localhost:3000",
              "supports_credentials": True,
-             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
              "allow_headers": ["Content-Type", "Authorization"]
          }})
 

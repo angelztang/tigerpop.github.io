@@ -35,13 +35,13 @@ export interface ListingFilters {
 }
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
-  const url = filters ? `${API_URL}/listing${filters}` : `${API_URL}/listing`;
+  const url = filters ? `${API_URL}/api/listing${filters}` : `${API_URL}/api/listing`;
   const response = await axios.get<Listing[]>(url);
   return response.data;
 };
 
 export const getListing = async (id: number): Promise<Listing> => {
-  const response = await axios.get<Listing>(`${API_URL}/listing/${id}`);
+  const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`);
   return response.data;
 };
 
@@ -60,7 +60,7 @@ export const createListing = async (data: CreateListingData): Promise<Listing> =
     formData.append('images', JSON.stringify(data.images));
   }
   
-  const response = await axios.post<Listing>(`${API_URL}/listing`, formData, {
+  const response = await axios.post<Listing>(`${API_URL}/api/listing`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -82,7 +82,7 @@ export const updateListing = async (id: number, data: Partial<Listing>): Promise
   const userId = localStorage.getItem('user_id');
   if (userId) formData.append('user_id', userId);
   
-  const response = await axios.put<Listing>(`${API_URL}/listing/${id}`, formData, {
+  const response = await axios.put<Listing>(`${API_URL}/api/listing/${id}`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
@@ -91,12 +91,17 @@ export const updateListing = async (id: number, data: Partial<Listing>): Promise
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await axios.patch<Listing>(`${API_URL}/listing/${id}/status`, { status });
+  const response = await axios.patch<Listing>(`${API_URL}/api/listing/${id}/status`, { status });
   return response.data;
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  await axios.delete(`${API_URL}/listing/${id}`);
+  const token = localStorage.getItem('token');
+  await axios.delete(`${API_URL}/api/listing/${id}`, {
+    headers: {
+      'Authorization': `Bearer ${token}`
+    }
+  });
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
@@ -106,7 +111,7 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
       formData.append('images', file);
     });
 
-    const response = await axios.post<{ urls: string[] }>(`${API_URL}/listing/upload`, formData, {
+    const response = await axios.post<{ urls: string[] }>(`${API_URL}/api/listing/upload`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -124,18 +129,18 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
 };
 
 export const getCategories = async (): Promise<string[]> => {
-  const response = await axios.get<string[]>(`${API_URL}/listing/categories`);
+  const response = await axios.get<string[]>(`${API_URL}/api/listing/categories`);
   return response.data;
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/listing/user?user_id=${userId}`);
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`);
   return response.data;
 };
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
   try {
-    const response = await axios.post(`${API_URL}/listing/${listingId}/notify`);
+    const response = await axios.post(`${API_URL}/api/listing/${listingId}/notify`);
     return response.data;
   } catch (error) {
     console.error('Error sending notification:', error);
@@ -144,7 +149,7 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
 };
 
 export const getUserPurchases = async (): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/listing/purchases`);
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/purchases`);
   return response.data;
 };
   
