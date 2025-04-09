@@ -1,4 +1,5 @@
 import os
+import json
 from datetime import timedelta
 from dotenv import load_dotenv
 
@@ -28,6 +29,16 @@ class Config:
     MAIL_PASSWORD = 'vvtb vsht wwro tvlb'
     MAIL_DEFAULT_SENDER = 'tigerpopmarketplace@gmail.com'
 
+    # CORS Configuration
+    CORS_ORIGINS = [
+        'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com',
+        'http://localhost:3000'
+    ]
+    CORS_SUPPORTS_CREDENTIALS = True
+    CORS_METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+    CORS_ALLOW_HEADERS = ['Content-Type', 'Authorization']
+    CORS_EXPOSE_HEADERS = ['Content-Type', 'Authorization']
+    CORS_MAX_AGE = 3600
     
     # Ensure upload directory exists
     if not os.path.exists(UPLOAD_FOLDER):

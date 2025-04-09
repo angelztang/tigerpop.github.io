@@ -9,14 +9,12 @@ def create_app(config_class=Config):
 
     # Enable CORS with credentials for all routes
     CORS(app, 
-         resources={r"/*": {
-             "origins": ["http://localhost:3000", "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
-             "supports_credentials": True,
-             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-             "expose_headers": ["Content-Type", "Authorization"],
-             "max_age": 3600
-         }})
+         origins=['https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com', 'http://localhost:3000'],
+         supports_credentials=True,
+         methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+         allow_headers=['Content-Type', 'Authorization'],
+         expose_headers=['Content-Type', 'Authorization'],
+         max_age=3600)
 
     # Initialize extensions
     init_extensions(app)
