@@ -1,7 +1,5 @@
 import axios from 'axios';
-import { CAS_URL } from '../config';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+import { API_URL, CAS_URL } from '../config';
 
 export interface LoginData {
   username: string;
@@ -78,7 +76,7 @@ export const isAuthenticated = () => {
 };
 
 export const signup = async (data: SignupData): Promise<{ message: string }> => {
-  const response = await fetch(`${API_URL}/signup`, {
+  const response = await fetch(`${API_URL}/api/signup`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

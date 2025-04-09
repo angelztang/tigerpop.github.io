@@ -11,9 +11,11 @@ interface ListingFormProps {
   isSubmitting?: boolean;
   initialData?: Partial<ListingFormData>;
   onClose?: () => void;
+  isEditMode?: boolean;
 }
 
 interface ListingFormData {
+  id?: number;
   title: string;
   description: string;
   price: string;
@@ -32,7 +34,7 @@ const categories = [
   'other'
 ];
 
-const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
+const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose, isEditMode = false }) => {
   const [formData, setFormData] = useState<ListingFormData>({
     title: initialData.title || '',
     description: initialData.description || '',
@@ -41,7 +43,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     images: initialData.images || []
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>(initialData.images || []);
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -68,21 +70,11 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     setError(null);
     
     try {
-      const formDataToSend = new FormData();
-      
-      // Add listing data
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('price', formData.price);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('user_id', getUserId() || '0');
-
       // Upload images first if any
       let imageUrls: string[] = [];
       if (selectedFiles.length > 0) {
         try {
           imageUrls = await uploadImages(selectedFiles);
-          formDataToSend.append('images', JSON.stringify(imageUrls));
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
           setError('Failed to upload images. Please try again.');
@@ -90,26 +82,18 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         }
       }
 
-      // Send the request
-      const response = await fetch(`${API_URL}/listing`, {
-        method: 'POST',
-        body: formDataToSend,
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create listing');
-      }
-
-      const data = await response.json();
-      onSubmit({
+      // Prepare the data to send
+      const dataToSend = {
         ...formData,
-        images: imageUrls
-      });
+        id: initialData.id,
+        images: imageUrls.length > 0 ? imageUrls : formData.images
+      };
+
+      // Call the onSubmit function with the data
+      onSubmit(dataToSend);
     } catch (error) {
-      console.error('Error in listing creation:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create listing');
+      console.error(`Error in listing ${isEditMode ? 'update' : 'creation'}:`, error);
+      setError(error instanceof Error ? error.message : `Failed to ${isEditMode ? 'update' : 'create'} listing`);
     }
   };
 
@@ -117,7 +101,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
       <div className="relative bg-white rounded-lg p-8 m-4 max-w-xl w-full z-50 shadow-xl">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Create New Listing</h2>
+          <h2 className="text-2xl font-bold">{isEditMode ? 'Edit Listing' : 'Create New Listing'}</h2>
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
@@ -258,7 +242,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   : 'bg-orange-500 hover:bg-orange-600'
               } transition-colors`}
             >
-              Create Listing
+              {isEditMode ? 'Update Listing' : 'Create Listing'}
             </button>
           </div>
         </form>
