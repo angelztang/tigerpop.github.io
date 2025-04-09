@@ -96,7 +96,7 @@ def test_upload():
         current_app.logger.error(f"Error uploading image: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/', methods=['GET'])
+@bp.route('', methods=['GET'])
 def get_listings():
     try:
         # Get query parameters for filtering

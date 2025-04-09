@@ -7,9 +7,9 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Enable CORS with credentials
+    # Enable CORS with credentials for all routes
     CORS(app, 
-         resources={r"/api/*": {
+         resources={r"/*": {
              "origins": ["http://localhost:3000", "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
              "supports_credentials": True,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],

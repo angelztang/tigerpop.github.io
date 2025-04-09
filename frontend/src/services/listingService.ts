@@ -79,12 +79,12 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
     formData.append('images', file);
   });
 
-  const response = await api.post(`${API_URL}/api/listing/upload`, formData, {
+  const response = await api.post<{ urls: string[] }>(`${API_URL}/api/listing/upload`, formData, {
     headers: {
       'Content-Type': 'multipart/form-data',
     },
   });
-  return response.data;
+  return response.data.urls;
 };
 
 export const getCategories = async (): Promise<string[]> => {
