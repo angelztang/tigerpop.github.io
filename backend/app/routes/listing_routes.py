@@ -126,7 +126,8 @@ def get_listings():
             'status': listing.status,
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]  # Include image URLs
+            'images': [image.filename for image in listing.images],  # Include image URLs
+            'condition': listing.condition
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
@@ -190,7 +191,8 @@ def create_listing():
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
                 'images': image_urls,
-                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
+                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
+                'condition': new_listing.condition
             }), 201
 
         except Exception as db_error:
@@ -379,7 +381,8 @@ def get_single_listing(id):
             'user_id': listing.user_id,
             'user_netid': user.netid if user else None,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]
+            'images': [image.filename for image in listing.images],
+            'condition': listing.condition
         })
     except Exception as e:
         current_app.logger.error(f"Error fetching listing {id}: {str(e)}")

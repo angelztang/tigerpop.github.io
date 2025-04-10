@@ -14,17 +14,19 @@ class Listing(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    condition = db.Column(db.String(50), nullable=True)
     
     # Add relationship with ListingImage
     images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, title, description, price, category, status, user_id, created_at=None):
+    def __init__(self, title, description, price, category, status, user_id, condition='good', created_at=None):
         self.title = title
         self.description = description
         self.price = price
         self.category = category
         self.status = status
         self.user_id = user_id
+        self.condition = condition
         if created_at:
             self.created_at = created_at
     
@@ -39,7 +41,8 @@ class Listing(db.Model):
             'user_id': self.user_id,
             'buyer_id': self.buyer_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'images': [image.filename for image in self.images]
+            'images': [image.filename for image in self.images],
+            'condition': self.condition
         }
     
     def __repr__(self):
