@@ -118,8 +118,21 @@ const MarketplacePage: React.FC = () => {
         await heartListing(id);
         setHeartedListings(prev => [...prev, id]);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error toggling heart:', error);
+      if (error.response?.status === 401) {
+        alert('Please log in to heart listings');
+      } else if (error.response?.status === 400) {
+        if (error.response?.data?.error === 'Listing already hearted') {
+          alert('You have already hearted this listing');
+        } else if (error.response?.data?.error === 'Listing is not available') {
+          alert('This listing is no longer available');
+        } else {
+          alert('Failed to heart listing: ' + error.response?.data?.error);
+        }
+      } else {
+        alert('Failed to heart listing. Please try again.');
+      }
     }
   };
 

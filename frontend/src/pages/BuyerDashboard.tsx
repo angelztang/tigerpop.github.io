@@ -40,9 +40,14 @@ const BuyerDashboard: React.FC = () => {
       console.log('Received listings:', data);
       setListings(data);
       
-      // Update hearted list
-      const heartedData = await getHeartedListings();
-      setHeartedListings(heartedData.map(listing => listing.id));
+      // Update hearted list separately and don't let it affect the main listings
+      try {
+        const heartedData = await getHeartedListings();
+        setHeartedListings(heartedData.map(listing => listing.id));
+      } catch (err) {
+        console.warn('Failed to fetch hearted listings:', err);
+        setHeartedListings([]);
+      }
     } catch (err) {
       console.error('Detailed error in fetchListings:', err);
       setError('Failed to load listings');

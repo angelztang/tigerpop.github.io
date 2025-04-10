@@ -504,8 +504,8 @@ def update_listing(id):
 @jwt_required()
 def heart_listing(id):
     try:
-        current_user = get_jwt_identity()
-        if not current_user:
+        current_user_id = get_jwt_identity()
+        if not current_user_id:
             return jsonify({'error': 'User not authenticated'}), 401
 
         listing = Listing.query.get_or_404(id)
@@ -514,7 +514,7 @@ def heart_listing(id):
 
         # Check if already hearted
         existing_heart = HeartedListing.query.filter_by(
-            user_id=current_user['id'],
+            user_id=current_user_id,
             listing_id=id
         ).first()
 
@@ -522,7 +522,7 @@ def heart_listing(id):
             return jsonify({'error': 'Listing already hearted'}), 400
 
         hearted_listing = HeartedListing(
-            user_id=current_user['id'],
+            user_id=current_user_id,
             listing_id=id
         )
         db.session.add(hearted_listing)
@@ -531,18 +531,19 @@ def heart_listing(id):
         return jsonify({'message': 'Listing hearted successfully'}), 200
     except Exception as e:
         current_app.logger.error(f"Error hearting listing: {str(e)}")
+        db.session.rollback()
         return jsonify({'error': 'Failed to heart listing'}), 500
 
 @bp.route('/<int:id>/heart', methods=['DELETE'])
 @jwt_required()
 def unheart_listing(id):
     try:
-        current_user = get_jwt_identity()
-        if not current_user:
+        current_user_id = get_jwt_identity()
+        if not current_user_id:
             return jsonify({'error': 'User not authenticated'}), 401
 
         hearted_listing = HeartedListing.query.filter_by(
-            user_id=current_user['id'],
+            user_id=current_user_id,
             listing_id=id
         ).first_or_404()
 
@@ -558,11 +559,11 @@ def unheart_listing(id):
 @jwt_required()
 def get_hearted_listings():
     try:
-        current_user = get_jwt_identity()
-        if not current_user:
+        current_user_id = get_jwt_identity()
+        if not current_user_id:
             return jsonify({'error': 'User not authenticated'}), 401
 
-        hearted_listings = HeartedListing.query.filter_by(user_id=current_user['id']).all()
+        hearted_listings = HeartedListing.query.filter_by(user_id=current_user_id).all()
         listing_ids = [hl.listing_id for hl in hearted_listings]
         
         listings = Listing.query.filter(Listing.id.in_(listing_ids)).all()
@@ -571,11 +572,3 @@ def get_hearted_listings():
     except Exception as e:
         current_app.logger.error(f"Error fetching hearted listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch hearted listings'}), 500
-
-@bp.after_request
-def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
-    return response

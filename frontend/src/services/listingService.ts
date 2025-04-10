@@ -155,11 +155,7 @@ export const heartListing = async (id: number): Promise<void> => {
     if (!token) {
       throw new Error('Please log in to heart listings');
     }
-    await axios.post(`${API_URL}/api/listing/${id}/heart`, {}, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    await axios.post(`${API_URL}/api/listing/${id}/heart`, {}, getAuthHeaders());
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Please log in to heart listings');
@@ -174,11 +170,7 @@ export const unheartListing = async (id: number): Promise<void> => {
     if (!token) {
       throw new Error('Please log in to unheart listings');
     }
-    await axios.delete(`${API_URL}/api/listing/${id}/heart`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    await axios.delete(`${API_URL}/api/listing/${id}/heart`, getAuthHeaders());
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Please log in to unheart listings');
@@ -191,19 +183,20 @@ export const getHeartedListings = async (): Promise<Listing[]> => {
   try {
     const token = localStorage.getItem('token');
     if (!token) {
-      throw new Error('Please log in to view hearted listings');
+      return [];
     }
-    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/hearted`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/hearted`, getAuthHeaders());
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 401) {
-      throw new Error('Please log in to view hearted listings');
+      return [];
     }
-    throw new Error('Failed to fetch hearted listings');
+    if (error.response?.status === 422) {
+      console.warn('Failed to fetch hearted listings (422):', error.response?.data);
+      return [];
+    }
+    console.error('Error fetching hearted listings:', error);
+    return [];
   }
 };
   
