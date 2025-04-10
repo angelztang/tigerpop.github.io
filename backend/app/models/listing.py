@@ -58,4 +58,19 @@ class ListingImage(db.Model):
         self.listing_id = listing_id
     
     def __repr__(self):
-        return f'<ListingImage {self.filename}>' 
+        return f'<ListingImage {self.filename}>'
+
+class HeartedListing(db.Model):
+    __tablename__ = 'hearted_listings'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relationships
+    user = db.relationship('User', backref=db.backref('hearted_listings', lazy=True))
+    listing = db.relationship('Listing', backref=db.backref('hearted_by', lazy=True))
+
+    def __repr__(self):
+        return f'<HeartedListing {self.id}>' 

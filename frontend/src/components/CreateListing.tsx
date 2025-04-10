@@ -22,7 +22,8 @@ const CreateListing = () => {
         price: parseFloat(formData.get('price') as string),
         category: formData.get('category') as string,
         images: [], // You'll need to handle image uploads separately
-        user_id: parseInt(userId)
+        user_id: parseInt(userId),
+        condition: formData.get('condition') as string
       };
 
       await createListing(listingData);

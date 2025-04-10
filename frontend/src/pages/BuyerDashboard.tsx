@@ -73,7 +73,7 @@ const BuyerDashboard: React.FC = () => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'pending') return listing.status === 'pending';
     if (activeFilter === 'purchased') return listing.status === 'sold';
-    if (activeFilter === 'hearted') return true; // Already filtered by API
+    if (activeFilter === 'hearted') return heartedListings.includes(listing.id);
     return false;
   });
 
@@ -82,95 +82,79 @@ const BuyerDashboard: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-8">My Purchases</h1>
-
-        {error && (
-          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-            {error}
-          </div>
-        )}
-
-        <div className="mb-6">
-          <div className="flex space-x-4">
-            <button
-              onClick={() => setActiveFilter('all')}
-              className={`px-4 py-2 rounded-md ${
-                activeFilter === 'all'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setActiveFilter('pending')}
-              className={`px-4 py-2 rounded-md ${
-                activeFilter === 'pending'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Pending
-            </button>
-            <button
-              onClick={() => setActiveFilter('purchased')}
-              className={`px-4 py-2 rounded-md ${
-                activeFilter === 'purchased'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Purchased
-            </button>
-            <button
-              onClick={() => setActiveFilter('hearted')}
-              className={`px-4 py-2 rounded-md ${
-                activeFilter === 'hearted'
-                  ? 'bg-orange-500 text-white'
-                  : 'bg-white text-gray-700 hover:bg-gray-100'
-              }`}
-            >
-              Hearted
-            </button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredListings.length > 0 ? (
-            filteredListings.map(listing => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                isHearted={heartedListings.includes(listing.id)}
-                onHeartClick={handleHeartClick}
-                onDelete={() => {}}
-                onClick={() => setSelectedListing(listing)}
-              />
-            ))
-          ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-xl text-gray-600">
-                {activeFilter === 'all'
-                  ? "You haven't made any purchases yet"
-                  : activeFilter === 'pending'
-                  ? "You don't have any pending purchases"
-                  : activeFilter === 'purchased'
-                  ? "You haven't completed any purchases yet"
-                  : "You haven't hearted any listings yet"}
-              </p>
-            </div>
-          )}
-        </div>
-
-        {selectedListing && (
-          <ListingDetailModal
-            listing={selectedListing}
-            onClose={() => setSelectedListing(null)}
-          />
-        )}
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">My Dashboard</h1>
+      
+      <div className="flex space-x-4 mb-8">
+        <button
+          onClick={() => setActiveFilter('all')}
+          className={`px-4 py-2 rounded ${
+            activeFilter === 'all' ? 'bg-orange-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          All Listings
+        </button>
+        <button
+          onClick={() => setActiveFilter('pending')}
+          className={`px-4 py-2 rounded ${
+            activeFilter === 'pending' ? 'bg-orange-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          Pending
+        </button>
+        <button
+          onClick={() => setActiveFilter('purchased')}
+          className={`px-4 py-2 rounded ${
+            activeFilter === 'purchased' ? 'bg-orange-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          Purchased
+        </button>
+        <button
+          onClick={() => setActiveFilter('hearted')}
+          className={`px-4 py-2 rounded ${
+            activeFilter === 'hearted' ? 'bg-orange-500 text-white' : 'bg-gray-200'
+          }`}
+        >
+          Hearted
+        </button>
       </div>
+
+      {loading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
+        </div>
+      ) : error ? (
+        <div className="text-red-500 text-center">{error}</div>
+      ) : filteredListings.length === 0 ? (
+        <div className="text-center text-gray-500 py-8">
+          <p className="text-xl">No items found</p>
+          <p className="text-sm mt-2">
+            {activeFilter === 'all' ? "You don't have any listings yet" :
+             activeFilter === 'pending' ? "You don't have any pending listings" :
+             activeFilter === 'purchased' ? "You haven't purchased any items yet" :
+             "You haven't hearted any items yet"}
+          </p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredListings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              isHearted={heartedListings.includes(listing.id)}
+              onHeartClick={() => handleHeartClick(listing.id)}
+            />
+          ))}
+        </div>
+      )}
+
+      {selectedListing && (
+        <ListingDetailModal
+          listing={selectedListing}
+          onClose={() => setSelectedListing(null)}
+        />
+      )}
     </div>
   );
 };

@@ -18,6 +18,7 @@ interface ListingFormData {
   description: string;
   price: string;
   category: string;
+  condition: string;
   images: string[];
 }
 
@@ -32,12 +33,21 @@ const categories = [
   'other'
 ];
 
+const conditions = [
+  'new',
+  'like new',
+  'good',
+  'fair',
+  'poor'
+];
+
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
   const [formData, setFormData] = useState<ListingFormData>({
     title: initialData.title || '',
     description: initialData.description || '',
     price: initialData.price || '',
     category: initialData.category || '',
+    condition: initialData.condition || '',
     images: initialData.images || []
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -75,6 +85,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       formDataToSend.append('description', formData.description);
       formDataToSend.append('price', formData.price);
       formDataToSend.append('category', formData.category);
+      formDataToSend.append('condition', formData.condition);
       formDataToSend.append('user_id', getUserId() || '0');
 
       // Upload images first if any
@@ -161,6 +172,27 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               {categories.map(category => (
                 <option key={category} value={category}>
                   {category}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-1">
+              Condition:
+            </label>
+            <select
+              id="condition"
+              name="condition"
+              value={formData.condition}
+              onChange={handleChange}
+              required
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            >
+              <option value="">Select condition</option>
+              {conditions.map(condition => (
+                <option key={condition} value={condition}>
+                  {condition}
                 </option>
               ))}
             </select>

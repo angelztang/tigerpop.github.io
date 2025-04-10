@@ -9,7 +9,7 @@ const CreateListing: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (formData: { title: string; description: string; price: string; category: string; images: string[] }) => {
+  const handleSubmit = async (formData: { title: string; description: string; price: string; category: string; images: string[]; condition: string }) => {
     setIsSubmitting(true);
     setError(null);
     try {
@@ -22,7 +22,8 @@ const CreateListing: React.FC = () => {
       const listingData: CreateListingData = {
         ...formData,
         price: parseFloat(formData.price),
-        user_id: parseInt(userId)
+        user_id: parseInt(userId),
+        condition: formData.condition
       };
 
       await createListing(listingData);

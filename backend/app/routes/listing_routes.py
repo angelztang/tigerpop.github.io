@@ -2,11 +2,12 @@ from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import os
 from ..extensions import db, mail
-from ..models import Listing, ListingImage, User
+from ..models import Listing, ListingImage, User, HeartedListing
 from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
+from flask_jwt_extended import jwt_required, get_jwt_identity
 import base64
 import io
 from PIL import Image
@@ -159,7 +160,8 @@ def create_listing():
                 price=price,
                 category=category,
                 status='available',
-                user_id=user_id
+                user_id=user_id,
+                condition=request.form.get('condition', 'good')  # Add condition field with default value
             )
 
             # Add listing to database first to get the ID
@@ -474,6 +476,8 @@ def update_listing(id):
             except json.JSONDecodeError:
                 current_app.logger.error("Failed to parse image URLs")
                 return jsonify({'error': 'Invalid image data format'}), 400
+        if 'condition' in data:
+            listing.condition = data['condition']
         
         db.session.commit()
         
@@ -493,10 +497,82 @@ def update_listing(id):
         current_app.logger.error(f"Error updating listing: {str(e)}")
         return jsonify({'error': 'Failed to update listing'}), 500
 
+@bp.route('/<int:id>/heart', methods=['POST'])
+@jwt_required()
+def heart_listing(id):
+    try:
+        current_user = get_jwt_identity()
+        if not current_user:
+            return jsonify({'error': 'User not authenticated'}), 401
+
+        listing = Listing.query.get_or_404(id)
+        if listing.status != 'available':
+            return jsonify({'error': 'Listing is not available'}), 400
+
+        # Check if already hearted
+        existing_heart = HeartedListing.query.filter_by(
+            user_id=current_user['id'],
+            listing_id=id
+        ).first()
+
+        if existing_heart:
+            return jsonify({'error': 'Listing already hearted'}), 400
+
+        hearted_listing = HeartedListing(
+            user_id=current_user['id'],
+            listing_id=id
+        )
+        db.session.add(hearted_listing)
+        db.session.commit()
+
+        return jsonify({'message': 'Listing hearted successfully'}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error hearting listing: {str(e)}")
+        return jsonify({'error': 'Failed to heart listing'}), 500
+
+@bp.route('/<int:id>/heart', methods=['DELETE'])
+@jwt_required()
+def unheart_listing(id):
+    try:
+        current_user = get_jwt_identity()
+        if not current_user:
+            return jsonify({'error': 'User not authenticated'}), 401
+
+        hearted_listing = HeartedListing.query.filter_by(
+            user_id=current_user['id'],
+            listing_id=id
+        ).first_or_404()
+
+        db.session.delete(hearted_listing)
+        db.session.commit()
+
+        return jsonify({'message': 'Listing unhearted successfully'}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error unhearting listing: {str(e)}")
+        return jsonify({'error': 'Failed to unheart listing'}), 500
+
+@bp.route('/hearted', methods=['GET'])
+@jwt_required()
+def get_hearted_listings():
+    try:
+        current_user = get_jwt_identity()
+        if not current_user:
+            return jsonify({'error': 'User not authenticated'}), 401
+
+        hearted_listings = HeartedListing.query.filter_by(user_id=current_user['id']).all()
+        listing_ids = [hl.listing_id for hl in hearted_listings]
+        
+        listings = Listing.query.filter(Listing.id.in_(listing_ids)).all()
+        
+        return jsonify([listing.to_dict() for listing in listings]), 200
+    except Exception as e:
+        current_app.logger.error(f"Error fetching hearted listings: {str(e)}")
+        return jsonify({'error': 'Failed to fetch hearted listings'}), 500
+
 @bp.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response

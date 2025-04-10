@@ -21,12 +21,16 @@ export interface Listing {
   price: number;
   image: string;
   category: string;
-  status: string;
+  status: 'available' | 'pending' | 'sold';
   isHearted?: boolean;
   user_id: number;
   user_netid: string;
   created_at: string;
+  updated_at: string;
   images: string[];
+  condition: string;
+  seller_id: number;
+  buyer_id?: number;
 }
 
 export interface CreateListingData {
@@ -36,6 +40,7 @@ export interface CreateListingData {
   category: string;
   images: string[];
   user_id: number;
+  condition: string;
 }
 
 export interface ListingFilters {
@@ -146,7 +151,15 @@ export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
 
 export const heartListing = async (id: number): Promise<void> => {
   try {
-    await axios.post(`${API_URL}/api/listing/${id}/heart`, {}, getAuthHeaders());
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Please log in to heart listings');
+    }
+    await axios.post(`${API_URL}/api/listing/${id}/heart`, {}, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Please log in to heart listings');
@@ -157,7 +170,15 @@ export const heartListing = async (id: number): Promise<void> => {
 
 export const unheartListing = async (id: number): Promise<void> => {
   try {
-    await axios.delete(`${API_URL}/api/listing/${id}/heart`, getAuthHeaders());
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Please log in to unheart listings');
+    }
+    await axios.delete(`${API_URL}/api/listing/${id}/heart`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Please log in to unheart listings');
@@ -168,7 +189,15 @@ export const unheartListing = async (id: number): Promise<void> => {
 
 export const getHeartedListings = async (): Promise<Listing[]> => {
   try {
-    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/hearted`, getAuthHeaders());
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Please log in to view hearted listings');
+    }
+    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/hearted`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
     return response.data;
   } catch (error: any) {
     if (error.response?.status === 401) {

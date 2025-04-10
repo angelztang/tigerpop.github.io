@@ -137,8 +137,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
                 <p className="text-gray-600">{listing.category}</p>
               </div>
               <div className="mb-4">
-                <h3 className="text-lg font-semibold">Posted by</h3>
-                <p className="text-gray-600">{listing.user_netid || 'Unknown user'}</p>
+                <h3 className="text-lg font-semibold">Condition</h3>
+                <p className="text-gray-600">{listing.condition || 'Not specified'}</p>
               </div>
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Status</h3>

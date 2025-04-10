@@ -199,17 +199,24 @@ const MarketplacePage: React.FC = () => {
       {/* All Items Section */}
       <div>
         <h2 className="text-xl font-bold mb-6">All Items</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredListings.map((listing) => (
-            <ListingCard
-              key={listing.id}
-              listing={listing}
-              isHearted={heartedListings.includes(listing.id)}
-              onHeartClick={handleHeartClick}
-              onClick={() => setSelectedListing(listing)}
-            />
-          ))}
-        </div>
+        {filteredListings.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-xl text-gray-600">There are no items matching your filters</p>
+            <p className="text-sm text-gray-500 mt-2">Try adjusting your filters or check back later</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredListings.map((listing) => (
+              <ListingCard
+                key={listing.id}
+                listing={listing}
+                isHearted={heartedListings.includes(listing.id)}
+                onHeartClick={handleHeartClick}
+                onClick={() => setSelectedListing(listing)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Listing Detail Modal */}
