@@ -13,20 +13,20 @@ import requests
 from ..extensions import jwt
 import xml.etree.ElementTree as ET
 from flask import Blueprint
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 
 #-----------------------------------------------------------------------
 
 _CAS_URL = 'https://fed.princeton.edu/cas/'  # Princeton CAS server
-_BACKEND_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'  # Backend URL
+_BACKEND_URL = 'http://localhost:8000'  # Backend URL
 
 logger = logging.getLogger(__name__)
 
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/api/auth/cas/login'  # Frontend CAS login endpoint
+CAS_SERVICE = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'  # Frontend URL
 
 #-----------------------------------------------------------------------
 
@@ -66,7 +66,9 @@ def get_cas_ticket():
 def validate_cas_ticket(ticket):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    service_url = CAS_SERVICE  # Use the configured frontend service URL
+    service_url = f'{CAS_SERVICE}/api/auth/cas/login'
+    if request.args.get('redirect_uri'):
+        service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
     
     try:
         response = requests.get(validate_url, params={
@@ -105,7 +107,8 @@ def generate_jwt_token(user):
         identity=user.id,
         additional_claims={
             'netid': user.netid
-        }
+        },
+        expires_delta=timedelta(days=1)  # Token expires in 1 day
     )
 
 @cas_bp.route('/login')
@@ -116,8 +119,7 @@ def cas_login():
     if not ticket:
         # If no ticket, redirect to CAS login
         login_url = f'{CAS_SERVER}/login'
-        # Use the backend URL as the service
-        service_url = f'{_BACKEND_URL}/api/auth/cas/login'
+        service_url = f'{CAS_SERVICE}/api/auth/cas/login'
         if request.args.get('redirect_uri'):
             service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
         return redirect(f'{login_url}?service={urllib.parse.quote(service_url)}')
@@ -129,6 +131,8 @@ def cas_login():
     
     # Create or update user
     user = create_or_update_user(netid)
+    if not user:
+        return redirect(f'{CAS_SERVICE}/login?error=user_creation_failed')
     
     # Generate JWT token
     token = generate_jwt_token(user)

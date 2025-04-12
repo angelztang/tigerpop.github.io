@@ -2,6 +2,7 @@ from flask import Flask
 from flask_cors import CORS
 from app.config import Config
 from app.extensions import db, migrate, init_extensions
+import os
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -10,12 +11,10 @@ def create_app(config_class=Config):
     # Enable CORS with credentials
     CORS(app, 
          resources={r"/api/*": {
-             "origins": ["http://localhost:3000", "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
+             "origins": ["https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
              "supports_credentials": True,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-             "expose_headers": ["Content-Type", "Authorization"],
-             "max_age": 3600
+             "allow_headers": ["Content-Type", "Authorization"]
          }})
 
     # Initialize extensions
