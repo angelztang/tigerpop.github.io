@@ -19,14 +19,14 @@ import os
 #-----------------------------------------------------------------------
 
 _CAS_URL = 'https://fed.princeton.edu/cas/'  # Princeton CAS server
-_BACKEND_URL = 'http://localhost:8000'  # Backend URL
+_BACKEND_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'  # Backend URL
 
 logger = logging.getLogger(__name__)
 
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'http://localhost:3000'  # Frontend URL
+CAS_SERVICE = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/api/auth/cas/login'  # Frontend CAS login endpoint
 
 #-----------------------------------------------------------------------
 
@@ -66,10 +66,7 @@ def get_cas_ticket():
 def validate_cas_ticket(ticket):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    # Use the backend URL as the service since that's where CAS redirected to
-    service_url = f'{_BACKEND_URL}/api/auth/cas/login'
-    if request.args.get('redirect_uri'):
-        service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
+    service_url = CAS_SERVICE  # Use the configured frontend service URL
     
     try:
         response = requests.get(validate_url, params={

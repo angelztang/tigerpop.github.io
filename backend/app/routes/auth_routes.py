@@ -59,25 +59,24 @@ def cas_login():
     ticket = get_cas_ticket()
     
     if not ticket:
-        # If no ticket, redirect to CAS login
+        # If no ticket, redirect to CAS login with the correct frontend service URL
         login_url = 'https://fed.princeton.edu/cas/login'
-        service_url = request.args.get('redirect_uri', 'http://localhost:3000')
+        service_url = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/api/auth/cas/login'
         return redirect(f'{login_url}?service={service_url}')
     
     # Validate the ticket
-    username = validate_cas_ticket(ticket)
-    if not username:
-        return redirect(f'http://localhost:3000/login?error=invalid_ticket')
+    netid = validate_cas_ticket(ticket)
+    if not netid:
+        return redirect(f'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/login?error=invalid_ticket')
     
     # Create or update user
-    user = create_or_update_user(username)
+    user = create_or_update_user(netid)
     
     # Generate JWT token
     token = generate_jwt_token(user)
     
-    # Redirect back to frontend with token
-    redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000')
-    return redirect(f'{redirect_uri}?token={token}')
+    # Redirect back to frontend with token and netid
+    return redirect(f'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/login?token={token}&netid={netid}')
 
 @bp.route('/cas/logout')
 def cas_logout():
@@ -87,5 +86,5 @@ def cas_logout():
     
     # Redirect to CAS logout
     logout_url = 'https://fed.princeton.edu/cas/logout'
-    service_url = request.args.get('redirect_uri', 'http://localhost:3000')
+    service_url = request.args.get('redirect_uri', 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com')
     return redirect(f'{logout_url}?service={service_url}')
