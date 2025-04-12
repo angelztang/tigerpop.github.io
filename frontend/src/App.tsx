@@ -20,15 +20,28 @@ const App: React.FC = () => {
     const token = params.get('token');
     
     if (token) {
-      handleCasCallback(token);
-      // Remove token from URL and redirect to dashboard
-      navigate('/dashboard', { replace: true });
+      console.log('Token received from URL:', token);
+      try {
+        const authResponse = handleCasCallback(token);
+        console.log('Auth response:', authResponse);
+        setAuthenticated(true);
+        setNetid(authResponse.netid);
+        // Remove token from URL and redirect to dashboard
+        navigate('/dashboard', { replace: true });
+      } catch (error) {
+        console.error('Error processing token:', error);
+        setAuthenticated(false);
+        setNetid(null);
+      }
     }
 
     // Update authentication state when it changes
     const checkAuth = () => {
-      setAuthenticated(isAuthenticated());
-      setNetid(getNetid());
+      const isAuth = isAuthenticated();
+      const currentNetid = getNetid();
+      console.log('Checking auth state:', { isAuth, currentNetid });
+      setAuthenticated(isAuth);
+      setNetid(currentNetid);
     };
 
     // Check auth state on mount and when localStorage changes

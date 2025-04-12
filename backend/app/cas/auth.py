@@ -19,14 +19,14 @@ import os
 #-----------------------------------------------------------------------
 
 _CAS_URL = 'https://fed.princeton.edu/cas/'  # Princeton CAS server
-_BACKEND_URL = 'http://localhost:8000'  # Backend URL
+_BACKEND_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'  # Backend URL
 
 logger = logging.getLogger(__name__)
 
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'  # Frontend URL
+CAS_SERVICE = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'  # Frontend URL without /api prefix
 
 #-----------------------------------------------------------------------
 
@@ -66,7 +66,8 @@ def get_cas_ticket():
 def validate_cas_ticket(ticket):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    service_url = f'{CAS_SERVICE}/api/auth/cas/login'
+    # Use the exact same URL as the frontend
+    service_url = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/auth/cas/login'
     if request.args.get('redirect_uri'):
         service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
     
@@ -119,7 +120,7 @@ def cas_login():
     if not ticket:
         # If no ticket, redirect to CAS login
         login_url = f'{CAS_SERVER}/login'
-        service_url = f'{CAS_SERVICE}/api/auth/cas/login'
+        service_url = f'{CAS_SERVICE}/auth/cas/login'
         if request.args.get('redirect_uri'):
             service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
         return redirect(f'{login_url}?service={urllib.parse.quote(service_url)}')
@@ -127,19 +128,24 @@ def cas_login():
     # Validate the ticket
     netid = validate_cas_ticket(ticket)
     if not netid:
+        current_app.logger.error("Failed to validate CAS ticket")
         return redirect(f'{CAS_SERVICE}/login?error=invalid_ticket')
     
     # Create or update user
     user = create_or_update_user(netid)
     if not user:
+        current_app.logger.error("Failed to create/update user")
         return redirect(f'{CAS_SERVICE}/login?error=user_creation_failed')
     
     # Generate JWT token
     token = generate_jwt_token(user)
+    current_app.logger.info(f"Generated token for user {netid}")
     
-    # Redirect back to frontend with token
-    redirect_uri = request.args.get('redirect_uri', CAS_SERVICE)
-    return redirect(f'{redirect_uri}?token={token}')
+    # Always redirect to the frontend dashboard with the token
+    # Use the frontend URL directly, not through the backend
+    redirect_url = f'{CAS_SERVICE}/?token={token}'
+    current_app.logger.info(f"Redirecting to: {redirect_url}")
+    return redirect(redirect_url)
 
 @cas_bp.route('/logout')
 def cas_logout():
@@ -155,4 +161,16 @@ def cas_logout():
 #-----------------------------------------------------------------------
 
 def is_authenticated():
-    return 'user_info' in session 
+    """Check if the request has a valid JWT token."""
+    auth_header = request.headers.get('Authorization')
+    if not auth_header or not auth_header.startswith('Bearer '):
+        return False
+    
+    token = auth_header.split(' ')[1]
+    try:
+        # Verify the token is valid
+        payload = jwt.decode(token, current_app.config['JWT_SECRET_KEY'], algorithms=['HS256'])
+        return True
+    except Exception as e:
+        current_app.logger.error(f"Token validation error: {str(e)}")
+        return False 

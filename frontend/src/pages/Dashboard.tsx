@@ -11,12 +11,15 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"buyer" | "seller">("buyer");
   const [listings, setListings] = useState<Listing[]>([]);
-  const netid = 'testuser'; // Set default user
+  const netid = getNetid(); // Get actual NetID from localStorage
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold">Dashboard</h1>
+          <p className="text-gray-600">Welcome, {netid}!</p>
+        </div>
         <button
           onClick={() => setMode(mode === "buyer" ? "seller" : "buyer")}
           className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
