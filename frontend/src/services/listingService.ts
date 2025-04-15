@@ -117,7 +117,7 @@ export const getCategories = async (): Promise<string[]> => {
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`, getAuthHeaders());
+  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?netid=${userId}`, getAuthHeaders());
   return response.data;
 };
 

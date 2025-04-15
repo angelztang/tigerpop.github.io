@@ -10,7 +10,7 @@ def create_app(config_class=Config):
 
     # Enable CORS with credentials and expose headers
     CORS(app, 
-         resources={r"/api/*": {
+         resources={r"/*": {  # Change from /api/* to /* to cover all routes
              "origins": [
                  "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com",
                  "http://localhost:3000"
@@ -21,7 +21,6 @@ def create_app(config_class=Config):
              "expose_headers": ["Authorization"],
              "max_age": 3600
          }},
-         # Allow token parameter in URL
          allow_headers=["Content-Type", "Authorization"],
          expose_headers=["Authorization"],
          supports_credentials=True

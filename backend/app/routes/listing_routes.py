@@ -136,13 +136,19 @@ def get_listings():
 @bp.route('', methods=['POST'])
 def create_listing():
     try:
-        # Get form data
-        title = request.form.get('title')
-        description = request.form.get('description')
-        price = request.form.get('price')
-        category = request.form.get('category', 'other')
-        user_id = request.form.get('user_id')
-        images = request.form.get('images')
+        # Handle both JSON and form data
+        if request.is_json:
+            data = request.get_json()
+        else:
+            data = request.form.to_dict()
+
+        # Get required fields
+        title = data.get('title')
+        description = data.get('description')
+        price = data.get('price')
+        category = data.get('category', 'other')
+        user_id = data.get('user_id')
+        images = data.get('images')
 
         # Validate required fields
         if not all([title, description, price, user_id]):
@@ -162,7 +168,7 @@ def create_listing():
                 category=category,
                 status='available',
                 user_id=user_id,
-                condition=request.form.get('condition', 'good')  # Add condition field with default value
+                condition=data.get('condition', 'good')
             )
 
             # Add listing to database first to get the ID
@@ -173,7 +179,7 @@ def create_listing():
             image_urls = []
             if images:
                 try:
-                    image_urls = json.loads(images)
+                    image_urls = json.loads(images) if isinstance(images, str) else images
                     for url in image_urls:
                         image = ListingImage(filename=url, listing_id=new_listing.id)
                         db.session.add(image)
@@ -215,14 +221,18 @@ def get_categories():
 @bp.route('/user', methods=['GET'])
 def get_user_listings():
     try:
-        # Get the user_id from the query parameters
-        user_id = request.args.get('user_id')
+        # Get the netid from the query parameters
+        netid = request.args.get('netid')
         
-        if not user_id:
-            return jsonify({'error': 'User ID is required'}), 400
+        if not netid:
+            return jsonify({'error': 'NetID is required'}), 400
             
-        # Get all listings for this user
-        listings = Listing.query.filter_by(user_id=user_id).order_by(Listing.created_at.desc()).all()
+        # Get all listings for this user by joining with users table
+        listings = (Listing.query
+                   .join(User, Listing.user_id == User.id)
+                   .filter(User.netid == netid)
+                   .order_by(Listing.created_at.desc())
+                   .all())
         
         # Convert to dictionary format
         return jsonify([{
@@ -243,14 +253,18 @@ def get_user_listings():
 @bp.route('/buyer', methods=['GET'])
 def get_buyer_listings():
     try:
-        # Get the user_id from the query parameters
-        user_id = request.args.get('user_id')
+        # Get the netid from the query parameters
+        netid = request.args.get('user_id')  # using user_id param for netid for backward compatibility
         
-        if not user_id:
+        if not netid:
             return jsonify({'error': 'User ID is required'}), 400
             
-        # Get all listings where this user is the buyer
-        listings = Listing.query.filter_by(buyer_id=user_id).order_by(Listing.created_at.desc()).all()
+        # Get all listings where this user is the buyer by joining with users table
+        listings = (Listing.query
+                   .join(User, Listing.buyer_id == User.id)
+                   .filter(User.netid == netid)
+                   .order_by(Listing.created_at.desc())
+                   .all())
         
         # Return empty array if no listings found
         if not listings:

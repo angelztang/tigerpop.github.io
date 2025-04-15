@@ -16,7 +16,7 @@ interface ListingFormProps {
 interface ListingFormData {
   title: string;
   description: string;
-  price: string;
+  price: number;
   category: string;
   condition: string;
   images: string[];
@@ -45,9 +45,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const [formData, setFormData] = useState<ListingFormData>({
     title: initialData.title || '',
     description: initialData.description || '',
-    price: initialData.price || '',
+    price: initialData.price || 0,
     category: initialData.category || '',
-    condition: initialData.condition || '',
+    condition: initialData.condition || 'good',
     images: initialData.images || []
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -76,51 +76,42 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
-      const formDataToSend = new FormData();
+      const userId = getUserId();
+      if (!userId) {
+        setError('User not authenticated');
+        return;
+      }
+
+      // Create listing data
+      const listingData: ListingFormData = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        images: selectedFiles.map(file => URL.createObjectURL(file)),
+        condition: formData.condition
+      };
+
+      // Submit the form
+      await onSubmit(listingData);
       
-      // Add listing data
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('price', formData.price);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('condition', formData.condition);
-      formDataToSend.append('user_id', getUserId() || '0');
-
-      // Upload images first if any
-      let imageUrls: string[] = [];
-      if (selectedFiles.length > 0) {
-        try {
-          imageUrls = await uploadImages(selectedFiles);
-          formDataToSend.append('images', JSON.stringify(imageUrls));
-        } catch (uploadError) {
-          console.error('Error uploading images:', uploadError);
-          setError('Failed to upload images. Please try again.');
-          return;
-        }
-      }
-
-      // Send the request
-      const response = await fetch(`${API_URL}/listing`, {
-        method: 'POST',
-        body: formDataToSend,
-        credentials: 'include'
+      // Reset form
+      setFormData({
+        title: '',
+        description: '',
+        price: 0,
+        category: '',
+        condition: 'good',
+        images: []
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create listing');
-      }
-
-      const data = await response.json();
-      onSubmit({
-        ...formData,
-        images: imageUrls
-      });
-    } catch (error) {
-      console.error('Error in listing creation:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create listing');
+      setSelectedFiles([]);
+      setPreviewUrls([]);
+      
+    } catch (err) {
+      console.error('Error in listing creation:', err);
+      setError('Failed to create listing. Please try again.');
     }
   };
 
@@ -225,7 +216,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 type="text"
                 id="price"
                 name="price"
-                value={formData.price}
+                value={formData.price.toString()}
                 onChange={handleChange}
                 required
                 pattern="^\d+(\.\d{1,2})?$"
@@ -283,7 +274,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
               className={`px-4 py-2 text-white rounded-md ${
                 isSubmitting
                   ? 'bg-orange-400 cursor-not-allowed'
