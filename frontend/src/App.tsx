@@ -1,56 +1,57 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { isAuthenticated, getNetid, handleCasCallback } from './services/authService';
+import { isAuthenticated, getNetid, UserInfo } from './services/authService';
+import axios from 'axios';
 import Navbar from './components/Navbar';
 import MarketplacePage from './pages/MarketplacePage';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import ListingDetail from './pages/ListingDetail';
 import './index.css';
+import { API_URL, FRONTEND_URL } from './config';
+
+interface AuthResponse {
+  netid: string;
+}
 
 const App: React.FC = () => {
-  const [authenticated, setAuthenticated] = useState<boolean>(isAuthenticated());
-  const [netid, setNetid] = useState<string | null>(getNetid());
+  const [authenticated, setAuthenticated] = useState<boolean>(false);
+  const [netid, setNetid] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle CAS callback if there's a token in the URL
-    const params = new URLSearchParams(location.search);
-    const token = params.get('token');
-    
-    if (token) {
-      console.log('Token received from URL:', token);
-      try {
-        const authResponse = handleCasCallback(token);
-        console.log('Auth response:', authResponse);
-        setAuthenticated(true);
-        setNetid(authResponse.netid);
-        // Remove token from URL and redirect to dashboard
-        navigate('/dashboard', { replace: true });
-      } catch (error) {
-        console.error('Error processing token:', error);
-        setAuthenticated(false);
-        setNetid(null);
+    // Handle CAS callback
+    if (location.pathname === '/auth/callback') {
+      const ticket = new URLSearchParams(location.search).get('ticket');
+      if (ticket) {
+        // Validate ticket with backend, including service URL
+        const serviceUrl = `${FRONTEND_URL}/auth/callback`;
+        axios.get<AuthResponse>(`${API_URL}/api/auth/validate`, {
+          params: {
+            ticket,
+            service: serviceUrl
+          }
+        })
+          .then(response => {
+            const { netid } = response.data;
+            localStorage.setItem('netid', netid);
+            setAuthenticated(true);
+            setNetid(netid);
+            navigate('/dashboard', { replace: true });
+          })
+          .catch(error => {
+            console.error('Error validating ticket:', error);
+            navigate('/login?error=auth_failed', { replace: true });
+          });
       }
-    }
-
-    // Update authentication state when it changes
-    const checkAuth = () => {
+    } else {
+      // Check if user is authenticated
       const isAuth = isAuthenticated();
       const currentNetid = getNetid();
-      console.log('Checking auth state:', { isAuth, currentNetid });
       setAuthenticated(isAuth);
       setNetid(currentNetid);
-    };
-
-    // Check auth state on mount and when localStorage changes
-    window.addEventListener('storage', checkAuth);
-    checkAuth();
-
-    return () => {
-      window.removeEventListener('storage', checkAuth);
-    };
+    }
   }, [location, navigate]);
 
   return (
@@ -60,6 +61,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<MarketplacePage />} />
           <Route path="/marketplace" element={<MarketplacePage />} />
+          <Route path="/auth/callback" element={<div>Authenticating...</div>} />
           <Route 
             path="/login" 
             element={authenticated ? <Navigate to="/dashboard" /> : <LoginPage />} 

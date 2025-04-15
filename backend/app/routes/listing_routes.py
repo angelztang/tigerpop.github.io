@@ -249,16 +249,13 @@ def get_buyer_listings():
         if not user_id:
             return jsonify({'error': 'User ID is required'}), 400
             
-        # Convert user_id to integer
-        try:
-            user_id = int(user_id)
-        except ValueError:
-            current_app.logger.error(f"Invalid user_id format: {user_id}")
-            return jsonify({'error': 'Invalid user ID format'}), 400
-            
         # Get all listings where this user is the buyer
         listings = Listing.query.filter_by(buyer_id=user_id).order_by(Listing.created_at.desc()).all()
         
+        # Return empty array if no listings found
+        if not listings:
+            return jsonify([])
+            
         # Convert to dictionary format
         return jsonify([{
             'id': listing.id,

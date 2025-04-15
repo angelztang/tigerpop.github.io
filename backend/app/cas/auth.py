@@ -63,13 +63,11 @@ def get_cas_ticket():
             ticket = re.search(r'ticket=([^&]+)', duo_redirect).group(1)
     return ticket
 
-def validate_cas_ticket(ticket):
+def validate_cas_ticket(ticket, service_url=None):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    # Use the exact same URL as the frontend
-    service_url = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/auth/cas/login'
-    if request.args.get('redirect_uri'):
-        service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
+    # Use provided service URL or fall back to request.base_url
+    service_url = service_url or request.base_url
     
     try:
         response = requests.get(validate_url, params={
@@ -120,9 +118,7 @@ def cas_login():
     if not ticket:
         # If no ticket, redirect to CAS login
         login_url = f'{CAS_SERVER}/login'
-        service_url = f'{CAS_SERVICE}/auth/cas/login'
-        if request.args.get('redirect_uri'):
-            service_url += f'?redirect_uri={request.args.get("redirect_uri")}'
+        service_url = request.base_url
         return redirect(f'{login_url}?service={urllib.parse.quote(service_url)}')
     
     # Validate the ticket
@@ -141,8 +137,7 @@ def cas_login():
     token = generate_jwt_token(user)
     current_app.logger.info(f"Generated token for user {netid}")
     
-    # Always redirect to the frontend dashboard with the token
-    # Use the frontend URL directly, not through the backend
+    # Redirect to the frontend with the token
     redirect_url = f'{CAS_SERVICE}/?token={token}'
     current_app.logger.info(f"Redirecting to: {redirect_url}")
     return redirect(redirect_url)

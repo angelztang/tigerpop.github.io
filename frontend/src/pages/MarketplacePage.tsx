@@ -49,6 +49,9 @@ const MarketplacePage: React.FC = () => {
       let url = '';
       const params = new URLSearchParams();
       
+      // Always filter for available listings
+      params.append('status', 'available');
+      
       if (selectedPrice) {
         params.append('max_price', selectedPrice.toString());
       }
@@ -57,9 +60,7 @@ const MarketplacePage: React.FC = () => {
         params.append('category', selectedCategory);
       }
       
-      if (params.toString()) {
-        url = `?${params.toString()}`;
-      }
+      url = `?${params.toString()}`;
       
       const data = await getListings(url);
       setListings(data);
@@ -84,6 +85,12 @@ const MarketplacePage: React.FC = () => {
     fetchListings();
     fetchHeartedListings();
   }, [selectedPrice, selectedCategory]);
+
+  // Add this new useEffect for initial mount
+  useEffect(() => {
+    fetchListings();
+    fetchHeartedListings();
+  }, []); // Empty dependency array means this runs once on mount
 
   const handleListingUpdated = () => {
     fetchListings();
@@ -137,7 +144,9 @@ const MarketplacePage: React.FC = () => {
   };
 
   const filteredListings = listings.filter(listing => {
+    // Always filter out non-available listings
     if (listing.status !== 'available') return false;
+    // Then apply category and price filters if selected
     if (selectedCategory && listing.category.toLowerCase() !== selectedCategory) return false;
     if (selectedPrice && listing.price > selectedPrice) return false;
     return true;

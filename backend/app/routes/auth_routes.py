@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify, redirect, session, Response
+from flask import Blueprint, request, jsonify, redirect, session, Response, current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from werkzeug.security import generate_password_hash, check_password_hash
 from ..extensions import db
 from ..models import User
-from ..cas.auth import cas_bp, is_authenticated, get_cas_ticket, validate_cas_ticket, create_or_update_user, generate_jwt_token
+from ..cas.auth import cas_bp, is_authenticated, get_cas_ticket, validate_cas_ticket, create_or_update_user, generate_jwt_token, CAS_SERVER
 from sqlalchemy import text
 import bcrypt
 import logging
@@ -140,8 +140,12 @@ def verify_token():
             
         user = User.query.get(current_user_id)
         if not user:
-            logger.error(f"User not found for user_id: {current_user_id}")
-            return jsonify({'error': 'User not found'}), 404
+            # If user doesn't exist, create them
+            logger.info(f"User not found, creating new user with netid: {netid}")
+            user = User(netid=netid)
+            db.session.add(user)
+            db.session.commit()
+            logger.info(f"Created new user with id: {user.id}")
             
         logger.info(f"Token verified successfully for user: {user.netid}")
         return jsonify({
@@ -151,3 +155,26 @@ def verify_token():
     except Exception as e:
         logger.error(f"Token verification error: {str(e)}")
         return jsonify({'error': 'Invalid token'}), 401
+
+@bp.route('/validate', methods=['GET'])
+def validate_ticket():
+    """Validate CAS ticket and return netid."""
+    ticket = request.args.get('ticket')
+    if not ticket:
+        return jsonify({'error': 'No ticket provided'}), 400
+    
+    # Get the service URL from the request
+    service_url = request.args.get('service')
+    if not service_url:
+        return jsonify({'error': 'No service URL provided'}), 400
+    
+    # Validate the ticket with CAS server
+    try:
+        # Call validate_cas_ticket with both ticket and service URL
+        netid = validate_cas_ticket(ticket, service_url)
+        if netid:
+            return jsonify({'netid': netid}), 200
+        return jsonify({'error': 'Invalid ticket'}), 401
+    except Exception as e:
+        current_app.logger.error(f"Error validating ticket: {str(e)}")
+        return jsonify({'error': 'Error validating ticket'}), 500
