@@ -148,7 +148,8 @@ def create_listing():
         price = data.get('price')
         category = data.get('category', 'other')
         user_id = data.get('user_id')
-        images = data.get('images')
+        images = data.get('images', [])
+        condition = data.get('condition', 'good')
 
         # Validate required fields
         if not all([title, description, price, user_id]):
@@ -168,25 +169,19 @@ def create_listing():
                 category=category,
                 status='available',
                 user_id=user_id,
-                condition=data.get('condition', 'good')
+                condition=condition
             )
 
-            # Add listing to database first to get the ID
+            # Add listing to database
             db.session.add(new_listing)
             db.session.commit()
 
             # Handle images if provided
-            image_urls = []
             if images:
-                try:
-                    image_urls = json.loads(images) if isinstance(images, str) else images
-                    for url in image_urls:
-                        image = ListingImage(filename=url, listing_id=new_listing.id)
-                        db.session.add(image)
-                    db.session.commit()
-                except json.JSONDecodeError:
-                    current_app.logger.error("Failed to parse image URLs")
-                    # Don't fail the listing creation if image parsing fails
+                for url in images:
+                    image = ListingImage(filename=url, listing_id=new_listing.id)
+                    db.session.add(image)
+                db.session.commit()
 
             return jsonify({
                 'id': new_listing.id,
@@ -196,9 +191,9 @@ def create_listing():
                 'category': new_listing.category,
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
-                'images': image_urls,
-                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
-                'condition': new_listing.condition
+                'images': [image.filename for image in new_listing.images],
+                'condition': new_listing.condition,
+                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
 
         except Exception as db_error:
