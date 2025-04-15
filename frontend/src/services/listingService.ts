@@ -53,14 +53,24 @@ export interface ListingFilters {
 }
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
-  const url = filters ? `${API_URL}/api/listing${filters}` : `${API_URL}/api/listing`;
-  const response = await axios.get<Listing[]>(url, getAuthHeaders());
-  return response.data;
+  try {
+    const url = filters ? `${API_URL}/api/listing${filters}` : `${API_URL}/api/listing`;
+    const response = await axios.get<Listing[]>(url, getAuthHeaders());
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching listings:', error);
+    return [];
+  }
 };
 
-export const getListing = async (id: number): Promise<Listing> => {
-  const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`, getAuthHeaders());
-  return response.data;
+export const getListing = async (id: number): Promise<Listing | null> => {
+  try {
+    const response = await axios.get<Listing>(`${API_URL}/api/listing/${id}`, getAuthHeaders());
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching listing:', error);
+    return null;
+  }
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
@@ -117,8 +127,13 @@ export const getCategories = async (): Promise<string[]> => {
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`, getAuthHeaders());
-  return response.data;
+  try {
+    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/user?user_id=${userId}`, getAuthHeaders());
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching user listings:', error);
+    return [];
+  }
 };
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
@@ -145,8 +160,13 @@ export const getUserPurchases = async (): Promise<Listing[]> => {
 };
 
 export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
-  const response = await axios.get<Listing[]>(`${API_URL}/api/listing/buyer?user_id=${userId}`, getAuthHeaders());
-  return response.data;
+  try {
+    const response = await axios.get<Listing[]>(`${API_URL}/api/listing/buyer?user_id=${userId}`, getAuthHeaders());
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching buyer listings:', error);
+    return [];
+  }
 };
 
 export const heartListing = async (id: number): Promise<void> => {

@@ -66,7 +66,8 @@ const MarketplacePage: React.FC = () => {
       setListings(data);
     } catch (error) {
       console.error('Error fetching listings:', error);
-      setError('Failed to load listings. Please try again later.');
+      // Don't set error state, just set empty listings
+      setListings([]);
     } finally {
       setLoading(false);
     }
@@ -77,7 +78,8 @@ const MarketplacePage: React.FC = () => {
       const hearted = await getHeartedListings();
       setHeartedListings(hearted.map(listing => listing.id));
     } catch (error) {
-      console.error('Error fetching hearted listings:', error);
+      // If hearted listings fail, just set empty array
+      setHeartedListings([]);
     }
   };
 
@@ -160,14 +162,6 @@ const MarketplacePage: React.FC = () => {
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-xl text-red-600">{error}</div>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Price Filters */}
@@ -223,8 +217,8 @@ const MarketplacePage: React.FC = () => {
         <h2 className="text-xl font-bold mb-6">All Items</h2>
         {filteredListings.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-xl text-gray-600">There are no items matching your filters</p>
-            <p className="text-sm text-gray-500 mt-2">Try adjusting your filters or check back later</p>
+            <p className="text-xl text-gray-600">No items available at the moment</p>
+            <p className="text-sm text-gray-500 mt-2">Check back later for new listings</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -2,12 +2,11 @@ from flask import Blueprint, request, jsonify, current_app
 from werkzeug.utils import secure_filename
 import os
 from ..extensions import db, mail
-from ..models import Listing, ListingImage, User, HeartedListing
+from ..models import Listing, ListingImage, User
 from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
-from flask_jwt_extended import jwt_required, get_jwt_identity
 import base64
 import io
 from PIL import Image
@@ -97,7 +96,7 @@ def test_upload():
         current_app.logger.error(f"Error uploading image: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-@bp.route('/', methods=['GET'])
+@bp.route('', methods=['GET'])
 def get_listings():
     try:
         # Get query parameters for filtering
@@ -126,8 +125,7 @@ def get_listings():
             'status': listing.status,
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],  # Include image URLs
-            'condition': listing.condition
+            'images': [image.filename for image in listing.images]  # Include image URLs
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
@@ -161,8 +159,7 @@ def create_listing():
                 price=price,
                 category=category,
                 status='available',
-                user_id=user_id,
-                condition=request.form.get('condition', 'good')  # Add condition field with default value
+                user_id=user_id
             )
 
             # Add listing to database first to get the ID
@@ -191,8 +188,7 @@ def create_listing():
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
                 'images': image_urls,
-                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
-                'condition': new_listing.condition
+                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
 
         except Exception as db_error:
@@ -240,73 +236,35 @@ def get_user_listings():
         current_app.logger.error(f"Error fetching user listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch user listings'}), 500
 
-@bp.route('/buyer', methods=['GET'])
-def get_buyer_listings():
-    try:
-        # Get the user_id from the query parameters
-        user_id = request.args.get('user_id')
-        
-        if not user_id:
-            return jsonify({'error': 'User ID is required'}), 400
-            
-        # Get all listings where this user is the buyer
-        listings = Listing.query.filter_by(buyer_id=user_id).order_by(Listing.created_at.desc()).all()
-        
-        # Return empty array if no listings found
-        if not listings:
-            return jsonify([])
-            
-        # Convert to dictionary format
-        return jsonify([{
-            'id': listing.id,
-            'title': listing.title,
-            'description': listing.description,
-            'price': listing.price,
-            'category': listing.category,
-            'status': listing.status,
-            'user_id': listing.user_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]
-        } for listing in listings])
-    except Exception as e:
-        current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
-        return jsonify({'error': 'Failed to fetch buyer listings'}), 500
-
 @bp.route('/<int:id>/buy', methods=['POST'])
 def request_to_buy(id):
     listing = Listing.query.get_or_404(id)
     data = request.get_json()
     
-    # Convert buyer_id to integer if it's not already
-    buyer_id = data.get('buyer_id')
-    try:
-        buyer_id = int(buyer_id)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid buyer ID format'}), 400
-    
     # Update listing with buyer information
-    listing.buyer_id = buyer_id
+    listing.buyer_id = data.get('buyer_id')
+    listing.buyer_message = data.get('message')
+    listing.buyer_contact = data.get('contact_info')
     listing.status = 'pending'
     db.session.commit()
     
     # Get seller's email
-    seller = User.query.get(listing.user_id)
+    seller = User.query.get(listing.seller_id)
     
     # Send email to seller
     msg = Message(
-        subject=f'TigerPop: New Interest in Your Listing - {listing.title}',
-        recipients=[f'{seller.netid}@princeton.edu'],
-        body=f'Someone is interested in your listing "{listing.title}"', 
-        html=f'''
-            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                <h2 style="color: #4A90E2;">🎉 Someone is interested in your listing!</h2>
-                <p><strong>Title:</strong> {listing.title}</p>
-                <p><strong>Price:</strong> ${listing.price}</p>
-                <p><strong>Category:</strong> {listing.category}</p>
-                <hr style="margin: 20px 0;">
-                <p>You can <a href="http://localhost:3000/listings/{listing.id}" style="color: #4A90E2;">view and manage your listing here</a>.</p>
-                <p>– The <strong>TigerPop</strong> Team 🐯</p>
-            </div>
+        subject=f'New Purchase Request for {listing.title}',
+        recipients=[seller.email],
+        body=f'''
+        Someone wants to buy your item: {listing.title}
+        
+        Message from buyer:
+        {listing.buyer_message}
+        
+        Contact information:
+        {listing.buyer_contact}
+        
+        You can respond to this email to contact the buyer.
         '''
     )
     
@@ -325,23 +283,20 @@ def request_to_buy(id):
 
 @bp.route('/<int:id>/status', methods=['PATCH'])
 def update_listing_status(id):
-    try:
-        listing = Listing.query.get_or_404(id)
-        data = request.get_json()
-        
-        if 'status' not in data:
-            return jsonify({'error': 'Status is required'}), 400
-            
-        listing.status = data['status']
-        db.session.commit()
-        
-        return jsonify({
-            'id': listing.id,
-            'status': listing.status
-        })
-    except Exception as e:
-        current_app.logger.error(f"Error updating listing status: {str(e)}")
-        return jsonify({'error': 'Failed to update listing status'}), 500
+    listing = Listing.query.get_or_404(id)
+    user_id = 1  # Default user_id for testing
+    
+    if listing.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    listing.status = data['status']
+    db.session.commit()
+    
+    return jsonify({
+        'id': listing.id,
+        'status': listing.status
+    })
 
 @bp.route('/<int:id>', methods=['DELETE'])
 def delete_listing(id):
@@ -378,8 +333,7 @@ def get_single_listing(id):
             'user_id': listing.user_id,
             'user_netid': user.netid if user else None,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],
-            'condition': listing.condition
+            'images': [image.filename for image in listing.images]
         })
     except Exception as e:
         current_app.logger.error(f"Error fetching listing {id}: {str(e)}")
@@ -411,6 +365,8 @@ def notify_seller(id):
             </div>
             '''
         )
+
+        
         # Send email
         mail.send(msg)
         
@@ -442,45 +398,51 @@ def notify_seller(id):
 def update_listing(id):
     try:
         listing = Listing.query.get_or_404(id)
+        user_id = request.form.get('user_id')
         
-        # Handle both JSON and form data
-        if request.is_json:
-            data = request.get_json()
-        else:
-            data = request.form.to_dict()
-        
+        if not user_id or int(user_id) != listing.user_id:
+            return jsonify({'error': 'Unauthorized'}), 403
+
+        # Get form data
+        title = request.form.get('title')
+        description = request.form.get('description')
+        price = request.form.get('price')
+        category = request.form.get('category')
+        images = request.form.get('images')
+
         # Update listing fields if provided
-        if 'title' in data:
-            listing.title = data['title']
-        if 'description' in data:
-            listing.description = data['description']
-        if 'price' in data:
+        if title:
+            listing.title = title
+        if description:
+            listing.description = description
+        if price:
             try:
-                price = float(data['price'])
+                price = float(price)
                 if price <= 0:
                     return jsonify({'error': 'Price must be greater than 0'}), 400
                 listing.price = price
             except ValueError:
                 return jsonify({'error': 'Invalid price format'}), 400
-        if 'category' in data:
-            listing.category = data['category']
-        if 'images' in data:
-            # Clear existing images
-            ListingImage.query.filter_by(listing_id=listing.id).delete()
-            # Add new images
+        if category:
+            listing.category = category
+
+        # Handle images if provided
+        if images:
             try:
-                image_urls = json.loads(data['images']) if isinstance(data['images'], str) else data['images']
-                for image_url in image_urls:
-                    image = ListingImage(filename=image_url, listing_id=listing.id)
+                image_urls = json.loads(images)
+                # Delete existing images
+                for image in listing.images:
+                    db.session.delete(image)
+                # Add new images
+                for url in image_urls:
+                    image = ListingImage(filename=url, listing_id=listing.id)
                     db.session.add(image)
             except json.JSONDecodeError:
                 current_app.logger.error("Failed to parse image URLs")
                 return jsonify({'error': 'Invalid image data format'}), 400
-        if 'condition' in data:
-            listing.condition = data['condition']
-        
+
         db.session.commit()
-        
+
         return jsonify({
             'id': listing.id,
             'title': listing.title,
@@ -489,83 +451,19 @@ def update_listing(id):
             'category': listing.category,
             'status': listing.status,
             'user_id': listing.user_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]
+            'images': [image.filename for image in listing.images],
+            'created_at': listing.created_at.isoformat() if listing.created_at else None
         })
+
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error updating listing: {str(e)}")
-        return jsonify({'error': 'Failed to update listing'}), 500
+        return jsonify({'error': str(e)}), 500
 
-@bp.route('/<int:id>/heart', methods=['POST'])
-@jwt_required()
-def heart_listing(id):
-    try:
-        current_user_id = get_jwt_identity()
-        if not current_user_id:
-            return jsonify({'error': 'User not authenticated'}), 401
-
-        listing = Listing.query.get_or_404(id)
-        if listing.status != 'available':
-            return jsonify({'error': 'Listing is not available'}), 400
-
-        # Check if already hearted
-        existing_heart = HeartedListing.query.filter_by(
-            user_id=current_user_id,
-            listing_id=id
-        ).first()
-
-        if existing_heart:
-            return jsonify({'error': 'Listing already hearted'}), 400
-
-        hearted_listing = HeartedListing(
-            user_id=current_user_id,
-            listing_id=id
-        )
-        db.session.add(hearted_listing)
-        db.session.commit()
-
-        return jsonify({'message': 'Listing hearted successfully'}), 200
-    except Exception as e:
-        current_app.logger.error(f"Error hearting listing: {str(e)}")
-        db.session.rollback()
-        return jsonify({'error': 'Failed to heart listing'}), 500
-
-@bp.route('/<int:id>/heart', methods=['DELETE'])
-@jwt_required()
-def unheart_listing(id):
-    try:
-        current_user_id = get_jwt_identity()
-        if not current_user_id:
-            return jsonify({'error': 'User not authenticated'}), 401
-
-        hearted_listing = HeartedListing.query.filter_by(
-            user_id=current_user_id,
-            listing_id=id
-        ).first_or_404()
-
-        db.session.delete(hearted_listing)
-        db.session.commit()
-
-        return jsonify({'message': 'Listing unhearted successfully'}), 200
-    except Exception as e:
-        current_app.logger.error(f"Error unhearting listing: {str(e)}")
-        return jsonify({'error': 'Failed to unheart listing'}), 500
-
-@bp.route('/hearted', methods=['GET'])
-@jwt_required()
-def get_hearted_listings():
-    try:
-        current_user_id = get_jwt_identity()
-        if not current_user_id:
-            return jsonify({'error': 'User not authenticated'}), 401
-
-        hearted_listings = HeartedListing.query.filter_by(user_id=current_user_id).all()
-        listing_ids = [hl.listing_id for hl in hearted_listings]
-        
-        listings = Listing.query.filter(Listing.id.in_(listing_ids)).all()
-        
-        return jsonify([listing.to_dict() for listing in listings]), 200
-    except Exception as e:
-        current_app.logger.error(f"Error fetching hearted listings: {str(e)}")
-        return jsonify({'error': 'Failed to fetch hearted listings'}), 500
+@bp.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    return response
