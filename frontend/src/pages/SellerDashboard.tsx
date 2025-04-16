@@ -9,6 +9,15 @@ import SellerListingModal from '../components/SellerListingModal';
 
 type FilterTab = 'all' | 'selling' | 'sold';
 
+interface ListingFormData {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  images: string[];
+  condition: string;
+}
+
 const SellerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
@@ -40,7 +49,7 @@ const SellerDashboard: React.FC = () => {
     }
   };
 
-  const handleListingCreated = async (formData: { title: string; description: string; price: string; category: string; images: string[]; condition: string }) => {
+  const handleListingCreated = async (formData: ListingFormData) => {
     setIsSubmitting(true);
     setError(null);
     try {
@@ -52,9 +61,7 @@ const SellerDashboard: React.FC = () => {
 
       const listingData: CreateListingData = {
         ...formData,
-        price: parseFloat(formData.price),
-        user_id: parseInt(userId),
-        condition: formData.condition
+        user_id: parseInt(userId)
       };
 
       const response = await createListing(listingData);
