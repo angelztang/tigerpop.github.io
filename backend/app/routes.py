@@ -1,6 +1,30 @@
 @bp.route('/listings', methods=['GET'])
 def get_listings():
-    listings = Listing.query.all()
+    search_query = request.args.get('search', '')
+    max_price = request.args.get('max_price', type=float)
+    category = request.args.get('category')
+    status = request.args.get('status', 'available')
+
+    query = Listing.query
+
+    # Apply search filter if search query is provided
+    if search_query:
+        query = query.filter(
+            db.or_(
+                Listing.title.ilike(f'%{search_query}%'),
+                Listing.description.ilike(f'%{search_query}%')
+            )
+        )
+
+    # Apply other filters
+    if max_price is not None:
+        query = query.filter(Listing.price <= max_price)
+    if category:
+        query = query.filter(Listing.category == category)
+    if status:
+        query = query.filter(Listing.status == status)
+
+    listings = query.all()
     return jsonify([{
         'id': listing.id,
         'title': listing.title,

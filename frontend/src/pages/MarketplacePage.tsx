@@ -19,6 +19,7 @@ const MarketplacePage: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -46,7 +47,6 @@ const MarketplacePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      let url = '';
       const params = new URLSearchParams();
       
       // Always filter for available listings
@@ -59,9 +59,12 @@ const MarketplacePage: React.FC = () => {
       if (selectedCategory) {
         params.append('category', selectedCategory);
       }
+
+      if (searchQuery) {
+        params.append('search', searchQuery);
+      }
       
-      url = `?${params.toString()}`;
-      
+      const url = `?${params.toString()}`;
       const data = await getListings(url);
       setListings(data);
     } catch (error) {
@@ -84,27 +87,24 @@ const MarketplacePage: React.FC = () => {
   useEffect(() => {
     fetchListings();
     fetchHeartedListings();
-  }, [selectedPrice, selectedCategory]);
-
-  // Add this new useEffect for initial mount
-  useEffect(() => {
-    fetchListings();
-    fetchHeartedListings();
-  }, []); // Empty dependency array means this runs once on mount
-
-  const handleListingUpdated = () => {
-    fetchListings();
-    setSelectedListing(null); // Close any open modals
-  };
+  }, [selectedPrice, selectedCategory, searchQuery]);
 
   const location = useLocation();
 
   useEffect(() => {
     const queryParams = new URLSearchParams(location.search);
     const categoryParam = queryParams.get('category');
+    const searchParam = queryParams.get('search');
+    
     setSelectedCategory(categoryParam);
-    setSelectedPrice(null); // Reset price when URL changes category
+    setSearchQuery(searchParam);
+    setSelectedPrice(null); // Reset price when URL changes
   }, [location.search]);
+
+  const handleListingUpdated = () => {
+    fetchListings();
+    setSelectedListing(null); // Close any open modals
+  };
 
   const handleCategoryClick = (slug: string) => {
     setSelectedCategory(selectedCategory === slug ? null : slug);
@@ -169,86 +169,82 @@ const MarketplacePage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Price Filters */}
-      <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4">Shop By Price</h2>
-        <div className="flex flex-wrap gap-3">
-          {priceRanges.map((range) => (
-            <button
-              key={range.max}
-              onClick={() => handlePriceClick(range.max)}
-              className={`px-6 py-2 rounded-lg ${
-                selectedPrice === range.max
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-              } transition-colors duration-200`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Category Cards */}
-      <div className="mb-12">
-        <h2 className="text-xl font-bold mb-4">Shop By Piece</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {categories.map((category) => (
-            <button
-              key={category.slug}
-              onClick={() => handleCategoryClick(category.slug)}
-              className={`relative overflow-hidden rounded-lg aspect-[4/3] group ${
-                selectedCategory === category.slug
-                  ? 'ring-2 ring-orange-500'
-                  : ''
-              }`}
-            >
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-60"></div>
-              <img
-                src={category.image}
-                alt={category.name}
-                className="w-full h-full object-cover"
-              />
-              <span className="absolute bottom-4 left-4 text-white text-xl font-medium">
-                {category.name}
-              </span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* All Items Section */}
-      <div>
-        <h2 className="text-xl font-bold mb-6">All Items</h2>
-        {filteredListings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-gray-600">There are no items matching your filters</p>
-            <p className="text-sm text-gray-500 mt-2">Try adjusting your filters or check back later</p>
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col space-y-8">
+          {/* Price Filters */}
+          <div>
+            <h2 className="text-xl font-bold mb-4">Price Range</h2>
+            <div className="flex flex-wrap gap-4">
+              {priceRanges.map((range) => (
+                <button
+                  key={range.max}
+                  onClick={() => handlePriceClick(range.max)}
+                  className={`px-4 py-2 rounded-lg ${
+                    selectedPrice === range.max
+                      ? 'bg-orange-500 text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {range.label}
+                </button>
+              ))}
+            </div>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredListings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                isHearted={heartedListings.includes(listing.id)}
-                onHeartClick={handleHeartClick}
-                onClick={() => setSelectedListing(listing)}
-              />
-            ))}
+
+          {/* Search Results Header */}
+          {searchQuery && filteredListings.length > 0 && (
+            <div className="text-center py-4">
+              <h2 className="text-xl font-bold">
+                Search Results for "{searchQuery}"
+              </h2>
+              <p className="text-gray-600 mt-2">
+                Found {filteredListings.length} items
+              </p>
+            </div>
+          )}
+
+          {/* Listings Grid */}
+          <div>
+            <h2 className="text-xl font-bold mb-6">
+              {searchQuery ? 'Search Results' : 'All Items'}
+            </h2>
+            {filteredListings.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-xl text-gray-600">
+                  {searchQuery
+                    ? `No items found matching "${searchQuery}"`
+                    : 'There are no items matching your filters'}
+                </p>
+                <p className="text-sm text-gray-500 mt-2">
+                  Try adjusting your search or filters
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredListings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isHearted={heartedListings.includes(listing.id)}
+                    onHeartClick={handleHeartClick}
+                    onClick={() => setSelectedListing(listing)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Listing Detail Modal */}
+        {selectedListing && (
+          <ListingDetailModal
+            listing={selectedListing}
+            onClose={() => setSelectedListing(null)}
+            onListingUpdated={handleListingUpdated}
+          />
         )}
       </div>
-
-      {/* Listing Detail Modal */}
-      {selectedListing && (
-        <ListingDetailModal
-          listing={selectedListing}
-          onClose={() => setSelectedListing(null)}
-          onListingUpdated={handleListingUpdated}
-        />
-      )}
     </div>
   );
 };

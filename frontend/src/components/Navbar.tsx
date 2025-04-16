@@ -25,8 +25,15 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement search functionality
-    console.log('Search:', searchQuery);
+    if (searchQuery.trim()) {
+      navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSearch(e);
+    }
   };
 
   return (
@@ -106,14 +113,21 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
               <Link to="/marketplace?category=other" className="text-gray-600 hover:text-gray-900">other</Link>
             </div>
             
-            <form onSubmit={handleSearch} className="flex">
+            <form onSubmit={handleSearch} className="flex space-x-2">
               <input
                 type="text"
                 placeholder="Search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={handleKeyPress}
                 className="w-full px-4 py-2 rounded-lg bg-orange-100 bg-opacity-30 focus:outline-none focus:ring-2 focus:ring-orange-300"
               />
+              <button
+                type="submit"
+                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300"
+              >
+                Search
+              </button>
             </form>
           </div>
         </div>
