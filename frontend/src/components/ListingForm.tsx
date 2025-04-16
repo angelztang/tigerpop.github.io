@@ -5,6 +5,7 @@ import { getUserId } from '../services/authService';
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Listing, createListing, updateListing, uploadImages, CreateListingData } from '../services/listingService';
+import api from '../services/api';
 
 interface ListingFormProps {
   onSubmit: (data: ListingFormData) => void;
@@ -101,25 +102,16 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         images: imageUrls
       };
 
-      // Send the request
-      const response = await fetch(`${API_URL}/listing`, {
-        method: 'POST',
-        body: JSON.stringify(listingData),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to create listing');
-      }
+      // Send the request using api instance
+      const response = await api.post('/listing', listingData);
 
       onSubmit({
         ...formData,
         images: imageUrls
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error in listing creation:', error);
-      setError(error instanceof Error ? error.message : 'Failed to create listing');
+      setError(error.response?.data?.error || 'Failed to create listing');
     }
   };
 
