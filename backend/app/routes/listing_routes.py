@@ -134,13 +134,19 @@ def get_listings():
 @bp.route('', methods=['POST'])
 def create_listing():
     try:
-        # Get form data
-        title = request.form.get('title')
-        description = request.form.get('description')
-        price = request.form.get('price')
-        category = request.form.get('category', 'other')
-        user_id = request.form.get('user_id')
-        images = request.form.get('images')
+        # Get JSON data
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        # Extract fields
+        title = data.get('title')
+        description = data.get('description')
+        price = data.get('price')
+        category = data.get('category', 'other')
+        condition = data.get('condition')
+        user_id = data.get('user_id')  # This could be either netid or user_id
+        images = data.get('images', [])
 
         # Validate required fields
         if not all([title, description, price, user_id]):
@@ -152,14 +158,25 @@ def create_listing():
             if price <= 0:
                 return jsonify({'error': 'Price must be greater than 0'}), 400
 
+            # Get user by netid or id
+            user = None
+            if isinstance(user_id, str):
+                user = User.query.filter_by(netid=user_id).first()
+            else:
+                user = User.query.get(user_id)
+
+            if not user:
+                return jsonify({'error': 'User not found'}), 404
+
             # Create new listing
             new_listing = Listing(
                 title=title,
                 description=description,
                 price=price,
                 category=category,
+                condition=condition,
                 status='available',
-                user_id=user_id
+                user_id=user.id
             )
 
             # Add listing to database first to get the ID
@@ -167,17 +184,11 @@ def create_listing():
             db.session.commit()
 
             # Handle images if provided
-            image_urls = []
             if images:
-                try:
-                    image_urls = json.loads(images)
-                    for url in image_urls:
-                        image = ListingImage(filename=url, listing_id=new_listing.id)
-                        db.session.add(image)
-                    db.session.commit()
-                except json.JSONDecodeError:
-                    current_app.logger.error("Failed to parse image URLs")
-                    # Don't fail the listing creation if image parsing fails
+                for url in images:
+                    image = ListingImage(filename=url, listing_id=new_listing.id)
+                    db.session.add(image)
+                db.session.commit()
 
             return jsonify({
                 'id': new_listing.id,
@@ -185,9 +196,10 @@ def create_listing():
                 'description': new_listing.description,
                 'price': new_listing.price,
                 'category': new_listing.category,
+                'condition': new_listing.condition,
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
-                'images': image_urls,
+                'images': images,
                 'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
 
@@ -211,14 +223,19 @@ def get_categories():
 @bp.route('/user', methods=['GET'])
 def get_user_listings():
     try:
-        # Get the user_id from the query parameters
-        user_id = request.args.get('user_id')
+        # Get the netid from the query parameters
+        netid = request.args.get('user_id')  # This is actually the netid
         
-        if not user_id:
-            return jsonify({'error': 'User ID is required'}), 400
+        if not netid:
+            return jsonify({'error': 'NetID is required'}), 400
+            
+        # First get the user by netid
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
             
         # Get all listings for this user
-        listings = Listing.query.filter_by(user_id=user_id).order_by(Listing.created_at.desc()).all()
+        listings = Listing.query.filter_by(user_id=user.id).order_by(Listing.created_at.desc()).all()
         
         # Convert to dictionary format
         return jsonify([{
@@ -235,6 +252,40 @@ def get_user_listings():
     except Exception as e:
         current_app.logger.error(f"Error fetching user listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch user listings'}), 500
+
+@bp.route('/buyer', methods=['GET'])
+def get_buyer_listings():
+    try:
+        # Get the netid from the query parameters
+        netid = request.args.get('user_id')  # This is actually the netid
+        
+        if not netid:
+            return jsonify({'error': 'NetID is required'}), 400
+            
+        # First get the user by netid
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        # Get all listings where this user is the buyer
+        listings = Listing.query.filter_by(buyer_id=user.id).order_by(Listing.created_at.desc()).all()
+        
+        # Convert to dictionary format
+        return jsonify([{
+            'id': listing.id,
+            'title': listing.title,
+            'description': listing.description,
+            'price': listing.price,
+            'category': listing.category,
+            'status': listing.status,
+            'user_id': listing.user_id,
+            'buyer_id': listing.buyer_id,
+            'created_at': listing.created_at.isoformat() if listing.created_at else None,
+            'images': [image.filename for image in listing.images]
+        } for listing in listings])
+    except Exception as e:
+        current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
+        return jsonify({'error': 'Failed to fetch buyer listings'}), 500
 
 @bp.route('/<int:id>/buy', methods=['POST'])
 def request_to_buy(id):
@@ -462,8 +513,9 @@ def update_listing(id):
 
 @bp.after_request
 def after_request(response):
-    response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+    frontend_url = os.getenv('FRONTEND_URL', 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com')
+    response.headers.add('Access-Control-Allow-Origin', frontend_url)
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS,PATCH')
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     return response
