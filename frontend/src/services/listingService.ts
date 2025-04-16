@@ -179,7 +179,7 @@ export const getUserPurchases = async (): Promise<Listing[]> => {
 
 export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
   try {
-    const response = await api.get<Listing[]>(`/listing/buyer?buyer_id=${userId}`);
+    const response = await api.get<Listing[]>(`/listing/buyer?user_id=${userId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching buyer listings:', error);
