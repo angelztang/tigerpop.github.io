@@ -78,22 +78,11 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     setError(null);
     
     try {
-      const formDataToSend = new FormData();
-      
-      // Add listing data
-      formDataToSend.append('title', formData.title);
-      formDataToSend.append('description', formData.description);
-      formDataToSend.append('price', formData.price);
-      formDataToSend.append('category', formData.category);
-      formDataToSend.append('condition', formData.condition);
-      formDataToSend.append('user_id', getUserId() || '0');
-
       // Upload images first if any
       let imageUrls: string[] = [];
       if (selectedFiles.length > 0) {
         try {
           imageUrls = await uploadImages(selectedFiles);
-          formDataToSend.append('images', JSON.stringify(imageUrls));
         } catch (uploadError) {
           console.error('Error uploading images:', uploadError);
           setError('Failed to upload images. Please try again.');
@@ -101,10 +90,21 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         }
       }
 
+      // Create listing data
+      const listingData = {
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price),
+        category: formData.category,
+        condition: formData.condition,
+        user_id: getUserId(),
+        images: imageUrls
+      };
+
       // Send the request
       const response = await fetch(`${API_URL}/listing`, {
         method: 'POST',
-        body: formDataToSend,
+        body: JSON.stringify(listingData),
         credentials: 'include'
       });
 
@@ -113,7 +113,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         throw new Error(errorData.error || 'Failed to create listing');
       }
 
-      const data = await response.json();
       onSubmit({
         ...formData,
         images: imageUrls
