@@ -207,17 +207,25 @@ const MarketplacePage: React.FC = () => {
           {/* Listings Grid */}
           <div>
             <h2 className="text-xl font-bold mb-6">
-              {searchQuery ? 'Search Results' : 'All Items'}
+              {searchQuery 
+                ? 'Search Results' 
+                : selectedCategory 
+                  ? categories.find(cat => cat.slug === selectedCategory)?.name || 'Category Items'
+                  : 'All Items'}
             </h2>
             {filteredListings.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-xl text-gray-600">
                   {searchQuery
                     ? `No items found matching "${searchQuery}"`
-                    : 'There are no items matching your filters'}
+                    : selectedCategory
+                      ? `No items found in ${categories.find(cat => cat.slug === selectedCategory)?.name || 'this category'}`
+                      : 'No items available in the marketplace yet'}
                 </p>
                 <p className="text-sm text-gray-500 mt-2">
-                  Try adjusting your search or filters
+                  {searchQuery || selectedCategory
+                    ? 'Try adjusting your search or filters'
+                    : 'Check back later or create a new listing'}
                 </p>
               </div>
             ) : (
