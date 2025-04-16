@@ -256,19 +256,13 @@ def get_user_listings():
 @bp.route('/buyer', methods=['GET'])
 def get_buyer_listings():
     try:
-        # Get the netid from the query parameters
         netid = request.args.get('user_id')  # This is actually the netid
         
         if not netid:
             return jsonify({'error': 'NetID is required'}), 400
             
-        # First get the user by netid
-        user = User.query.filter_by(netid=netid).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-            
-        # Get all listings where this user is the buyer
-        listings = Listing.query.filter_by(buyer_id=user.id).order_by(Listing.created_at.desc()).all()
+        # Get all listings where this netid is the buyer
+        listings = Listing.query.filter_by(buyer_id=netid).order_by(Listing.created_at.desc()).all()
         
         # Convert to dictionary format
         return jsonify([{

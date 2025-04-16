@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { isAuthenticated, getNetid, UserInfo } from './services/authService';
+import { isAuthenticated, getUserInfo, setUserInfo, UserInfo } from './services/authService';
 import axios from 'axios';
 import Navbar from './components/Navbar';
 import MarketplacePage from './pages/MarketplacePage';
@@ -16,7 +16,7 @@ interface AuthResponse {
 
 const App: React.FC = () => {
   const [authenticated, setAuthenticated] = useState<boolean>(false);
-  const [netid, setNetid] = useState<string | null>(null);
+  const [userInfo, setUserInfoState] = useState<UserInfo | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -35,9 +35,10 @@ const App: React.FC = () => {
         })
           .then(response => {
             const { netid } = response.data;
-            localStorage.setItem('netid', netid);
+            const newUserInfo: UserInfo = { netid };
+            setUserInfo(newUserInfo);
+            setUserInfoState(newUserInfo);
             setAuthenticated(true);
-            setNetid(netid);
             navigate('/dashboard', { replace: true });
           })
           .catch(error => {
@@ -48,15 +49,15 @@ const App: React.FC = () => {
     } else {
       // Check if user is authenticated
       const isAuth = isAuthenticated();
-      const currentNetid = getNetid();
+      const currentUserInfo = getUserInfo();
       setAuthenticated(isAuth);
-      setNetid(currentNetid);
+      setUserInfoState(currentUserInfo);
     }
   }, [location, navigate]);
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar authenticated={authenticated} netid={netid} />
+      <Navbar authenticated={authenticated} netid={userInfo?.netid || null} />
       <main className="container mx-auto px-4 py-8">
         <Routes>
           <Route path="/" element={<MarketplacePage />} />

@@ -138,7 +138,7 @@ def verify_token():
             logger.error("No netid found in token claims")
             return jsonify({'error': 'Invalid token claims'}), 401
             
-        user = User.query.get(current_user_id)
+        user = User.query.filter_by(id=current_user_id).first()
         if not user:
             # If user doesn't exist, create them
             logger.info(f"User not found, creating new user with netid: {netid}")
@@ -150,7 +150,8 @@ def verify_token():
         logger.info(f"Token verified successfully for user: {user.netid}")
         return jsonify({
             'netid': user.netid,
-            'user_id': user.id
+            'user_id': user.id,
+            'email': user.email
         }), 200
     except Exception as e:
         logger.error(f"Token verification error: {str(e)}")

@@ -12,7 +12,7 @@ class Listing(db.Model):
     category = db.Column(db.String(50))
     status = db.Column(db.String(20), default='available')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
+    buyer_id = db.Column(db.String(80), db.ForeignKey('users.netid'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     condition = db.Column(db.String(50), nullable=True)
     

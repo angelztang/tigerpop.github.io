@@ -2,6 +2,7 @@
 
 import api from './api';
 import { getUserId } from './authService';
+import axios from 'axios';
 
 export interface Listing {
   id: number;
@@ -177,9 +178,9 @@ export const getUserPurchases = async (): Promise<Listing[]> => {
   }
 };
 
-export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
+export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
   try {
-    const response = await api.get<Listing[]>(`/listing/buyer?user_id=${userId}`);
+    const response = await axios.get(`${API_URL}/api/listing/buyer?user_id=${netid}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching buyer listings:', error);

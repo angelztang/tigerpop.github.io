@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Listing, getBuyerListings, getHeartedListings, heartListing, unheartListing } from '../services/listingService';
-import { getUserId } from '../services/authService';
+import { getNetid } from '../services/authService';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
 
@@ -18,43 +18,26 @@ const BuyerDashboard: React.FC = () => {
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
   useEffect(() => {
-    fetchListings();
-  }, [activeFilter]);
-
-  const fetchListings = async () => {
-    try {
-      const userId = getUserId();
-      if (!userId) {
-        navigate('/login');
-        return;
-      }
-      console.log('Fetching listings for user:', userId);
-      let data: Listing[];
-      
-      if (activeFilter === 'hearted') {
-        data = await getHeartedListings();
-      } else {
-        data = await getBuyerListings(userId);
-      }
-      
-      console.log('Received listings:', data);
-      setListings(data);
-      
-      // Update hearted list separately and don't let it affect the main listings
+    const fetchListings = async () => {
       try {
-        const heartedData = await getHeartedListings();
-        setHeartedListings(heartedData.map(listing => listing.id));
+        const netid = getNetid();
+        if (!netid) {
+          setError('User not authenticated');
+          setLoading(false);
+          return;
+        }
+        const data = await getBuyerListings(netid);
+        setListings(data);
       } catch (err) {
-        console.warn('Failed to fetch hearted listings:', err);
-        setHeartedListings([]);
+        setError('Failed to fetch listings');
+        console.error('Error:', err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Detailed error in fetchListings:', err);
-      setError('Failed to load listings');
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    fetchListings();
+  }, []);
 
   const handleHeartClick = async (id: number) => {
     try {
@@ -84,6 +67,10 @@ const BuyerDashboard: React.FC = () => {
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500 text-center">{error}</div>;
   }
 
   return (
@@ -129,9 +116,7 @@ const BuyerDashboard: React.FC = () => {
         <div className="flex justify-center items-center h-64">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
         </div>
-      ) : error ? (
-        <div className="text-red-500 text-center">{error}</div>
-      ) : filteredListings.length === 0 ? (
+      ) : listings.length === 0 ? (
         <div className="text-center text-gray-500 py-8">
           <p className="text-xl">No items found</p>
           <p className="text-sm mt-2">

@@ -11,16 +11,25 @@ export const login = () => {
 };
 
 export const logout = () => {
-  // Clear netid and redirect to login
-  localStorage.removeItem('netid');
+  // Clear user info and redirect to login
+  localStorage.removeItem('userInfo');
   window.location.href = '/login';
 };
 
-export const getNetid = () => localStorage.getItem('netid');
-
-export const isAuthenticated = () => {
-  return !!localStorage.getItem('netid');
+export const getUserInfo = (): UserInfo | null => {
+  const userInfoStr = localStorage.getItem('userInfo');
+  return userInfoStr ? JSON.parse(userInfoStr) : null;
 };
 
-// For backward compatibility - returns netid as the user ID
-export const getUserId = () => localStorage.getItem('netid'); 
+export const setUserInfo = (userInfo: UserInfo) => {
+  localStorage.setItem('userInfo', JSON.stringify(userInfo));
+};
+
+export const isAuthenticated = () => {
+  return !!getUserInfo();
+};
+
+export const getNetid = () => {
+  const userInfo = getUserInfo();
+  return userInfo?.netid || null;
+}; 
