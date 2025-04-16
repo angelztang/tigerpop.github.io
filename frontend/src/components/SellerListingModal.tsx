@@ -235,11 +235,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                       onChange={handleInputChange}
                       className="border rounded px-2 py-1 w-full"
                     >
-                      <option value="Clothing">Clothing</option>
-                      <option value="Electronics">Electronics</option>
-                      <option value="Furniture">Furniture</option>
-                      <option value="Books">Books</option>
-                      <option value="Other">Other</option>
+                      <option value="tops">tops</option>
+                      <option value="bottoms">bottoms</option>
+                      <option value="dresses">dresses</option>
+                      <option value="shoes">shoes</option>
+                      <option value="furniture">furniture</option>
+                      <option value="appliances">appliances</option>
+                      <option value="books">books</option>
+                      <option value="other">other</option>
                     </select>
                   ) : (
                     <p className="text-gray-600">{listing.category}</p>

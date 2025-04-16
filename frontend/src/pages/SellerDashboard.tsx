@@ -16,6 +16,7 @@ interface ListingFormData {
   category: string;
   images: string[];
   condition: string;
+  user_id: number;
 }
 
 const SellerDashboard: React.FC = () => {
@@ -60,8 +61,7 @@ const SellerDashboard: React.FC = () => {
       }
 
       const listingData: CreateListingData = {
-        ...formData,
-        user_id: parseInt(userId)
+        ...formData
       };
 
       const response = await createListing(listingData);

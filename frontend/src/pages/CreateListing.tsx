@@ -11,6 +11,7 @@ interface ListingFormData {
   category: string;
   images: string[];
   condition: string;
+  user_id: number;
 }
 
 const CreateListing: React.FC = () => {
@@ -29,8 +30,7 @@ const CreateListing: React.FC = () => {
       }
 
       const listingData: CreateListingData = {
-        ...formData,
-        user_id: parseInt(userId)
+        ...formData
       };
 
       await createListing(listingData);

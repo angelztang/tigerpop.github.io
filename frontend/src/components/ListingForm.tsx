@@ -2,7 +2,7 @@
 import { API_URL } from '../config';
 import { getUserId } from '../services/authService';
 // Popup Modal that appears when users click "Create Listing"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Listing, createListing, updateListing, uploadImages, CreateListingData } from '../services/listingService';
 
@@ -20,6 +20,7 @@ interface ListingFormData {
   category: string;
   condition: string;
   images: string[];
+  user_id: number;
 }
 
 const categories = [
@@ -48,11 +49,23 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     price: initialData.price || 0,
     category: initialData.category || '',
     condition: initialData.condition || 'good',
-    images: initialData.images || []
+    images: initialData.images || [],
+    user_id: initialData.user_id || 0
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize user_id when component mounts
+  useEffect(() => {
+    const userId = localStorage.getItem('user_id');
+    if (userId) {
+      setFormData(prev => ({
+        ...prev,
+        user_id: parseInt(userId)
+      }));
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -78,40 +91,35 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     setError(null);
 
     try {
-      const userId = getUserId();
+      const userId = localStorage.getItem('user_id');
       if (!userId) {
-        setError('User not authenticated');
+        setError('User not authenticated. Please log in.');
         return;
       }
 
-      // Create listing data
-      const listingData: ListingFormData = {
-        title: formData.title,
-        description: formData.description,
-        price: formData.price,
-        category: formData.category,
-        images: selectedFiles.map(file => URL.createObjectURL(file)),
-        condition: formData.condition
+      const listingData: CreateListingData = {
+        ...formData,
+        user_id: parseInt(userId)
       };
 
-      // Submit the form
+      // Validate required fields
+      if (!listingData.title || !listingData.description || !listingData.price || !listingData.category) {
+        setError('Please fill in all required fields');
+        return;
+      }
+
+      // Handle image uploads if there are any
+      if (selectedFiles.length > 0) {
+        const uploadedUrls = await uploadImages(selectedFiles);
+        listingData.images = uploadedUrls;
+      }
+
       await onSubmit(listingData);
-      
-      // Reset form
-      setFormData({
-        title: '',
-        description: '',
-        price: 0,
-        category: '',
-        condition: 'good',
-        images: []
-      });
-      setSelectedFiles([]);
-      setPreviewUrls([]);
-      
+      if (onClose) {
+        onClose();
+      }
     } catch (err) {
-      console.error('Error in listing creation:', err);
-      setError('Failed to create listing. Please try again.');
+      setError(err instanceof Error ? err.message : 'An error occurred while submitting the listing');
     }
   };
 
