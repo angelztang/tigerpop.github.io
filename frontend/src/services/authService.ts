@@ -2,6 +2,7 @@ import { CAS_URL, FRONTEND_URL } from '../config';
 
 export interface UserInfo {
   netid: string;
+  user_id?: string;
 }
 
 export const login = () => {
@@ -32,4 +33,9 @@ export const isAuthenticated = () => {
 export const getNetid = () => {
   const userInfo = getUserInfo();
   return userInfo?.netid || null;
+};
+
+export const getUserId = () => {
+  const userInfo = getUserInfo();
+  return userInfo?.user_id || null;
 }; 
