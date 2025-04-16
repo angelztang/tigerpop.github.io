@@ -10,7 +10,7 @@ def create_app(config_class=Config):
 
     # Enable CORS with credentials and expose headers
     CORS(app, 
-         resources={r"/api/*": {
+         resources={r"/*": {
              "origins": [
                  "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com",
                  "http://localhost:3000"

@@ -17,7 +17,7 @@ def test_image_upload():
             
             # Get backend URL from environment variable
             backend_url = os.getenv('SERVICE_URL', 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com')
-            url = f'{backend_url}/api/listings/test-upload'
+            url = f'{backend_url}/api/listing/test-upload'
             
             print(f'Testing upload to: {url}')
             
