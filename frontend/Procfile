@@ -1,1 +1,1 @@
-web: npm install -g serve@14.2.1 && serve -s build --single --listen $PORT --no-clipboard --no-request-logging
+web: npm start
