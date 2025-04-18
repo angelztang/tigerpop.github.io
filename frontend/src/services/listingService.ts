@@ -15,7 +15,8 @@ const handleResponse = async (response: Response) => {
 // Helper function to get request headers
 const getHeaders = () => {
   const headers: HeadersInit = {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
   };
   const token = localStorage.getItem('token');
   if (token) {
