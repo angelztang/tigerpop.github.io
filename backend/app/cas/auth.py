@@ -110,13 +110,22 @@ def validate_cas_ticket(ticket, service_url=None):
 
 def create_or_update_user(netid):
     """Create or update a user based on CAS netid."""
-    user = User.query.filter_by(netid=netid).first()
-    if not user:
-        user = User(netid=netid)
-        db.session.add(user)
-    
-    db.session.commit()
-    return user
+    try:
+        current_app.logger.info(f"Creating/updating user with netid: {netid}")
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            current_app.logger.info(f"Creating new user for netid: {netid}")
+            user = User(netid=netid)
+            db.session.add(user)
+            db.session.commit()
+            current_app.logger.info(f"Created new user with id: {user.id}")
+        else:
+            current_app.logger.info(f"Found existing user with id: {user.id}")
+        return user
+    except Exception as e:
+        current_app.logger.error(f"Error creating/updating user: {str(e)}")
+        db.session.rollback()
+        return None
 
 def generate_jwt_token(user):
     """Generate a JWT token for the user."""

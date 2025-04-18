@@ -1,19 +1,21 @@
 import os
 from datetime import timedelta
 from dotenv import load_dotenv
+import logging
+from logging.handlers import RotatingFileHandler
 
 load_dotenv()
 
 class Config:
     # Basic Flask config
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev')
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev'
     
     # JWT config
-    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'dev-secret-key')
+    JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY') or 'dev'
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
     
     # Database config
-    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL')
+    SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or 'sqlite:///app.db'
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
@@ -30,7 +32,22 @@ class Config:
     MAIL_PASSWORD = 'vvtb vsht wwro tvlb'
     MAIL_DEFAULT_SENDER = ('TigerPop', "tigerpopmarketplace@gmail.com")
 
+    # Logging configuration
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
+    LOG_LEVEL = logging.INFO
+    LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    LOG_FILE = 'app.log'
+    LOG_MAX_BYTES = 1024 * 1024  # 1MB
+    LOG_BACKUP_COUNT = 10
     
     # Ensure upload directory exists
     if not os.path.exists(UPLOAD_FOLDER):
         os.makedirs(UPLOAD_FOLDER)
+
+    # Additional config
+    CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')
+    CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY')
+    CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET')
+    FRONTEND_URL = os.environ.get('FRONTEND_URL') or 'http://localhost:3000'
+    SERVICE_URL = os.environ.get('SERVICE_URL') or 'http://localhost:5000'
+    CAS_URL = os.environ.get('CAS_URL') or 'https://fed.princeton.edu/cas'

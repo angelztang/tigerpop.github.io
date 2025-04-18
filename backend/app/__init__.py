@@ -2,10 +2,32 @@ from flask import Flask, request
 from app.config import Config
 from app.extensions import db, migrate, init_extensions, jwt
 import os
+import logging
+from logging.handlers import RotatingFileHandler
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Setup logging
+    if not app.debug and not app.testing:
+        if app.config['LOG_TO_STDOUT']:
+            stream_handler = logging.StreamHandler()
+            stream_handler.setLevel(app.config['LOG_LEVEL'])
+            stream_handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
+            app.logger.addHandler(stream_handler)
+        else:
+            if not os.path.exists('logs'):
+                os.mkdir('logs')
+            file_handler = RotatingFileHandler('logs/app.log',
+                                             maxBytes=app.config['LOG_MAX_BYTES'],
+                                             backupCount=app.config['LOG_BACKUP_COUNT'])
+            file_handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
+            file_handler.setLevel(app.config['LOG_LEVEL'])
+            app.logger.addHandler(file_handler)
+
+        app.logger.setLevel(app.config['LOG_LEVEL'])
+        app.logger.info('TigerPop startup')
 
     # Initialize extensions
     init_extensions(app)
