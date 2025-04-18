@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import ListingCard from '../components/ListingCard';
 import { Listing, getListings, heartListing, unheartListing, getHeartedListings } from '../services/listingService';
 import ListingDetailModal from '../components/ListingDetailModal';
+import { isAuthenticated } from '../services/authService';
 
 interface PriceRange {
   label: string;
@@ -23,6 +24,7 @@ const MarketplacePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
+  const [isUserAuthenticated, setIsUserAuthenticated] = useState(false);
 
   const priceRanges: PriceRange[] = [
     { label: 'Under $10', max: 10 },
@@ -46,7 +48,6 @@ const MarketplacePage: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      let url = '';
       const params = new URLSearchParams();
       
       // Always filter for available listings
@@ -60,43 +61,75 @@ const MarketplacePage: React.FC = () => {
         params.append('category', selectedCategory);
       }
       
-      url = `?${params.toString()}`;
-      
-      const data = await getListings(url);
-      setListings(data);
-    } catch (error) {
-      console.error('Error fetching listings:', error);
-      // Don't set error state, just set empty listings
-      setListings([]);
+      const response = await getListings(params.toString());
+      setListings(response);
+    } catch (err) {
+      setError('Failed to fetch listings');
+      console.error('Error fetching listings:', err);
     } finally {
       setLoading(false);
     }
   };
 
   const fetchHeartedListings = async () => {
+    if (!isUserAuthenticated) return;
+    
     try {
-      const hearted = await getHeartedListings();
-      setHeartedListings(hearted.map(listing => listing.id));
-    } catch (error) {
-      // If hearted listings fail, just set empty array
-      setHeartedListings([]);
+      const response = await getHeartedListings();
+      setHeartedListings(response.map(listing => listing.id));
+    } catch (err) {
+      console.error('Error fetching hearted listings:', err);
     }
   };
 
   useEffect(() => {
-    fetchListings();
-    fetchHeartedListings();
-  }, [selectedPrice, selectedCategory]);
+    setIsUserAuthenticated(isAuthenticated());
+  }, []);
 
-  // Add this new useEffect for initial mount
   useEffect(() => {
     fetchListings();
-    fetchHeartedListings();
-  }, []); // Empty dependency array means this runs once on mount
+    if (isUserAuthenticated) {
+      fetchHeartedListings();
+    }
+  }, [selectedPrice, selectedCategory, isUserAuthenticated]);
 
   const handleListingUpdated = () => {
     fetchListings();
-    setSelectedListing(null); // Close any open modals
+    if (isUserAuthenticated) {
+      fetchHeartedListings();
+    }
+  };
+
+  const handleCategoryClick = (slug: string) => {
+    setSelectedCategory(selectedCategory === slug ? null : slug);
+  };
+
+  const handlePriceClick = (max: number) => {
+    setSelectedPrice(selectedPrice === max ? null : max);
+  };
+
+  const handleHeartClick = async (id: number) => {
+    if (!isUserAuthenticated) {
+      // Redirect to login if not authenticated
+      window.location.href = '/login';
+      return;
+    }
+
+    try {
+      if (heartedListings.includes(id)) {
+        await unheartListing(id);
+        setHeartedListings(heartedListings.filter(listingId => listingId !== id));
+      } else {
+        await heartListing(id);
+        setHeartedListings([...heartedListings, id]);
+      }
+      // If we're on the hearted filter, refresh the listings
+      if (selectedCategory === 'hearted') {
+        await fetchListings();
+      }
+    } catch (error) {
+      console.error('Error toggling heart:', error);
+    }
   };
 
   const location = useLocation();
@@ -105,45 +138,8 @@ const MarketplacePage: React.FC = () => {
     const queryParams = new URLSearchParams(location.search);
     const categoryParam = queryParams.get('category');
     setSelectedCategory(categoryParam);
-    setSelectedPrice(null); // Reset price when URL changes category
+    setSelectedPrice(null);
   }, [location.search]);
-
-  const handleCategoryClick = (slug: string) => {
-    setSelectedCategory(selectedCategory === slug ? null : slug);
-    setSelectedPrice(null); // Reset price filter when changing category
-  };
-
-  const handlePriceClick = (max: number) => {
-    setSelectedPrice(selectedPrice === max ? null : max);
-  };
-
-  const handleHeartClick = async (id: number) => {
-    try {
-      const isHearted = heartedListings.includes(id);
-      if (isHearted) {
-        await unheartListing(id);
-        setHeartedListings(prev => prev.filter(listingId => listingId !== id));
-      } else {
-        await heartListing(id);
-        setHeartedListings(prev => [...prev, id]);
-      }
-    } catch (error: any) {
-      console.error('Error toggling heart:', error);
-      if (error.response?.status === 401) {
-        alert('Please log in to heart listings');
-      } else if (error.response?.status === 400) {
-        if (error.response?.data?.error === 'Listing already hearted') {
-          alert('You have already hearted this listing');
-        } else if (error.response?.data?.error === 'Listing is not available') {
-          alert('This listing is no longer available');
-        } else {
-          alert('Failed to heart listing: ' + error.response?.data?.error);
-        }
-      } else {
-        alert('Failed to heart listing. Please try again.');
-      }
-    }
-  };
 
   const filteredListings = listings.filter(listing => {
     // Always filter out non-available listings
@@ -164,19 +160,21 @@ const MarketplacePage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold mb-8">Marketplace</h1>
+      
       {/* Price Filters */}
       <div className="mb-8">
-        <h2 className="text-xl font-bold mb-4">Shop By Price</h2>
-        <div className="flex flex-wrap gap-3">
+        <h2 className="text-xl font-semibold mb-4">Price Range</h2>
+        <div className="flex flex-wrap gap-2">
           {priceRanges.map((range) => (
             <button
               key={range.max}
               onClick={() => handlePriceClick(range.max)}
-              className={`px-6 py-2 rounded-lg ${
+              className={`px-4 py-2 rounded-full ${
                 selectedPrice === range.max
-                  ? 'bg-orange-100 text-orange-700'
-                  : 'bg-gray-50 hover:bg-gray-100 text-gray-700'
-              } transition-colors duration-200`}
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
+              }`}
             >
               {range.label}
             </button>
@@ -184,63 +182,58 @@ const MarketplacePage: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Cards */}
-      <div className="mb-12">
-        <h2 className="text-xl font-bold mb-4">Shop By Piece</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+      {/* Category Filters */}
+      <div className="mb-8">
+        <h2 className="text-xl font-semibold mb-4">Categories</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {categories.map((category) => (
             <button
               key={category.slug}
               onClick={() => handleCategoryClick(category.slug)}
-              className={`relative overflow-hidden rounded-lg aspect-[4/3] group ${
+              className={`p-4 rounded-lg ${
                 selectedCategory === category.slug
-                  ? 'ring-2 ring-orange-500'
-                  : ''
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-gray-200 text-gray-800'
               }`}
             >
-              <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-60"></div>
               <img
                 src={category.image}
                 alt={category.name}
-                className="w-full h-full object-cover"
+                className="w-full h-32 object-cover rounded mb-2"
               />
-              <span className="absolute bottom-4 left-4 text-white text-xl font-medium">
-                {category.name}
-              </span>
+              <span>{category.name}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* All Items Section */}
-      <div>
-        <h2 className="text-xl font-bold mb-6">All Items</h2>
-        {filteredListings.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-xl text-gray-600">No items available at the moment</p>
-            <p className="text-sm text-gray-500 mt-2">Check back later for new listings</p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredListings.map((listing) => (
-              <ListingCard
-                key={listing.id}
-                listing={listing}
-                isHearted={heartedListings.includes(listing.id)}
-                onHeartClick={handleHeartClick}
-                onClick={() => setSelectedListing(listing)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Listings Grid */}
+      {loading ? (
+        <div className="text-center">Loading...</div>
+      ) : error ? (
+        <div className="text-center text-red-500">{error}</div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredListings.map((listing) => (
+            <ListingCard
+              key={listing.id}
+              listing={listing}
+              isHearted={heartedListings.includes(listing.id)}
+              onHeartClick={() => handleHeartClick(listing.id)}
+              onClick={() => setSelectedListing(listing)}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Listing Detail Modal */}
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
+          isHearted={heartedListings.includes(selectedListing.id)}
+          onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
-          onListingUpdated={handleListingUpdated}
+          onUpdate={handleListingUpdated}
         />
       )}
     </div>

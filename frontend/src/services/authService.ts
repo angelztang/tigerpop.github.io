@@ -1,4 +1,4 @@
-import { CAS_URL, FRONTEND_URL } from '../config';
+import { API_URL, CAS_URL, FRONTEND_URL } from '../config';
 
 export interface UserInfo {
   netid: string;
@@ -6,8 +6,8 @@ export interface UserInfo {
 }
 
 export const login = () => {
-  // Redirect to CAS login with frontend callback URL
-  const serviceUrl = `${FRONTEND_URL}/auth/callback`;
+  // Redirect to CAS login with backend callback URL
+  const serviceUrl = `${API_URL}/api/auth/cas/login`;
   window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
 };
 

@@ -4,11 +4,19 @@ import { requestToBuy } from '../services/listingService';
 
 interface ListingDetailModalProps {
   listing: Listing;
+  isHearted: boolean;
+  onHeartClick: () => void;
   onClose: () => void;
-  onListingUpdated?: () => void;
+  onUpdate?: () => void;
 }
 
-const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClose, onListingUpdated }) => {
+const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ 
+  listing, 
+  isHearted,
+  onHeartClick,
+  onClose, 
+  onUpdate 
+}) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
@@ -32,8 +40,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
     try {
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
-      if (onListingUpdated) {
-        onListingUpdated();
+      if (onUpdate) {
+        onUpdate();
       }
       setTimeout(() => {
         onClose();
@@ -67,14 +75,48 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ listing, onClos
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold">{listing.title}</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={onHeartClick}
+                className={`p-2 rounded-full ${
+                  isHearted ? 'text-red-500' : 'text-gray-400'
+                } hover:text-red-500 transition-colors`}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill={isHearted ? 'currentColor' : 'none'}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* Image Carousel */}

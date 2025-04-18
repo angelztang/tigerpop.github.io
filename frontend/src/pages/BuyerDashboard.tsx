@@ -17,40 +17,44 @@ const BuyerDashboard: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const netid = getNetid();
-        if (!netid) {
-          setError('User not authenticated');
-          setLoading(false);
-          return;
-        }
-        const data = await getBuyerListings(netid);
-        setListings(data);
-      } catch (err) {
-        setError('Failed to fetch listings');
-        console.error('Error:', err);
-      } finally {
+  const fetchListings = async () => {
+    try {
+      const netid = getNetid();
+      if (!netid) {
+        setError('User not authenticated');
         setLoading(false);
+        return;
       }
-    };
+      const data = await getBuyerListings(netid);
+      setListings(data);
+    } catch (err) {
+      setError('Failed to fetch listings');
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchListings();
   }, []);
 
   const handleHeartClick = async (id: number) => {
     try {
-      const isHearted = heartedListings.includes(id);
-      if (isHearted) {
+      if (heartedListings.includes(id)) {
         await unheartListing(id);
-        setHeartedListings(prev => prev.filter(listingId => listingId !== id));
+        setHeartedListings(heartedListings.filter(listingId => listingId !== id));
       } else {
         await heartListing(id);
-        setHeartedListings(prev => [...prev, id]);
+        setHeartedListings([...heartedListings, id]);
       }
+      // If we're on the hearted filter, refresh the listings
       if (activeFilter === 'hearted') {
-        fetchListings();
+        const netid = getNetid();
+        if (netid) {
+          const response = await getBuyerListings(netid);
+          setListings(response);
+        }
       }
     } catch (error) {
       console.error('Error toggling heart:', error);
@@ -142,7 +146,10 @@ const BuyerDashboard: React.FC = () => {
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
+          isHearted={heartedListings.includes(selectedListing.id)}
+          onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
+          onUpdate={fetchListings}
         />
       )}
     </div>
