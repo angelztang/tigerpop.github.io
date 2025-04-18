@@ -4,12 +4,22 @@ import ListingForm from '../components/ListingForm';
 import { createListing, CreateListingData } from '../services/listingService';
 import { getUserId } from '../services/authService';
 
+interface ListingFormData {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  images: string[];
+  condition: string;
+  user_id: number;
+}
+
 const CreateListing: React.FC = () => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (formData: { title: string; description: string; price: string; category: string; images: string[]; condition: string }) => {
+  const handleSubmit = async (formData: ListingFormData) => {
     setIsSubmitting(true);
     setError(null);
     try {
@@ -20,10 +30,7 @@ const CreateListing: React.FC = () => {
       }
 
       const listingData: CreateListingData = {
-        ...formData,
-        price: parseFloat(formData.price),
-        user_id: parseInt(userId),
-        condition: formData.condition
+        ...formData
       };
 
       await createListing(listingData);

@@ -1,9 +1,28 @@
 // Handles fetching, creating, and updating listings (API calls)
 
-import api from './api';
 import { getUserId } from './authService';
-import axios from 'axios';
-import { API_URL } from '../config';
+
+const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
+
+// Helper function to handle API responses
+const handleResponse = async (response: Response) => {
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return response.json();
+};
+
+// Helper function to get request headers
+const getHeaders = () => {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json'
+  };
+  const token = localStorage.getItem('token');
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+  return headers;
+};
 
 export interface Listing {
   id: number;
@@ -44,67 +63,69 @@ export interface ListingFilters {
 }
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
-  try {
-    const url = filters ? `/listing${filters}` : '/listing';
-    const response = await api.get<Listing[]>(url);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching listings:', error);
-    return [];
-  }
+  const url = filters ? `${API_URL}/api/listing/${filters}` : `${API_URL}/api/listing/`;
+  const response = await fetch(url, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
-export const getListing = async (id: number): Promise<Listing | null> => {
-  try {
-    const response = await api.get<Listing>(`/listing/${id}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching listing:', error);
-    return null;
-  }
+export const getListing = async (id: number): Promise<Listing> => {
+  const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  try {
-    const response = await api.post<Listing>('/listing', data);
-    return response.data;
-  } catch (error) {
-    console.error('Error creating listing:', error);
-    throw error;
-  }
+  const response = await fetch(`${API_URL}/api/listing/`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
-  try {
-    const response = await api.put<Listing>(`/listing/${id}`, data);
-    return response.data;
-  } catch (error) {
-    console.error('Error updating listing:', error);
-    throw error;
-  }
+  const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+    method: 'PUT',
+    headers: getHeaders(),
+    body: JSON.stringify(data),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  try {
-    const response = await api.patch<Listing>(`/listing/${id}/status`, { status });
-    return response.data;
-  } catch (error) {
-    console.error('Error updating listing status:', error);
-    throw error;
-  }
+  const response = await fetch(`${API_URL}/api/listing/${id}/status/`, {
+    method: 'PATCH',
+    headers: getHeaders(),
+    body: JSON.stringify({ status }),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  try {
-    const userId = getUserId();
-    if (!userId) {
-      throw new Error('User not authenticated');
-    }
-    await api.delete(`/listing/${id}?user_id=${userId}`);
-  } catch (error) {
-    console.error('Error deleting listing:', error);
-    throw error;
+  const userId = getUserId();
+  if (!userId) {
+    throw new Error('User not authenticated');
   }
+  const response = await fetch(`${API_URL}/api/listing/${id}/?user_id=${userId}`, {
+    method: 'DELETE',
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const uploadImages = async (files: File[]): Promise<string[]> => {
@@ -114,17 +135,23 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
       formData.append('images', file);
     });
 
-    const response = await api.post<{ urls: string[] }>('/listing/upload', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const headers = getHeaders();
+    delete headers['Content-Type']; // Let the browser set the correct content type for FormData
 
-    if (!response.data.urls || !Array.isArray(response.data.urls)) {
+    const response = await fetch(`${API_URL}/api/listing/upload/`, {
+      method: 'POST',
+      headers,
+      body: formData,
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    const data = await handleResponse(response);
+    if (!data.urls || !Array.isArray(data.urls)) {
       throw new Error('Invalid response format from server');
     }
 
-    return response.data.urls;
+    return data.urls;
   } catch (error) {
     console.error('Error uploading images:', error);
     throw error;
@@ -132,23 +159,21 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
 };
 
 export const getCategories = async (): Promise<string[]> => {
-  try {
-    const response = await api.get<string[]>('/listing/categories');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching categories:', error);
-    return [];
-  }
+  const response = await fetch(`${API_URL}/api/listing/categories/`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  try {
-    const response = await api.get<Listing[]>(`/listing/user?user_id=${userId}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user listings:', error);
-    return [];
-  }
+  const response = await fetch(`${API_URL}/api/listing/user/?user_id=${userId}`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
@@ -157,12 +182,18 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
     if (!userId) {
       throw new Error('User not authenticated');
     }
-    const response = await api.post(`/listing/${listingId}/buy`, {
-      buyer_id: userId,
-      message: 'I am interested in this item',
-      contact_info: 'Please contact me via email'
+    const response = await fetch(`${API_URL}/api/listing/${listingId}/buy/`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        buyer_id: userId,
+        message: 'I am interested in this item',
+        contact_info: 'Please contact me via email'
+      }),
+      credentials: 'include',
+      mode: 'cors'
     });
-    return response.data;
+    return handleResponse(response);
   } catch (error) {
     console.error('Error sending notification:', error);
     throw error;
@@ -170,23 +201,21 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
 };
 
 export const getUserPurchases = async (): Promise<Listing[]> => {
-  try {
-    const response = await api.get<Listing[]>('/listing/purchases');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching user purchases:', error);
-    return [];
-  }
+  const response = await fetch(`${API_URL}/api/listing/purchases/`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
-export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
-  try {
-    const response = await api.get<Listing[]>(`/listing/buyer?user_id=${netid}`);
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching buyer listings:', error);
-    return [];
-  }
+export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
+  const response = await fetch(`${API_URL}/api/listing/buyer/?user_id=${userId}`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
 };
 
 export const heartListing = async (id: number): Promise<void> => {
@@ -195,7 +224,13 @@ export const heartListing = async (id: number): Promise<void> => {
     if (!token) {
       throw new Error('Please log in to heart listings');
     }
-    await api.post(`/listing/${id}/heart`, {});
+    const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
+      method: 'POST',
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse(response);
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Please log in to heart listings');
@@ -210,7 +245,13 @@ export const unheartListing = async (id: number): Promise<void> => {
     if (!token) {
       throw new Error('Please log in to unheart listings');
     }
-    await api.delete(`/listing/${id}/heart`);
+    const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse(response);
   } catch (error: any) {
     if (error.response?.status === 401) {
       throw new Error('Please log in to unheart listings');
@@ -225,16 +266,21 @@ export const getHeartedListings = async (): Promise<Listing[]> => {
     if (!token) {
       return [];
     }
-    const response = await api.get<Listing[]>('/listing/hearted');
-    return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      return [];
+    const response = await fetch(`${API_URL}/api/listing/hearted/`, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    if (!response.ok) {
+      if (response.status === 401) return [];
+      if (response.status === 422) {
+        console.warn('Failed to fetch hearted listings (422)');
+        return [];
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-    if (error.response?.status === 422) {
-      console.warn('Failed to fetch hearted listings (422):', error.response?.data);
-      return [];
-    }
+    return handleResponse(response);
+  } catch (error) {
     console.error('Error fetching hearted listings:', error);
     return [];
   }

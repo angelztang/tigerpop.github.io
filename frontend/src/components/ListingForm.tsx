@@ -2,10 +2,9 @@
 import { API_URL } from '../config';
 import { getUserId } from '../services/authService';
 // Popup Modal that appears when users click "Create Listing"
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Listing, createListing, updateListing, uploadImages, CreateListingData } from '../services/listingService';
-import api from '../services/api';
 
 interface ListingFormProps {
   onSubmit: (data: ListingFormData) => void;
@@ -17,10 +16,11 @@ interface ListingFormProps {
 interface ListingFormData {
   title: string;
   description: string;
-  price: string;
+  price: number;
   category: string;
   condition: string;
   images: string[];
+  user_id: number;
 }
 
 const categories = [
@@ -46,14 +46,26 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const [formData, setFormData] = useState<ListingFormData>({
     title: initialData.title || '',
     description: initialData.description || '',
-    price: initialData.price || '',
+    price: initialData.price || 0,
     category: initialData.category || '',
-    condition: initialData.condition || '',
-    images: initialData.images || []
+    condition: initialData.condition || 'good',
+    images: initialData.images || [],
+    user_id: initialData.user_id || 0
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Initialize user_id when component mounts
+  useEffect(() => {
+    const userId = localStorage.getItem('user_id');
+    if (userId) {
+      setFormData(prev => ({
+        ...prev,
+        user_id: parseInt(userId)
+      }));
+    }
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -77,41 +89,37 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
-      // Upload images first if any
-      let imageUrls: string[] = [];
-      if (selectedFiles.length > 0) {
-        try {
-          imageUrls = await uploadImages(selectedFiles);
-        } catch (uploadError) {
-          console.error('Error uploading images:', uploadError);
-          setError('Failed to upload images. Please try again.');
-          return;
-        }
+      const userId = localStorage.getItem('user_id');
+      if (!userId) {
+        setError('User not authenticated. Please log in.');
+        return;
       }
 
-      // Create listing data
-      const listingData = {
-        title: formData.title,
-        description: formData.description,
-        price: parseFloat(formData.price),
-        category: formData.category,
-        condition: formData.condition,
-        user_id: getUserId(),
-        images: imageUrls
+      const listingData: CreateListingData = {
+        ...formData,
+        user_id: parseInt(userId)
       };
 
-      // Send the request using api instance
-      const response = await api.post('/listing', listingData);
+      // Validate required fields
+      if (!listingData.title || !listingData.description || !listingData.price || !listingData.category) {
+        setError('Please fill in all required fields');
+        return;
+      }
 
-      onSubmit({
-        ...formData,
-        images: imageUrls
-      });
-    } catch (error: any) {
-      console.error('Error in listing creation:', error);
-      setError(error.response?.data?.error || 'Failed to create listing');
+      // Handle image uploads if there are any
+      if (selectedFiles.length > 0) {
+        const uploadedUrls = await uploadImages(selectedFiles);
+        listingData.images = uploadedUrls;
+      }
+
+      await onSubmit(listingData);
+      if (onClose) {
+        onClose();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred while submitting the listing');
     }
   };
 
@@ -216,7 +224,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 type="text"
                 id="price"
                 name="price"
-                value={formData.price}
+                value={formData.price.toString()}
                 onChange={handleChange}
                 required
                 pattern="^\d+(\.\d{1,2})?$"
@@ -274,7 +282,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
               className={`px-4 py-2 text-white rounded-md ${
                 isSubmitting
                   ? 'bg-orange-400 cursor-not-allowed'

@@ -1,47 +1,49 @@
-import os
-import sys
 import requests
-from app import create_app
-from app.models.user import User
-from app.extensions import db
-from app.cas.auth import get_or_create_user, validate_ticket
-from dotenv import load_dotenv
-from flask import Flask
-import urllib.parse
+import webbrowser
 import time
-
-# Load environment variables
-load_dotenv()
+from app import create_app
+from app.models import User
+from app.cas.auth import CAS_SERVER, CAS_SERVICE, validate_cas_ticket
+from app.extensions import db
 
 def test_auth_flow():
-    print("Testing end-to-end authentication flow...")
+    """Test the CAS authentication flow."""
+    print("Starting CAS authentication test...")
     
-    # Create a test Flask app with Heroku database URL
-    app = Flask(__name__)
-    database_url = os.environ.get('DATABASE_URL')
-    if database_url and database_url.startswith('postgres://'):
-        database_url = database_url.replace('postgres://', 'postgresql://', 1)
-    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev')
-    
-    # Initialize database
-    db.init_app(app)
-    
-    print("\nPlease enter your netid:")
-    netid = input("Enter your netid: ").strip()
-    
-    print("\nCreating/retrieving user...")
+    # Create Flask app context
+    app = create_app()
     with app.app_context():
-        try:
-            user = get_or_create_user(netid)
-            print(f"Successfully created/retrieved user {netid}")
-            print(f"User details: {user.to_dict()}")
-        except Exception as e:
-            print(f"Error during user creation: {str(e)}")
-
+        # Construct CAS login URL
+        service_url = f"{CAS_SERVICE}/api/cas/login"
+        login_url = f"{CAS_SERVER}/login?service={service_url}"
+        
+        print(f"\nOpening CAS login URL in browser: {login_url}")
+        webbrowser.open(login_url)
+        
+        # Wait for user to log in and get ticket
+        print("\nPlease log in through CAS in your browser.")
+        print("After logging in, you will be redirected. Copy the 'ticket' parameter from the URL.")
+        ticket = input("\nEnter the ticket from the URL: ").strip()
+        
+        if not ticket:
+            print("No ticket provided. Test failed.")
+            return
+        
+        print(f"\nValidating ticket: {ticket}")
+        netid = validate_cas_ticket(ticket, service_url)
+        
+        if not netid:
+            print("Ticket validation failed.")
+            return
+        
+        print(f"\nTicket validated successfully for netid: {netid}")
+        
+        # Check if user exists in database
+        user = User.query.filter_by(netid=netid).first()
+        if user:
+            print(f"\nUser found in database: {user.netid}")
+        else:
+            print("\nUser not found in database. This is unexpected.")
+            
 if __name__ == "__main__":
-    try:
-        test_auth_flow()
-    except Exception as e:
-        print(f"Error during test: {str(e)}") 
+    test_auth_flow() 

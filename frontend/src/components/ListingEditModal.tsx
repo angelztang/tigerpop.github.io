@@ -12,9 +12,10 @@ interface ListingEditModalProps {
 interface ListingFormData {
   title: string;
   description: string;
-  price: string;
+  price: number;
   category: string;
   images: string[];
+  condition: string;
 }
 
 const categories = [
@@ -57,7 +58,7 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
     try {
       await updateListing(listing.id, {
         ...formData,
-        price: parseFloat(formData.price)
+        price: parseFloat(formData.price.toString())
       });
       onUpdate();
       onClose();
@@ -96,9 +97,10 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
           initialData={{
             title: listing.title,
             description: listing.description,
-            price: listing.price.toString(),
+            price: listing.price,
             category: listing.category,
-            images: listing.images
+            images: listing.images,
+            condition: listing.condition
           }}
         />
 

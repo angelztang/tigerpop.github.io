@@ -1,17 +1,65 @@
 // Main dashboard with Buyer/Seller mode toggle
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getNetid } from '../services/authService';
+import { getNetid, initializeUser } from '../services/authService';
 import { Listing } from '../services/listingService';
 import SellerDashboard from "./SellerDashboard";
 import BuyerDashboard from "./BuyerDashboard";
-import Marketplace from "./MarketplacePage";
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"buyer" | "seller">("buyer");
   const [listings, setListings] = useState<Listing[]>([]);
-  const netid = getNetid(); // Get actual NetID from localStorage
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const netid = getNetid();
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        if (!netid) {
+          navigate('/login');
+          return;
+        }
+
+        // Initialize user in database
+        const userData = await initializeUser();
+        console.log('User initialized:', userData);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error initializing user:', error);
+        setError('Failed to initialize user data');
+        setLoading(false);
+      }
+    };
+
+    init();
+  }, [netid, navigate]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-600 mt-8">
+        <p>{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -28,14 +76,11 @@ const Dashboard: React.FC = () => {
         </button>
       </div>
 
-      {/* Conditional Rendering based on mode */}
       {mode === "buyer" ? (
         <BuyerDashboard />
       ) : (
         <SellerDashboard />
       )}
-      <div className="mt-8">
-      </div>
     </div>
   );
 };
