@@ -214,17 +214,9 @@ def initialize_user():
         db.session.rollback()
         return jsonify({'error': 'Failed to initialize user'}), 500
 
-@bp.route('/users/check', methods=['POST', 'OPTIONS'])
+@bp.route('/users/check', methods=['POST'])
 def check_user():
     """Check if user exists, create if they don't."""
-    # Handle preflight request
-    if request.method == 'OPTIONS':
-        response = jsonify({'status': 'ok'})
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        response.headers['Access-Control-Allow-Methods'] = 'POST'
-        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
-        return response
-
     try:
         data = request.get_json()
         netid = data.get('netid')
@@ -243,12 +235,10 @@ def check_user():
         else:
             logger.info(f"Found existing user with netid: {netid}")
         
-        response = jsonify({
+        return jsonify({
             'netid': user.netid,
             'user_id': user.id
-        })
-        response.headers['Access-Control-Allow-Origin'] = '*'
-        return response, 200
+        }), 200
         
     except Exception as e:
         logger.error(f"Error checking/creating user: {str(e)}")

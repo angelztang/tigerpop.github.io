@@ -2,12 +2,13 @@ const express = require('express');
 const path = require('path');
 const app = express();
 
-// Serve static files from the dist directory
-app.use(express.static('dist'));
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'build')));
 
-// Handle React routing by serving index.html for all routes
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
 
 const port = process.env.PORT || 3000;
