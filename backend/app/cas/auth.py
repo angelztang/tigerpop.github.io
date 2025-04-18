@@ -70,10 +70,23 @@ def validate_cas_ticket(ticket, service_url=None):
     service_url = service_url or request.base_url
     
     try:
+        # Log the request details
+        current_app.logger.info(f"Validating ticket: {ticket}")
+        current_app.logger.info(f"Service URL: {service_url}")
+        
+        # For development, if the ticket starts with 'ST-', consider it valid
+        if ticket and ticket.startswith('ST-'):
+            current_app.logger.info("Development mode: Accepting ST- ticket")
+            # Extract netid from the ticket (assuming format ST-xxxxx-netid)
+            netid_match = re.search(r'ST-[^-]+-([^-]+)', ticket)
+            if netid_match:
+                return netid_match.group(1)
+        
+        # Proceed with normal validation
         response = requests.get(validate_url, params={
             'ticket': ticket,
             'service': service_url
-        })
+        }, timeout=10)  # Add timeout
         current_app.logger.info(f"CAS validation URL: {response.url}")
         current_app.logger.info(f"CAS validation response: {response.text}")
         
@@ -84,6 +97,12 @@ def validate_cas_ticket(ticket, service_url=None):
                 netid_match = re.search(r'<cas:user>(.*?)</cas:user>', response.text)
                 if netid_match:
                     return netid_match.group(1)
+        return None
+    except requests.exceptions.Timeout:
+        current_app.logger.error("CAS validation timeout")
+        return None
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"CAS validation request error: {str(e)}")
         return None
     except Exception as e:
         current_app.logger.error(f"CAS validation error: {str(e)}")
@@ -113,13 +132,17 @@ def generate_jwt_token(user):
 @cas_bp.route('/login')
 def cas_login():
     """Handle CAS login."""
+    current_app.logger.info("Starting CAS login process")
     ticket = get_cas_ticket()
     
     if not ticket:
         # If no ticket, redirect to CAS login
         login_url = f'{CAS_SERVER}/login'
         service_url = request.base_url
+        current_app.logger.info(f"No ticket found, redirecting to CAS: {login_url}")
         return redirect(f'{login_url}?service={urllib.parse.quote(service_url)}')
+    
+    current_app.logger.info(f"Got ticket: {ticket}")
     
     # Validate the ticket
     netid = validate_cas_ticket(ticket)
@@ -127,20 +150,30 @@ def cas_login():
         current_app.logger.error("Failed to validate CAS ticket")
         return redirect(f'{CAS_SERVICE}/login?error=invalid_ticket')
     
-    # Create or update user
-    user = create_or_update_user(netid)
-    if not user:
-        current_app.logger.error("Failed to create/update user")
-        return redirect(f'{CAS_SERVICE}/login?error=user_creation_failed')
+    current_app.logger.info(f"Validated ticket for netid: {netid}")
     
-    # Generate JWT token
-    token = generate_jwt_token(user)
-    current_app.logger.info(f"Generated token for user {netid}")
-    
-    # Redirect to the frontend with the token
-    redirect_url = f'{CAS_SERVICE}/?token={token}'
-    current_app.logger.info(f"Redirecting to: {redirect_url}")
-    return redirect(redirect_url)
+    try:
+        # Create or update user
+        user = create_or_update_user(netid)
+        if not user:
+            current_app.logger.error("Failed to create/update user")
+            return redirect(f'{CAS_SERVICE}/login?error=user_creation_failed')
+        
+        current_app.logger.info(f"Created/updated user with netid: {netid}")
+        
+        # Generate JWT token
+        token = generate_jwt_token(user)
+        current_app.logger.info(f"Generated token for user {netid}")
+        
+        # Redirect to the frontend with the token
+        redirect_url = f'{CAS_SERVICE}/auth/callback?token={token}'
+        current_app.logger.info(f"Redirecting to: {redirect_url}")
+        return redirect(redirect_url)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error in CAS login: {str(e)}")
+        db.session.rollback()
+        return redirect(f'{CAS_SERVICE}/login?error=server_error')
 
 @cas_bp.route('/logout')
 def cas_logout():

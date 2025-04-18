@@ -178,3 +178,79 @@ def validate_ticket():
     except Exception as e:
         current_app.logger.error(f"Error validating ticket: {str(e)}")
         return jsonify({'error': 'Error validating ticket'}), 500
+
+@bp.route('/users/initialize', methods=['POST'])
+def initialize_user():
+    """Initialize a user in the database after successful CAS authentication."""
+    try:
+        data = request.get_json()
+        netid = data.get('netid')
+        
+        if not netid:
+            return jsonify({'error': 'No netid provided'}), 400
+            
+        logger.info(f"Initializing user with netid: {netid}")
+        
+        # Check if user exists
+        user = User.query.filter_by(netid=netid).first()
+        
+        if not user:
+            # Create new user
+            logger.info(f"Creating new user for netid: {netid}")
+            user = User(netid=netid)
+            db.session.add(user)
+            db.session.commit()
+            logger.info(f"Created new user with id: {user.id}")
+        else:
+            logger.info(f"Found existing user with id: {user.id}")
+        
+        return jsonify({
+            'netid': user.netid,
+            'user_id': user.id
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error initializing user: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to initialize user'}), 500
+
+@bp.route('/users/check', methods=['POST', 'OPTIONS'])
+def check_user():
+    """Check if user exists, create if they don't."""
+    # Handle preflight request
+    if request.method == 'OPTIONS':
+        response = jsonify({'status': 'ok'})
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        response.headers['Access-Control-Allow-Methods'] = 'POST'
+        response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
+        return response
+
+    try:
+        data = request.get_json()
+        netid = data.get('netid')
+        
+        if not netid:
+            logger.error("No netid provided")
+            return jsonify({'error': 'No netid provided'}), 400
+            
+        # Simplified user check and creation
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            user = User(netid=netid)
+            db.session.add(user)
+            db.session.commit()
+            logger.info(f"Created new user with netid: {netid}")
+        else:
+            logger.info(f"Found existing user with netid: {netid}")
+        
+        response = jsonify({
+            'netid': user.netid,
+            'user_id': user.id
+        })
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response, 200
+        
+    except Exception as e:
+        logger.error(f"Error checking/creating user: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
