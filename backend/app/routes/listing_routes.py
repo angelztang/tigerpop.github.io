@@ -7,7 +7,7 @@ from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import base64
 import io
 from PIL import Image
@@ -249,18 +249,18 @@ def get_user_listings():
 @jwt_required()
 def get_buyer_listings():
     try:
-        # Get the user_id from the JWT token
-        current_user_id = get_jwt_identity()
-        
-        # Get query parameters
-        user_id = request.args.get('user_id')
-        
-        # Ensure the user is requesting their own listings
-        if user_id != current_user_id:
-            return jsonify({'error': 'Unauthorized access'}), 403
+        # Get the netid from the JWT token claims
+        current_netid = get_jwt().get('netid')
+        if not current_netid:
+            return jsonify({'error': 'No netid found in token'}), 401
+            
+        # Get the user by netid
+        user = User.query.filter_by(netid=current_netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
             
         # Query for listings where the user is the buyer
-        listings = Listing.query.filter_by(buyer_id=user_id).order_by(Listing.created_at.desc()).all()
+        listings = Listing.query.filter_by(buyer_id=user.id).order_by(Listing.created_at.desc()).all()
         
         # Convert to dictionary format
         return jsonify([{
