@@ -6,15 +6,13 @@ class User(db.Model):
     __tablename__ = 'users'
     
     netid = db.Column(db.String(80), primary_key=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
     
     def __init__(self, netid):
         self.netid = netid
     
     def to_dict(self):
         return {
-            'netid': self.netid,
-            'created_at': self.created_at.isoformat() if self.created_at else None
+            'netid': self.netid
         }
     
     def __repr__(self):
