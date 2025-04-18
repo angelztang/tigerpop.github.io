@@ -250,6 +250,8 @@ const MarketplacePage: React.FC = () => {
             listing={selectedListing}
             onClose={() => setSelectedListing(null)}
             onListingUpdated={handleListingUpdated}
+            isHearted={heartedListings.includes(selectedListing.id)}
+            onHeartClick={() => handleHeartClick(selectedListing.id)}
           />
         )}
       </div>
