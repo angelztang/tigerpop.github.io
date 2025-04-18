@@ -78,12 +78,11 @@ def validate_cas_ticket(ticket, service_url=None):
         # For development, if the ticket starts with 'ST-', consider it valid
         if ticket and ticket.startswith('ST-'):
             current_app.logger.info("Development mode: Accepting ST- ticket")
-            # Extract netid from the ticket (assuming format ST-xxxxx-netid)
-            netid_match = re.search(r'ST-[^-]+-([^-]+)', ticket)
-            if netid_match:
-                netid = netid_match.group(1)
-                current_app.logger.info(f"Development mode: Extracted netid {netid}")
-                return netid
+            # In development mode, use the ticket itself as the netid
+            # This is because the ticket is already the netid in development
+            netid = ticket
+            current_app.logger.info(f"Development mode: Using ticket as netid: {netid}")
+            return netid
         
         # Proceed with normal validation
         response = requests.get(validate_url, params={
