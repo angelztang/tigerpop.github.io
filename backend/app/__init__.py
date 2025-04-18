@@ -14,7 +14,12 @@ def create_app(config_class=Config):
     # Setup CORS
     CORS(app, resources={
         r"/api/*": {
-            "origins": ["https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
+            "origins": [
+                "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com",
+                "http://localhost:3000",
+                "http://localhost:5000",
+                "http://localhost:5001"
+            ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization"]
         }

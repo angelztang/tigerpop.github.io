@@ -9,6 +9,7 @@ import bcrypt
 import logging
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
+import os
 
 bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -92,13 +93,13 @@ def cas_login():
     if not ticket:
         # If no ticket, redirect to CAS login
         login_url = 'https://fed.princeton.edu/cas/login'
-        service_url = request.args.get('redirect_uri', 'http://localhost:3000')
+        service_url = request.args.get('redirect_uri', os.environ.get('FRONTEND_URL', 'http://localhost:3000'))
         return redirect(f'{login_url}?service={service_url}')
     
     # Validate the ticket
     username = validate_cas_ticket(ticket)
     if not username:
-        return redirect(f'http://localhost:3000/login?error=invalid_ticket')
+        return redirect(f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/login?error=invalid_ticket")
     
     # Create or update user
     user = create_or_update_user(username)
@@ -107,7 +108,7 @@ def cas_login():
     token = generate_jwt_token(user)
     
     # Redirect back to frontend with token
-    redirect_uri = request.args.get('redirect_uri', 'http://localhost:3000')
+    redirect_uri = request.args.get('redirect_uri', os.environ.get('FRONTEND_URL', 'http://localhost:3000'))
     return redirect(f'{redirect_uri}?token={token}')
 
 @bp.route('/cas/logout')
@@ -118,7 +119,7 @@ def cas_logout():
     
     # Redirect to CAS logout
     logout_url = 'https://fed.princeton.edu/cas/logout'
-    service_url = request.args.get('redirect_uri', 'http://localhost:3000')
+    service_url = request.args.get('redirect_uri', os.environ.get('FRONTEND_URL', 'http://localhost:3000'))
     return redirect(f'{logout_url}?service={service_url}')
 
 @bp.route('/verify', methods=['GET'])
