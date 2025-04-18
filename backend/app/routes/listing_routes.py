@@ -246,25 +246,22 @@ def get_user_listings():
         return jsonify({'error': 'Failed to fetch user listings'}), 500
 
 @bp.route('/buyer', methods=['GET'])
+@jwt_required()
 def get_buyer_listings():
     try:
-        # Get the netid from the query parameters
-        netid = request.args.get('user_id')  # using user_id param for netid for backward compatibility
+        # Get the user_id from the JWT token
+        current_user_id = get_jwt_identity()
         
-        if not netid:
-            return jsonify({'error': 'User ID is required'}), 400
-            
-        # Get all listings where this user is the buyer by joining with users table
-        listings = (Listing.query
-                   .join(User, Listing.buyer_id == User.id)
-                   .filter(User.netid == netid)
-                   .order_by(Listing.created_at.desc())
-                   .all())
+        # Get query parameters
+        user_id = request.args.get('user_id')
         
-        # Return empty array if no listings found
-        if not listings:
-            return jsonify([])
+        # Ensure the user is requesting their own listings
+        if user_id != current_user_id:
+            return jsonify({'error': 'Unauthorized access'}), 403
             
+        # Query for listings where the user is the buyer
+        listings = Listing.query.filter_by(buyer_id=user_id).order_by(Listing.created_at.desc()).all()
+        
         # Convert to dictionary format
         return jsonify([{
             'id': listing.id,
@@ -274,8 +271,10 @@ def get_buyer_listings():
             'category': listing.category,
             'status': listing.status,
             'user_id': listing.user_id,
+            'buyer_id': listing.buyer_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]
+            'images': [image.filename for image in listing.images],
+            'condition': listing.condition
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
