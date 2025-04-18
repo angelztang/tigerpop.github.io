@@ -4,6 +4,7 @@ from app.extensions import db, migrate, init_extensions, jwt
 import os
 import logging
 from logging.handlers import RotatingFileHandler
+import sys
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -11,12 +12,13 @@ def create_app(config_class=Config):
 
     # Setup logging
     if not app.debug and not app.testing:
-        if app.config['LOG_TO_STDOUT']:
-            stream_handler = logging.StreamHandler()
-            stream_handler.setLevel(app.config['LOG_LEVEL'])
-            stream_handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
-            app.logger.addHandler(stream_handler)
-        else:
+        # Always log to stdout on Heroku
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setLevel(app.config['LOG_LEVEL'])
+        stream_handler.setFormatter(logging.Formatter(app.config['LOG_FORMAT']))
+        app.logger.addHandler(stream_handler)
+        
+        if not app.config['LOG_TO_STDOUT']:
             if not os.path.exists('logs'):
                 os.mkdir('logs')
             file_handler = RotatingFileHandler('logs/app.log',

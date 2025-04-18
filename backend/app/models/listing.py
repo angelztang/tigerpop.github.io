@@ -11,8 +11,8 @@ class Listing(db.Model):
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50))
     status = db.Column(db.String(20), default='available')
-    user_id = db.Column(db.String(80), db.ForeignKey('users.netid'))
-    buyer_id = db.Column(db.String(80), db.ForeignKey('users.netid'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     condition = db.Column(db.String(50), nullable=True)
     
@@ -67,7 +67,7 @@ class HeartedListing(db.Model):
     __tablename__ = 'hearted_listings'
     
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.String(80), db.ForeignKey('users.netid'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     

@@ -19,6 +19,13 @@ class Config:
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 10,
+        'max_overflow': 2,
+        'pool_recycle': 300,
+        'pool_pre_ping': True,
+        'pool_timeout': 30
+    }
     
     # File upload config
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
@@ -33,7 +40,7 @@ class Config:
     MAIL_DEFAULT_SENDER = ('TigerPop', "tigerpopmarketplace@gmail.com")
 
     # Logging configuration
-    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT')
+    LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT', True)  # Default to True for Heroku
     LOG_LEVEL = logging.INFO
     LOG_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     LOG_FILE = 'app.log'
@@ -42,7 +49,11 @@ class Config:
     
     # Ensure upload directory exists
     if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
+        try:
+            os.makedirs(UPLOAD_FOLDER)
+        except Exception:
+            # On Heroku, we can't create directories
+            pass
 
     # Additional config
     CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME')

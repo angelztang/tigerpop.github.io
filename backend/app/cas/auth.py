@@ -15,6 +15,7 @@ import xml.etree.ElementTree as ET
 from flask import Blueprint
 from datetime import datetime, timedelta
 import os
+from functools import wraps
 
 #-----------------------------------------------------------------------
 
@@ -210,4 +211,37 @@ def is_authenticated():
         return True
     except Exception as e:
         current_app.logger.error(f"Token validation error: {str(e)}")
-        return False 
+        return False
+
+def login_required(f):
+    """Decorator to require JWT authentication."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not is_authenticated():
+            return jsonify({'error': 'Authentication required'}), 401
+        return f(*args, **kwargs)
+    return decorated_function
+
+def get_user_info():
+    """Get user info from JWT token."""
+    if not is_authenticated():
+        return None
+    token = request.cookies.get('token')
+    try:
+        payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None
+
+def init_auth(app):
+    """Initialize CAS authentication."""
+    app.config.setdefault('CAS_SERVER', 'https://fed.princeton.edu/cas')
+    app.config.setdefault('CAS_SERVICE', 'http://localhost:5001/api/auth/cas/callback')
+    app.config.setdefault('CAS_AFTER_LOGIN', '/')
+    app.config.setdefault('CAS_AFTER_LOGOUT', '/')
+    app.config.setdefault('CAS_LOGIN_ROUTE', '/login')
+    app.config.setdefault('CAS_LOGOUT_ROUTE', '/logout')
+    app.config.setdefault('CAS_VALIDATE_ROUTE', '/serviceValidate')
+    app.config.setdefault('CAS_TOKEN_SESSION_KEY', '_CAS_TOKEN') 
