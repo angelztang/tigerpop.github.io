@@ -86,4 +86,15 @@ export const initializeUser = async () => {
     console.error('Error initializing user:', error);
     throw error;
   }
+};
+
+export const setUserInfo = (userInfo: UserInfo) => {
+  console.log('Setting user info:', userInfo);
+  localStorage.setItem('netid', userInfo.netid);
+};
+
+export const getUserInfo = (): UserInfo | null => {
+  const netid = localStorage.getItem('netid');
+  console.log('Getting user info for netid:', netid);
+  return netid ? { netid } : null;
 }; 
