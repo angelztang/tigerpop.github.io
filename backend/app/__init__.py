@@ -1,4 +1,5 @@
 from flask import Flask, request
+from flask_cors import CORS
 from app.config import Config
 from app.extensions import db, migrate, init_extensions, jwt
 import os
@@ -9,6 +10,15 @@ import sys
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+
+    # Setup CORS
+    CORS(app, resources={
+        r"/api/*": {
+            "origins": ["https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+            "allow_headers": ["Content-Type", "Authorization"]
+        }
+    })
 
     # Setup logging
     if not app.debug and not app.testing:
