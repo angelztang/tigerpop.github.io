@@ -1,9 +1,4 @@
-export const API_URL = process.env.NODE_ENV === 'production'
-  ? 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'
-  : 'http://localhost:8000';
-
+// Always use Heroku URLs to avoid local development issues
+export const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
 export const CAS_URL = 'https://fed.princeton.edu/cas';
-
-export const FRONTEND_URL = process.env.NODE_ENV === 'production'
-  ? 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'
-  : 'http://localhost:3000'; 
+export const FRONTEND_URL = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'; 
