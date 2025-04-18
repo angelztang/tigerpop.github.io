@@ -64,6 +64,29 @@ def get_cas_ticket():
             ticket = re.search(r'ticket=([^&]+)', duo_redirect).group(1)
     return ticket
 
+def extract_netid_from_cas_response(response_text):
+    """Extract the netid directly from the CAS response."""
+    try:
+        # Parse the XML response
+        root = ET.fromstring(response_text)
+        # Find the authentication success element
+        success = root.find('.//{http://www.yale.edu/tp/cas}authenticationSuccess')
+        if success is not None:
+            # Extract the netid from the user element
+            user = success.find('{http://www.yale.edu/tp/cas}user')
+            if user is not None:
+                netid = user.text
+                current_app.logger.info(f"Extracted netid from CAS response: {netid}")
+                return netid
+            else:
+                current_app.logger.error("No user element found in CAS response")
+        else:
+            current_app.logger.error("No authentication success found in CAS response")
+        return None
+    except Exception as e:
+        current_app.logger.error(f"Error extracting netid from CAS response: {str(e)}")
+        return None
+
 def validate_cas_ticket(ticket, service_url=None):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
@@ -93,21 +116,11 @@ def validate_cas_ticket(ticket, service_url=None):
         current_app.logger.info(f"CAS validation response: {response.text}")
         
         if response.status_code == 200:
-            # Parse the XML response
-            root = ET.fromstring(response.text)
-            # Find the authentication success element
-            success = root.find('.//{http://www.yale.edu/tp/cas}authenticationSuccess')
-            if success is not None:
-                # Extract the netid from the user element
-                user = success.find('{http://www.yale.edu/tp/cas}user')
-                if user is not None:
-                    netid = user.text
-                    current_app.logger.info(f"Successfully validated ticket for netid: {netid}")
-                    return netid
-                else:
-                    current_app.logger.error("No user element found in CAS response")
-            else:
-                current_app.logger.error("No authentication success found in CAS response")
+            # Extract netid directly from the response
+            netid = extract_netid_from_cas_response(response.text)
+            if netid:
+                current_app.logger.info(f"Successfully validated ticket for netid: {netid}")
+                return netid
         else:
             current_app.logger.error(f"CAS validation failed with status code: {response.status_code}")
         return None
