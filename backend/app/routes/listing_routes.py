@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, current_app
+from flask import Blueprint, request, jsonify, current_app, session
 from werkzeug.utils import secure_filename
 import os
 from ..extensions import db, mail
@@ -249,10 +249,10 @@ def get_user_listings():
 @jwt_required()
 def get_buyer_listings():
     try:
-        # Get the netid from the JWT token claims
-        current_netid = get_jwt().get('netid')
+        # Get the netid from the session
+        current_netid = session.get('netid')
         if not current_netid:
-            return jsonify({'error': 'No netid found in token'}), 401
+            return jsonify({'error': 'No netid found in session'}), 401
             
         # Get the user by netid
         user = User.query.filter_by(netid=current_netid).first()

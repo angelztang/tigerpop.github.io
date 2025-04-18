@@ -190,6 +190,10 @@ def cas_login():
         
         current_app.logger.info(f"Created/updated user with netid: {netid}")
         
+        # Store netid in session
+        session['netid'] = netid
+        current_app.logger.info(f"Stored netid {netid} in session")
+        
         # Generate JWT token
         token = generate_jwt_token(user)
         current_app.logger.info(f"Generated token for user {netid}")
