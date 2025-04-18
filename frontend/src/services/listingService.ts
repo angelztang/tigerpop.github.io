@@ -209,13 +209,28 @@ export const getUserPurchases = async (): Promise<Listing[]> => {
   return handleResponse(response);
 };
 
-export const getBuyerListings = async (userId: string): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/api/listing/buyer/?user_id=${userId}`, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
+  try {
+    console.log('Fetching buyer listings for netid:', netid);
+    const response = await fetch(`${API_URL}/api/listing/buyer?netid=${netid}`, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error fetching buyer listings:', errorData);
+      throw new Error(errorData.error || 'Failed to fetch buyer listings');
+    }
+    
+    const data = await response.json();
+    console.log('Received buyer listings:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in getBuyerListings:', error);
+    throw error;
+  }
 };
 
 export const heartListing = async (id: number): Promise<void> => {
