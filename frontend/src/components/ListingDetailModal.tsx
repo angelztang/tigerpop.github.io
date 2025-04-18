@@ -8,6 +8,7 @@ interface ListingDetailModalProps {
   onHeartClick: () => void;
   onClose: () => void;
   onUpdate?: () => void;
+  onListingUpdated?: () => void;
 }
 
 const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ 
@@ -15,7 +16,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   isHearted,
   onHeartClick,
   onClose, 
-  onUpdate 
+  onUpdate,
+  onListingUpdated
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -42,6 +44,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       setNotificationSent(true);
       if (onUpdate) {
         onUpdate();
+      }
+      if (onListingUpdated) {
+        onListingUpdated();
       }
       setTimeout(() => {
         onClose();
