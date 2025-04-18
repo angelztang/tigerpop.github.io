@@ -246,16 +246,15 @@ def get_user_listings():
         return jsonify({'error': 'Failed to fetch user listings'}), 500
 
 @bp.route('/buyer', methods=['GET'])
-@jwt_required()
 def get_buyer_listings():
     try:
-        # Get the netid from the session
-        current_netid = session.get('netid')
-        if not current_netid:
-            return jsonify({'error': 'No netid found in session'}), 401
+        # Get the netid from the request parameters
+        netid = request.args.get('netid')
+        if not netid:
+            return jsonify({'error': 'No netid provided'}), 400
             
         # Get the user by netid
-        user = User.query.filter_by(netid=current_netid).first()
+        user = User.query.filter_by(netid=netid).first()
         if not user:
             return jsonify({'error': 'User not found'}), 404
             
