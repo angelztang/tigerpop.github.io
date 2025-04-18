@@ -27,7 +27,7 @@ logger = logging.getLogger(__name__)
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'  # Frontend URL without /api prefix
+CAS_SERVICE = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com/api/auth/cas/callback'
 
 #-----------------------------------------------------------------------
 
@@ -67,8 +67,8 @@ def get_cas_ticket():
 def validate_cas_ticket(ticket, service_url=None):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    # Use provided service URL or fall back to request.base_url
-    service_url = service_url or request.base_url
+    # Use provided service URL or fall back to CAS_SERVICE
+    service_url = service_url or CAS_SERVICE
     
     try:
         # Log the request details
@@ -78,10 +78,10 @@ def validate_cas_ticket(ticket, service_url=None):
         # For development, if the ticket starts with 'ST-', consider it valid
         if ticket and ticket.startswith('ST-'):
             current_app.logger.info("Development mode: Accepting ST- ticket")
-            # In development mode, use the ticket itself as the netid
-            # This is because the ticket is already the netid in development
-            netid = ticket
-            current_app.logger.info(f"Development mode: Using ticket as netid: {netid}")
+            # In development mode, use a test netid
+            # This is for testing purposes only
+            netid = "testuser"
+            current_app.logger.info(f"Development mode: Using test netid: {netid}")
             return netid
         
         # Proceed with normal validation
