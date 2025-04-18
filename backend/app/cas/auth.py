@@ -81,7 +81,9 @@ def validate_cas_ticket(ticket, service_url=None):
             # Extract netid from the ticket (assuming format ST-xxxxx-netid)
             netid_match = re.search(r'ST-[^-]+-([^-]+)', ticket)
             if netid_match:
-                return netid_match.group(1)
+                netid = netid_match.group(1)
+                current_app.logger.info(f"Development mode: Extracted netid {netid}")
+                return netid
         
         # Proceed with normal validation
         response = requests.get(validate_url, params={
@@ -92,12 +94,23 @@ def validate_cas_ticket(ticket, service_url=None):
         current_app.logger.info(f"CAS validation response: {response.text}")
         
         if response.status_code == 200:
-            # Check if the response contains a successful authentication
-            if '<cas:authenticationSuccess>' in response.text:
-                # Extract netid from the response
-                netid_match = re.search(r'<cas:user>(.*?)</cas:user>', response.text)
-                if netid_match:
-                    return netid_match.group(1)
+            # Parse the XML response
+            root = ET.fromstring(response.text)
+            # Find the authentication success element
+            success = root.find('.//{http://www.yale.edu/tp/cas}authenticationSuccess')
+            if success is not None:
+                # Extract the netid from the user element
+                user = success.find('{http://www.yale.edu/tp/cas}user')
+                if user is not None:
+                    netid = user.text
+                    current_app.logger.info(f"Successfully validated ticket for netid: {netid}")
+                    return netid
+                else:
+                    current_app.logger.error("No user element found in CAS response")
+            else:
+                current_app.logger.error("No authentication success found in CAS response")
+        else:
+            current_app.logger.error(f"CAS validation failed with status code: {response.status_code}")
         return None
     except requests.exceptions.Timeout:
         current_app.logger.error("CAS validation timeout")
@@ -113,6 +126,12 @@ def create_or_update_user(netid):
     """Create or update a user based on CAS netid."""
     try:
         current_app.logger.info(f"Creating/updating user with netid: {netid}")
+        
+        # Validate netid format (Princeton netids are typically 3-8 characters)
+        if not re.match(r'^[a-zA-Z0-9]{3,8}$', netid):
+            current_app.logger.error(f"Invalid netid format: {netid}")
+            return None
+            
         user = User.query.filter_by(netid=netid).first()
         if not user:
             current_app.logger.info(f"Creating new user for netid: {netid}")
