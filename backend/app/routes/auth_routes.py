@@ -216,32 +216,34 @@ def initialize_user():
         return jsonify({'error': 'Failed to initialize user'}), 500
 
 @bp.route('/users/check', methods=['POST'])
+@jwt_required()
 def check_user():
     """Check if user exists, create if they don't."""
     try:
-        data = request.get_json()
-        netid = data.get('netid')
+        # Get the current user from the JWT token
+        current_user = get_jwt_identity()
+        netid = current_user.get('netid')
         
         if not netid:
-            logger.error("No netid provided")
-            return jsonify({'error': 'No netid provided'}), 400
+            logger.error("No netid found in JWT token")
+            return jsonify({'error': 'No netid found in token'}), 401
             
         # Simplified user check and creation
         user = User.query.filter_by(netid=netid).first()
         if not user:
+            # Create new user if they don't exist
             user = User(netid=netid)
             db.session.add(user)
             db.session.commit()
             logger.info(f"Created new user with netid: {netid}")
-        else:
-            logger.info(f"Found existing user with netid: {netid}")
         
         return jsonify({
-            'netid': user.netid,
-            'user_id': user.id
+            'message': 'User checked successfully',
+            'user_id': user.id,
+            'netid': user.netid
         }), 200
         
     except Exception as e:
-        logger.error(f"Error checking/creating user: {str(e)}")
+        logger.error(f"Error checking user: {str(e)}")
         db.session.rollback()
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to check user'}), 500
