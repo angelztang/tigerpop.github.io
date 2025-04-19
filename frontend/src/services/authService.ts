@@ -18,7 +18,6 @@ export const logout = () => {
   console.log('Starting logout process');
   // Clear netid and redirect to login
   localStorage.removeItem('netid');
-  localStorage.removeItem('token');
   window.location.href = '/login';
 };
 
@@ -26,12 +25,6 @@ export const getNetid = () => {
   const netid = localStorage.getItem('netid');
   console.log('Getting netid:', netid);
   return netid;
-};
-
-export const getToken = () => {
-  const token = localStorage.getItem('token');
-  console.log('Getting token:', token ? 'Token exists' : 'No token');
-  return token;
 };
 
 export const isAuthenticated = () => {
@@ -54,27 +47,29 @@ export const initializeUser = async () => {
     const netid = getNetid();
     if (!netid) {
       console.error('No netid found during initialization');
-      throw new Error('No netid found');
-    }
-
-    const token = getToken();
-    const headers: HeadersInit = {
-      'Content-Type': 'application/json'
-    };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+      // Redirect to login if no netid is found
+      login();
+      return;
     }
 
     console.log('Making request to initialize user');
     const response = await fetch(`${API_URL}/api/auth/users/check`, {
       method: 'POST',
-      headers,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
       body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
 
     if (!response.ok) {
+      if (response.status === 401) {
+        // If unauthorized, redirect to login
+        login();
+        return;
+      }
       console.error('Failed to initialize user:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
