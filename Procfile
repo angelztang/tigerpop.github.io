@@ -1,1 +1,1 @@
-web: gunicorn --chdir backend wsgi:app 
+web: serve -s build
