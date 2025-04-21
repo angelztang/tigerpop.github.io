@@ -1,49 +1,91 @@
 import requests
-import webbrowser
-import time
+import json
+import logging
 from app import create_app
 from app.models import User
-from app.cas.auth import CAS_SERVER, CAS_SERVICE, validate_cas_ticket
 from app.extensions import db
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# Server configuration
+BASE_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'
+
 def test_auth_flow():
-    """Test the CAS authentication flow."""
-    print("Starting CAS authentication test...")
-    
-    # Create Flask app context
+    """Test the complete authentication flow."""
     app = create_app()
     with app.app_context():
-        # Construct CAS login URL
-        service_url = f"{CAS_SERVICE}/api/cas/login"
-        login_url = f"{CAS_SERVER}/login?service={service_url}"
-        
-        print(f"\nOpening CAS login URL in browser: {login_url}")
-        webbrowser.open(login_url)
-        
-        # Wait for user to log in and get ticket
-        print("\nPlease log in through CAS in your browser.")
-        print("After logging in, you will be redirected. Copy the 'ticket' parameter from the URL.")
-        ticket = input("\nEnter the ticket from the URL: ").strip()
-        
-        if not ticket:
-            print("No ticket provided. Test failed.")
-            return
-        
-        print(f"\nValidating ticket: {ticket}")
-        netid = validate_cas_ticket(ticket, service_url)
-        
-        if not netid:
-            print("Ticket validation failed.")
-            return
-        
-        print(f"\nTicket validated successfully for netid: {netid}")
-        
-        # Check if user exists in database
-        user = User.query.filter_by(netid=netid).first()
-        if user:
-            print(f"\nUser found in database: {user.netid}")
-        else:
-            print("\nUser not found in database. This is unexpected.")
+        try:
+            # Test 1: Test database connection
+            logger.info("Testing database connection...")
+            response = requests.get(f'{BASE_URL}/api/auth/test-db')
+            assert response.status_code == 200, f"Database connection test failed with status {response.status_code}: {response.text}"
+            logger.info("Database connection test passed")
+
+            # Test 2: Test user initialization for new user
+            logger.info("Testing user initialization for new user...")
+            test_netid = "testuser123"
             
-if __name__ == "__main__":
+            # First, ensure the user doesn't exist
+            existing_user = User.query.filter_by(netid=test_netid).first()
+            if existing_user:
+                db.session.delete(existing_user)
+                db.session.commit()
+            
+            # Try to initialize the user
+            response = requests.post(f'{BASE_URL}/api/auth/users/initialize',
+                                  json={'netid': test_netid})
+            assert response.status_code == 200, f"User initialization failed with status {response.status_code}: {response.text}"
+            data = response.json()
+            assert data['netid'] == test_netid, "Returned netid doesn't match"
+            logger.info("User initialization test passed")
+
+            # Test 3: Test user initialization for existing user
+            logger.info("Testing user initialization for existing user...")
+            response = requests.post(f'{BASE_URL}/api/auth/users/initialize',
+                                  json={'netid': test_netid})
+            assert response.status_code == 200, f"User initialization failed for existing user with status {response.status_code}: {response.text}"
+            data = response.json()
+            assert data['netid'] == test_netid, "Returned netid doesn't match for existing user"
+            logger.info("Existing user initialization test passed")
+
+            # Test 4: Test CAS validation and user creation
+            logger.info("Testing CAS validation and user creation...")
+            new_netid = "newuser456"
+            # Simulate CAS validation with a test ticket
+            test_ticket = "ST-test-ticket"
+            test_service = "https://tigerpop.io/auth/callback"
+            response = requests.get(f'{BASE_URL}/api/auth/validate',
+                                 params={'ticket': test_ticket, 'service': test_service})
+            assert response.status_code == 200, f"CAS validation failed with status {response.status_code}: {response.text}"
+            data = response.json()
+            assert 'netid' in data, "No netid returned"
+            netid = data['netid']
+            logger.info("CAS validation test passed")
+
+            # Test 5: Initialize user from CAS validation
+            logger.info("Testing user initialization from CAS validation...")
+            response = requests.post(f'{BASE_URL}/api/auth/users/initialize',
+                                  json={'netid': netid})
+            assert response.status_code == 200, f"User initialization failed with status {response.status_code}: {response.text}"
+            data = response.json()
+            assert data['netid'] == netid, "User netid doesn't match"
+            logger.info("User initialization from CAS validation test passed")
+
+            logger.info("All authentication tests passed successfully!")
+            return True
+
+        except Exception as e:
+            logger.error(f"Test failed: {str(e)}")
+            return False
+        finally:
+            # Clean up test users
+            for netid in [test_netid, new_netid]:
+                test_user = User.query.filter_by(netid=netid).first()
+                if test_user:
+                    db.session.delete(test_user)
+                    db.session.commit()
+
+if __name__ == '__main__':
     test_auth_flow() 

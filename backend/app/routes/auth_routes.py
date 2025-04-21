@@ -72,13 +72,20 @@ def login():
         if not user or not check_password_hash(user.password_hash, password):
             return jsonify({'message': 'Invalid username or password'}), 401
             
-        access_token = create_access_token(identity=user.id)
+        # Include netid in the token claims
+        access_token = create_access_token(
+            identity=user.id,
+            additional_claims={
+                'netid': user.netid
+            }
+        )
         return jsonify({
             'access_token': access_token,
             'user': {
                 'id': user.id,
                 'username': user.username,
-                'email': user.email
+                'email': user.email,
+                'netid': user.netid
             }
         })
     except Exception as e:
@@ -247,3 +254,34 @@ def check_user():
         logger.error(f"Error checking user: {str(e)}")
         db.session.rollback()
         return jsonify({'error': 'Failed to check user'}), 500
+
+@bp.route('/validate', methods=['POST'])
+def validate():
+    """Validate a user's credentials."""
+    data = request.get_json()
+    if not data or 'netid' not in data:
+        return jsonify({'error': 'Missing netid'}), 400
+
+    netid = data['netid']
+    try:
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            user = User(netid=netid)
+            db.session.add(user)
+            db.session.commit()
+
+        # Include netid in the token claims
+        access_token = create_access_token(
+            identity=user.id,
+            additional_claims={
+                'netid': user.netid
+            }
+        )
+        return jsonify({
+            'token': access_token,
+            'user': user.to_dict()
+        }), 200
+    except Exception as e:
+        current_app.logger.error(f"Error in validate: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Server error'}), 500

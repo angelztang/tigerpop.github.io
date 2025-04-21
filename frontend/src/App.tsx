@@ -12,6 +12,7 @@ import { API_URL, FRONTEND_URL } from './config';
 
 interface AuthResponse {
   netid: string;
+  token: string;
 }
 
 const App: React.FC = () => {
@@ -34,9 +35,13 @@ const App: React.FC = () => {
           }
         })
           .then(response => {
-            const { netid } = response.data;
+            const { netid, token } = response.data;
+            // Store token and netid in localStorage
+            localStorage.setItem('token', token);
+            localStorage.setItem('netid', netid);
+            
+            // Update state
             const newUserInfo: UserInfo = { netid };
-            setUserInfo(newUserInfo);
             setUserInfoState(newUserInfo);
             setAuthenticated(true);
             navigate('/dashboard', { replace: true });
