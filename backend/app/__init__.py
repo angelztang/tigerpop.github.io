@@ -11,33 +11,16 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
-    # Setup CORS with more permissive settings for development
+    # Configure CORS
     CORS(app, resources={
         r"/api/*": {
             "origins": [
                 "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com",
-                "http://localhost:3000",
-                "http://localhost:5000",
-                "http://localhost:5001"
+                "http://localhost:3000"
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": [
-                "Content-Type", 
-                "Authorization", 
-                "X-Requested-With",
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Headers",
-                "Access-Control-Allow-Methods"
-            ],
-            "expose_headers": [
-                "Content-Type", 
-                "Authorization",
-                "Access-Control-Allow-Origin",
-                "Access-Control-Allow-Headers",
-                "Access-Control-Allow-Methods"
-            ],
-            "supports_credentials": True,
-            "max_age": 3600
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "supports_credentials": True
         }
     })
 
