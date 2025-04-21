@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
+import { API_URL, FRONTEND_URL } from '../config';
 
 const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -7,26 +9,32 @@ const AuthCallback: React.FC = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const token = params.get('token');
+    const ticket = params.get('ticket');
     
-    if (token) {
-      // Extract netid from JWT token
-      try {
-        const tokenPayload = JSON.parse(atob(token.split('.')[1]));
-        const netid = tokenPayload.netid;
-        
-        // Store both token and netid
-        localStorage.setItem('token', token);
-        localStorage.setItem('netid', netid);
-        
-        // Redirect to dashboard
-        navigate('/dashboard');
-      } catch (error) {
-        console.error('Error processing token:', error);
-        navigate('/login?error=invalid_token');
-      }
+    if (ticket) {
+      // Validate ticket with backend, including service URL
+      const serviceUrl = `${FRONTEND_URL}/auth/callback`;
+      axios.get(`${API_URL}/api/auth/validate`, {
+        params: {
+          ticket,
+          service: serviceUrl
+        }
+      })
+        .then(response => {
+          const { netid, token } = response.data;
+          // Store token and netid in localStorage
+          localStorage.setItem('token', token);
+          localStorage.setItem('netid', netid);
+          
+          // Redirect to dashboard
+          navigate('/dashboard');
+        })
+        .catch(error => {
+          console.error('Error validating ticket:', error);
+          navigate('/login?error=invalid_ticket');
+        });
     } else {
-      navigate('/login?error=no_token');
+      navigate('/login?error=no_ticket');
     }
   }, [navigate, location]);
 
