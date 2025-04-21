@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 # Server configuration
 BASE_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'
+FRONTEND_URL = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'
 
 def test_auth_flow():
     """Test the complete authentication flow."""
@@ -52,12 +53,19 @@ def test_auth_flow():
 
             # Test 4: Test CAS validation and user creation
             logger.info("Testing CAS validation and user creation...")
-            new_netid = "newuser456"
-            # Simulate CAS validation with a test ticket
-            test_ticket = "ST-test-ticket"
-            test_service = "https://tigerpop.io/auth/callback"
+            # Use the correct service URL for CAS validation
+            service_url = f"{FRONTEND_URL}/auth/callback"
+            # Get a real ticket from CAS login
+            cas_login_url = f"https://fed.princeton.edu/cas/login?service={service_url}"
+            logger.info(f"Please visit this URL to get a ticket: {cas_login_url}")
+            ticket = input("Enter the ticket from the URL after logging in: ").strip()
+            
+            if not ticket:
+                logger.error("No ticket provided")
+                return False
+                
             response = requests.get(f'{BASE_URL}/api/auth/validate',
-                                 params={'ticket': test_ticket, 'service': test_service})
+                                 params={'ticket': ticket, 'service': service_url})
             assert response.status_code == 200, f"CAS validation failed with status {response.status_code}: {response.text}"
             data = response.json()
             assert 'netid' in data, "No netid returned"
@@ -81,11 +89,11 @@ def test_auth_flow():
             return False
         finally:
             # Clean up test users
-            for netid in [test_netid, new_netid]:
+            for netid in [test_netid, netid]:
                 test_user = User.query.filter_by(netid=netid).first()
                 if test_user:
                     db.session.delete(test_user)
                     db.session.commit()
 
 if __name__ == '__main__':
-    test_auth_flow() 
+    test_auth_flow()
