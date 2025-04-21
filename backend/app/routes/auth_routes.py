@@ -123,8 +123,8 @@ def cas_login():
     ticket = request.args.get('ticket')
     if not ticket:
         # No ticket, redirect to CAS login
-        service_url = request.url
-        login_url = f"{CAS_URL}login?service={urllib.parse.quote(service_url)}"
+        service_url = request.args.get('service', f"{FRONTEND_URL}/auth/callback")
+        login_url = f"{CAS_URL}/login?service={urllib.parse.quote(service_url)}"
         return redirect(login_url)
 
     # Validate the ticket
@@ -132,7 +132,7 @@ def cas_login():
     user_info = validate_cas_ticket(ticket, service_url)
     if not user_info:
         # Invalid ticket, redirect to CAS login
-        login_url = f"{CAS_URL}login?service={urllib.parse.quote(service_url)}"
+        login_url = f"{CAS_URL}/login?service={urllib.parse.quote(service_url)}"
         return redirect(login_url)
 
     # Store netid in session
@@ -146,8 +146,9 @@ def cas_login():
         db.session.add(user)
         db.session.commit()
 
-    # Redirect to clean URL
-    return redirect(strip_ticket(request.url))
+    # Redirect back to frontend with netid
+    frontend_url = request.args.get('redirect_uri', FRONTEND_URL)
+    return redirect(f"{frontend_url}/auth/callback?netid={netid}")
 
 @bp.route('/cas/logout', methods=['GET'])
 def cas_logout():
