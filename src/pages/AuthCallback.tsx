@@ -15,7 +15,11 @@ const AuthCallback: React.FC = () => {
     const ticket = searchParams.get('ticket');
 
     if (ticket) {
-      axios.get<AuthResponse>(`${process.env.REACT_APP_API_URL}/cas/validate?ticket=${ticket}`, {
+      // Include the correct service URL that matches the backend's expected URL
+      const serviceUrl = `${process.env.REACT_APP_API_URL}/api/auth/cas/callback`;
+      const encodedServiceUrl = encodeURIComponent(serviceUrl);
+      
+      axios.get<AuthResponse>(`${process.env.REACT_APP_API_URL}/api/auth/cas/validate?ticket=${ticket}&service=${encodedServiceUrl}`, {
         withCredentials: true
       })
         .then(response => {
