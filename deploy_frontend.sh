@@ -4,8 +4,9 @@
 git checkout frontend-deploy
 
 # Copy frontend files to root
-cp -r frontend/build/* .
-cp frontend/build/.gitignore . 2>/dev/null || true
+# cp -r frontend/build/* .
+cp -r frontend
+# cp frontend/build/.gitignore . 2>/dev/null || true
 
 # Create public directory and move files
 mkdir -p public
