@@ -4,17 +4,21 @@
 git checkout -b frontend-deploy
 
 # Install dependencies
+cd frontend
 npm install
 
 # Build the frontend
 npm run build
 
+# Move back to root directory
+cd ..
+
 # Create Procfile for serving static files
-echo "web: serve -s build" > Procfile
+echo "web: serve -s frontend/build" > Procfile
 
 # Create static.json for Heroku static buildpack configuration
 echo '{
-  "root": "build/",
+  "root": "frontend/build/",
   "routes": {
     "/**": "index.html"
   }
@@ -24,8 +28,8 @@ echo '{
 git add .
 git commit -m "Deploy frontend"
 
-# Push to Heroku
-git push heroku frontend-deploy:main --force
+# Push to Heroku frontend app
+git push https://git.heroku.com/tigerpop-marketplace-frontend.git frontend-deploy:main -f
 
 # Clean up: switch back to original branch and delete deployment branch
 git checkout -
