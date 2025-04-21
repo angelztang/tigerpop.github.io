@@ -15,12 +15,16 @@ const AuthCallback: React.FC = () => {
     const ticket = searchParams.get('ticket');
 
     if (ticket) {
-      // Use the backend URL as the service URL for CAS validation
-      const serviceUrl = `${process.env.REACT_APP_API_URL}/api/auth/cas/callback`;
+      // Use the frontend URL as the service URL for CAS validation
+      const serviceUrl = `${process.env.REACT_APP_FRONTEND_URL}/auth/callback`;
       const encodedServiceUrl = encodeURIComponent(serviceUrl);
       
       axios.get<AuthResponse>(`${process.env.REACT_APP_API_URL}/api/auth/validate?ticket=${ticket}&service=${encodedServiceUrl}`, {
-        withCredentials: true
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       })
         .then(response => {
           const { netid } = response.data;
