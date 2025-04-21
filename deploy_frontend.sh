@@ -4,16 +4,17 @@
 git checkout frontend-deploy
 
 # Copy frontend files to root
-# cp -r frontend/build/* .
-cp -r frontend
-# cp frontend/build/.gitignore . 2>/dev/null || true
+cp -r frontend/* .
+cp frontend/.gitignore . 2>/dev/null || true
+
+# Install dependencies and build
+npm install
+npm install -g serve
+npm run build
 
 # Create public directory and move files
 mkdir -p public
-mv index.html public/
-mv static public/
-mv categories public/
-mv images public/
+mv build/* public/
 
 # Create Procfile for serving static files
 echo "web: serve -s public" > Procfile
