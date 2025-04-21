@@ -123,7 +123,7 @@ def cas_login():
     ticket = request.args.get('ticket')
     if not ticket:
         # No ticket, redirect to CAS login
-        service_url = request.args.get('service', f"{FRONTEND_URL}/auth/callback")
+        service_url = request.url
         login_url = f"{CAS_URL}/login?service={urllib.parse.quote(service_url)}"
         return redirect(login_url)
 

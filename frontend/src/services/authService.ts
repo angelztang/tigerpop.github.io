@@ -8,8 +8,8 @@ export interface UserInfo {
 
 export const login = () => {
   console.log('Starting login process');
-  // Redirect to CAS login with backend callback URL
-  const serviceUrl = `${API_URL}/api/auth/cas/callback`;
+  // Redirect to CAS login with frontend callback URL
+  const serviceUrl = `${FRONTEND_URL}/api/auth/cas/login`;
   console.log('Redirecting to CAS with service URL:', serviceUrl);
   window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
 };
