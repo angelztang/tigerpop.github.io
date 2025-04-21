@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Create a new branch for deployment
-git checkout frontend-deploy
+git checkout -b frontend-deploy
 
 # Copy frontend files to root
 cp -r frontend/* .
