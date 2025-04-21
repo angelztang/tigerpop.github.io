@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getBuyerListings } from '../services/listingService';
+import { getBuyerListings, Listing } from '../services/listingService';
 import { getNetid } from '../services/authService';
 
 const BuyerDashboard: React.FC = () => {
