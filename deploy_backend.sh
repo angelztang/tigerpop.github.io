@@ -31,7 +31,7 @@ heroku run --app tigerpop-marketplace-backend flask db upgrade
 
 # Cleanup
 echo "🧹 Cleaning up..."
-git checkout main
+git checkout hannah
 git branch -D backend-deploy
 
 echo "✅ Backend deployment complete!" 
