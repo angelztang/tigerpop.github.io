@@ -1,24 +1,25 @@
 #!/bin/bash
 
 # Create a new branch for deployment
-git checkout -b frontend-deploy
+git checkout frontend-deploy
 
-# Install dependencies
-cd frontend
-npm install
+# Copy frontend files to root
+cp -r frontend/build/* .
+cp frontend/build/.gitignore . 2>/dev/null || true
 
-# Build the frontend
-npm run build
-
-# Move back to root directory
-cd ..
+# Create public directory and move files
+mkdir -p public
+mv index.html public/
+mv static public/
+mv categories public/
+mv images public/
 
 # Create Procfile for serving static files
-echo "web: serve -s frontend/build" > Procfile
+echo "web: serve -s public" > Procfile
 
 # Create static.json for Heroku static buildpack configuration
 echo '{
-  "root": "frontend/build/",
+  "root": "public",
   "routes": {
     "/**": "index.html"
   }
@@ -32,5 +33,5 @@ git commit -m "Deploy frontend"
 git push https://git.heroku.com/tigerpop-marketplace-frontend.git frontend-deploy:main -f
 
 # Clean up: switch back to original branch and delete deployment branch
-git checkout -
+git checkout hannah
 git branch -D frontend-deploy 
