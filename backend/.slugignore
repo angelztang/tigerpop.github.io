@@ -1,0 +1,62 @@
+# Development files
+.git
+.gitignore
+venv
+.env
+*.log
+*.pyc
+__pycache__
+*.pyo
+*.pyd
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.coverage
+htmlcov
+.tox
+.nox
+.pytest_cache
+test
+tests
+*.test.py
+*_test.py
+
+# IDE and editor files
+.idea
+.vscode
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build
+dist
+*.egg-info
+*.egg
+*.so
+*.dylib
+*.dll
+
+# Documentation
+docs
+*.md
+LICENSE
+README.md
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+migrations/versions/*.py
+
+# Misc
+*.bak
+*.tmp
+*.temp
+*.zip
+*.tar.gz
+*.rar
+*.7z 

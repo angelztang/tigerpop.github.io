@@ -10,9 +10,23 @@ import logging
 from sqlalchemy import create_engine
 from sqlalchemy.exc import OperationalError
 import os
+import urllib.parse
+import requests
+from app.cas.auth import extract_netid_from_cas_response
 
 bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
+
+CAS_URL = 'https://fed.princeton.edu/cas/'
+
+def strip_ticket(url):
+    """Remove the ticket parameter from the URL."""
+    parsed = urllib.parse.urlparse(url)
+    query = urllib.parse.parse_qs(parsed.query)
+    if 'ticket' in query:
+        del query['ticket']
+    new_query = urllib.parse.urlencode(query, doseq=True)
+    return urllib.parse.urlunparse(parsed._replace(query=new_query))
 
 @bp.route('/test-db', methods=['GET'])
 def test_db():
@@ -92,42 +106,55 @@ def login():
         logger.error(f"Login error: {str(e)}")
         return jsonify({'message': 'An error occurred during login'}), 500
 
-@bp.route('/cas/login')
+@bp.route('/cas/login', methods=['GET'])
 def cas_login():
-    """Handle CAS login."""
-    ticket = get_cas_ticket()
-    
-    if not ticket:
-        # If no ticket, redirect to CAS login
-        login_url = 'https://fed.princeton.edu/cas/login'
-        service_url = request.args.get('redirect_uri', os.environ.get('FRONTEND_URL', 'http://localhost:3000'))
-        return redirect(f'{login_url}?service={service_url}')
-    
-    # Validate the ticket
-    username = validate_cas_ticket(ticket)
-    if not username:
-        return redirect(f"{os.environ.get('FRONTEND_URL', 'http://localhost:3000')}/login?error=invalid_ticket")
-    
-    # Create or update user
-    user = create_or_update_user(username)
-    
-    # Generate JWT token
-    token = generate_jwt_token(user)
-    
-    # Redirect back to frontend with token
-    redirect_uri = request.args.get('redirect_uri', os.environ.get('FRONTEND_URL', 'http://localhost:3000'))
-    return redirect(f'{redirect_uri}?token={token}')
+    # If user is already authenticated, return their info
+    if 'netid' in session:
+        user = User.query.filter_by(netid=session['netid']).first()
+        if user:
+            return jsonify({
+                'netid': user.netid,
+                'name': user.name,
+                'email': user.email
+            })
+        return jsonify({'netid': session['netid']})
 
-@bp.route('/cas/logout')
+    # Get the ticket from the request
+    ticket = request.args.get('ticket')
+    if not ticket:
+        # No ticket, redirect to CAS login
+        service_url = request.url
+        login_url = f"{CAS_URL}login?service={urllib.parse.quote(service_url)}"
+        return redirect(login_url)
+
+    # Validate the ticket
+    service_url = strip_ticket(request.url)
+    user_info = validate_cas_ticket(ticket, service_url)
+    if not user_info:
+        # Invalid ticket, redirect to CAS login
+        login_url = f"{CAS_URL}login?service={urllib.parse.quote(service_url)}"
+        return redirect(login_url)
+
+    # Store netid in session
+    netid = user_info.get('netid')
+    session['netid'] = netid
+
+    # Check if user exists, create if not
+    user = User.query.filter_by(netid=netid).first()
+    if not user:
+        user = User(netid=netid)
+        db.session.add(user)
+        db.session.commit()
+
+    # Redirect to clean URL
+    return redirect(strip_ticket(request.url))
+
+@bp.route('/cas/logout', methods=['GET'])
 def cas_logout():
-    """Handle CAS logout."""
-    # Clear session
+    # Clear the session
     session.clear()
-    
     # Redirect to CAS logout
-    logout_url = 'https://fed.princeton.edu/cas/logout'
-    service_url = request.args.get('redirect_uri', os.environ.get('FRONTEND_URL', 'http://localhost:3000'))
-    return redirect(f'{logout_url}?service={service_url}')
+    return redirect(f"{CAS_URL}logout")
 
 @bp.route('/verify', methods=['GET'])
 @jwt_required()
@@ -285,3 +312,16 @@ def validate():
         current_app.logger.error(f"Error in validate: {str(e)}")
         db.session.rollback()
         return jsonify({'error': 'Server error'}), 500
+
+@bp.route('/validate', methods=['GET'])
+def validate_session():
+    if 'netid' in session:
+        netid = session['netid']
+        user = User.query.filter_by(netid=netid).first()
+        if user:
+            return jsonify({
+                'netid': user.netid,
+                'name': user.name,
+                'email': user.email
+            })
+    return jsonify({'error': 'Not authenticated'}), 401

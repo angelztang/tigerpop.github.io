@@ -1,24 +1,24 @@
-import { CAS_URL, FRONTEND_URL } from '../config';
-
-const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
+import { CAS_URL, FRONTEND_URL, API_URL } from '../config';
 
 export interface UserInfo {
   netid: string;
+  name?: string;
+  email?: string;
 }
 
 export const login = () => {
   console.log('Starting login process');
-  // Redirect to CAS login with frontend callback URL
-  const serviceUrl = `${FRONTEND_URL}/auth/callback`;
+  // Redirect to CAS login with backend callback URL
+  const serviceUrl = `${API_URL}/api/auth/cas/login`;
   console.log('Redirecting to CAS with service URL:', serviceUrl);
-  window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
+  window.location.href = `${CAS_URL}login?service=${encodeURIComponent(serviceUrl)}`;
 };
 
 export const logout = () => {
   console.log('Starting logout process');
-  // Clear netid and redirect to login
+  // Clear netid and redirect to CAS logout
   localStorage.removeItem('netid');
-  window.location.href = '/login';
+  window.location.href = `${API_URL}/api/auth/cas/logout`;
 };
 
 export const getNetid = () => {
