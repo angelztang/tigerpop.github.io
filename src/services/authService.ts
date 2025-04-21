@@ -56,8 +56,7 @@ export const initializeUser = async () => {
     const response = await fetch(`${API_URL}/api/auth/users/check`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${localStorage.getItem('token')}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({ netid }),
       credentials: 'include',
@@ -66,7 +65,8 @@ export const initializeUser = async () => {
 
     if (!response.ok) {
       if (response.status === 401) {
-        // If unauthorized, redirect to login
+        // If unauthorized, clear netid and redirect to login
+        localStorage.removeItem('netid');
         login();
         return;
       }

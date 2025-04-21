@@ -1,6 +1,20 @@
 {
-  "root": "public",
+  "root": "build",
   "routes": {
     "/**": "index.html"
-  }
-}
+  },
+  "headers": {
+    "/**": {
+      "Cache-Control": "no-cache, no-store, must-revalidate"
+    },
+    "/static/**": {
+      "Cache-Control": "public, max-age=31536000"
+    },
+    "/main.*.js": {
+      "Cache-Control": "public, max-age=31536000"
+    }
+  },
+  "clean_urls": false,
+  "https_only": true,
+  "directory_index": false
+} 

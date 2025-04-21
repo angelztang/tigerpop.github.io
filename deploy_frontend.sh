@@ -12,18 +12,20 @@ npm install
 npm install -g serve
 npm run build
 
-# Create public directory and move files
-mkdir -p public
-mv build/* public/
-
-# Create Procfile for serving static files
-echo "web: serve -s public" > Procfile
-
 # Create static.json for Heroku static buildpack configuration
 echo '{
-  "root": "public",
+  "root": "build",
+  "clean_urls": false,
   "routes": {
     "/**": "index.html"
+  },
+  "headers": {
+    "/**": {
+      "Cache-Control": "no-store, no-cache"
+    },
+    "/static/**": {
+      "Cache-Control": "public, max-age=31536000, immutable"
+    }
   }
 }' > static.json
 
@@ -36,4 +38,4 @@ git push https://git.heroku.com/tigerpop-marketplace-frontend.git frontend-deplo
 
 # Clean up: switch back to original branch and delete deployment branch
 git checkout hannah
-git branch -D frontend-deploy 
+git branch -D frontend-deploy

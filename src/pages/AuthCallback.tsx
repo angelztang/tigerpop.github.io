@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { FRONTEND_URL, API_URL } from '../config';
 
 interface AuthResponse {
   netid: string;
@@ -15,24 +16,35 @@ const AuthCallback: React.FC = () => {
     const ticket = searchParams.get('ticket');
 
     if (ticket) {
-      // Include the correct service URL that matches the backend's expected URL
-      const serviceUrl = `${process.env.REACT_APP_API_URL}/api/auth/cas/callback`;
+      // Use the frontend URL as the service URL for CAS validation
+      const serviceUrl = `${FRONTEND_URL}/auth/callback`;
       const encodedServiceUrl = encodeURIComponent(serviceUrl);
       
-      axios.get<AuthResponse>(`${process.env.REACT_APP_API_URL}/api/auth/cas/validate?ticket=${ticket}&service=${encodedServiceUrl}`, {
-        withCredentials: true
+      console.log('Validating CAS ticket with service URL:', serviceUrl);
+      
+      axios.get<AuthResponse>(`${API_URL}/api/auth/validate?ticket=${ticket}&service=${encodedServiceUrl}`, {
+        withCredentials: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        }
       })
         .then(response => {
           const { netid } = response.data;
+          console.log('CAS validation successful, netid:', netid);
           // Store netid in localStorage
           localStorage.setItem('netid', netid);
           navigate('/dashboard');
         })
         .catch(error => {
           console.error('Error validating CAS ticket:', error);
+          // Clear any existing netid on error
+          localStorage.removeItem('netid');
           navigate('/login');
         });
     } else {
+      console.error('No ticket found in URL');
+      localStorage.removeItem('netid');
       navigate('/login');
     }
   }, [location, navigate]);

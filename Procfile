@@ -1,1 +1,1 @@
-web: serve -s public
+web: serve -s build 0 --single
