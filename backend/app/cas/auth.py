@@ -90,8 +90,6 @@ def extract_netid_from_cas_response(response_text):
 def validate_cas_ticket(ticket, service_url=None):
     """Validate the CAS ticket with the CAS server."""
     validate_url = f'{CAS_SERVER}/serviceValidate'
-    # Use provided service URL or fall back to CAS_SERVICE
-    service_url = service_url or CAS_SERVICE
     
     try:
         # Log the request details
@@ -108,10 +106,17 @@ def validate_cas_ticket(ticket, service_url=None):
             return netid
         
         # Proceed with normal validation
-        response = requests.get(validate_url, params={
+        # Ensure proper URL encoding for the service parameter
+        encoded_service = urllib.parse.quote(service_url, safe='')
+        params = {
             'ticket': ticket,
-            'service': service_url
-        }, timeout=10)  # Add timeout
+            'service': service_url  # CAS library will handle URL encoding
+        }
+        
+        current_app.logger.info(f"Making CAS validation request to: {validate_url}")
+        current_app.logger.info(f"With params: {params}")
+        
+        response = requests.get(validate_url, params=params, timeout=10)
         current_app.logger.info(f"CAS validation URL: {response.url}")
         current_app.logger.info(f"CAS validation response: {response.text}")
         
@@ -123,6 +128,7 @@ def validate_cas_ticket(ticket, service_url=None):
                 return netid
         else:
             current_app.logger.error(f"CAS validation failed with status code: {response.status_code}")
+            current_app.logger.error(f"Response text: {response.text}")
         return None
     except requests.exceptions.Timeout:
         current_app.logger.error("CAS validation timeout")
