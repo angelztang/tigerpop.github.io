@@ -3,7 +3,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 from werkzeug.security import generate_password_hash, check_password_hash
 from ..extensions import db
 from ..models import User
-from ..cas.auth import cas_bp, is_authenticated, get_cas_ticket, validate_cas_ticket, create_or_update_user, generate_jwt_token, CAS_SERVER
+from ..cas.auth import cas_bp, is_authenticated, get_cas_ticket, validate, create_or_update_user, generate_jwt_token, CAS_SERVER
 from sqlalchemy import text
 import bcrypt
 import logging
@@ -108,47 +108,42 @@ def login():
 
 @bp.route('/cas/login', methods=['GET'])
 def cas_login():
-    # If user is already authenticated, return their info
-    if 'netid' in session:
-        user = User.query.filter_by(netid=session['netid']).first()
-        if user:
-            return jsonify({
-                'netid': user.netid,
-                'name': user.name,
-                'email': user.email
-            })
-        return jsonify({'netid': session['netid']})
-
-    # Get the ticket from the request
+    """Handle CAS login and ticket validation."""
     ticket = request.args.get('ticket')
+    
     if not ticket:
-        # No ticket, redirect to CAS login
+        # No ticket provided, redirect to CAS login
         service_url = request.url
-        login_url = f"{CAS_URL}/login?service={urllib.parse.quote(service_url)}"
-        return redirect(login_url)
-
+        cas_login_url = f"{CAS_URL}/login?service={urllib.parse.quote(service_url)}"
+        return redirect(cas_login_url)
+    
     # Validate the ticket
-    service_url = strip_ticket(request.url)
-    user_info = validate_cas_ticket(ticket, service_url)
+    user_info = validate(ticket)
     if not user_info:
-        # Invalid ticket, redirect to CAS login
-        login_url = f"{CAS_URL}/login?service={urllib.parse.quote(service_url)}"
-        return redirect(login_url)
-
-    # Store netid in session
-    netid = user_info.get('netid')
+        current_app.logger.error("Failed to validate CAS ticket")
+        return jsonify({'error': 'Invalid ticket'}), 401
+    
+    # Get the netid from the user info
+    netid = user_info.get('user')
+    if not netid:
+        current_app.logger.error("No netid found in CAS response")
+        return jsonify({'error': 'No netid found'}), 401
+    
+    # Store the netid in the session
     session['netid'] = netid
-
-    # Check if user exists, create if not
+    
+    # Check if user exists in database
     user = User.query.filter_by(netid=netid).first()
     if not user:
+        # Create new user
         user = User(netid=netid)
         db.session.add(user)
         db.session.commit()
-
-    # Redirect back to frontend with netid
-    frontend_url = request.args.get('redirect_uri', FRONTEND_URL)
-    return redirect(f"{frontend_url}/auth/callback?netid={netid}")
+        current_app.logger.info(f"Created new user: {netid}")
+    
+    # Redirect back to frontend with the netid
+    frontend_url = f"{FRONTEND_URL}/auth/callback?netid={netid}"
+    return redirect(frontend_url)
 
 @bp.route('/cas/logout', methods=['GET'])
 def cas_logout():
@@ -192,28 +187,43 @@ def verify_token():
         logger.error(f"Token verification error: {str(e)}")
         return jsonify({'error': 'Invalid token'}), 401
 
-@bp.route('/validate', methods=['GET'])
-def validate_ticket():
-    """Validate CAS ticket and return netid."""
-    ticket = request.args.get('ticket')
+@bp.route('/validate', methods=['POST'])
+def validate_ticket_route():
+    """Validate a CAS ticket and return user info."""
+    data = request.get_json()
+    ticket = data.get('ticket')
+    service_url = data.get('service')
+    
     if not ticket:
         return jsonify({'error': 'No ticket provided'}), 400
     
-    # Get the service URL from the request
-    service_url = request.args.get('service')
     if not service_url:
         return jsonify({'error': 'No service URL provided'}), 400
     
-    # Validate the ticket with CAS server
-    try:
-        # Call validate_cas_ticket with both ticket and service URL
-        netid = validate_cas_ticket(ticket, service_url)
-        if netid:
-            return jsonify({'netid': netid}), 200
+    # Validate the ticket
+    user_info = validate(ticket, service_url)
+    if not user_info:
         return jsonify({'error': 'Invalid ticket'}), 401
-    except Exception as e:
-        current_app.logger.error(f"Error validating ticket: {str(e)}")
-        return jsonify({'error': 'Error validating ticket'}), 500
+    
+    # Get the netid from the user info
+    netid = user_info.get('user')
+    if not netid:
+        return jsonify({'error': 'No netid found'}), 401
+    
+    # Check if user exists in database
+    user = User.query.filter_by(netid=netid).first()
+    if not user:
+        # Create new user
+        user = User(netid=netid)
+        db.session.add(user)
+        db.session.commit()
+        current_app.logger.info(f"Created new user: {netid}")
+    
+    # Return user info
+    return jsonify({
+        'netid': netid,
+        'user_id': user.id
+    })
 
 @bp.route('/users/initialize', methods=['POST'])
 def initialize_user():
@@ -282,37 +292,6 @@ def check_user():
         logger.error(f"Error checking user: {str(e)}")
         db.session.rollback()
         return jsonify({'error': 'Failed to check user'}), 500
-
-@bp.route('/validate', methods=['POST'])
-def validate():
-    """Validate a user's credentials."""
-    data = request.get_json()
-    if not data or 'netid' not in data:
-        return jsonify({'error': 'Missing netid'}), 400
-
-    netid = data['netid']
-    try:
-        user = User.query.filter_by(netid=netid).first()
-        if not user:
-            user = User(netid=netid)
-            db.session.add(user)
-            db.session.commit()
-
-        # Include netid in the token claims
-        access_token = create_access_token(
-            identity=user.id,
-            additional_claims={
-                'netid': user.netid
-            }
-        )
-        return jsonify({
-            'token': access_token,
-            'user': user.to_dict()
-        }), 200
-    except Exception as e:
-        current_app.logger.error(f"Error in validate: {str(e)}")
-        db.session.rollback()
-        return jsonify({'error': 'Server error'}), 500
 
 @bp.route('/validate', methods=['GET'])
 def validate_session():
