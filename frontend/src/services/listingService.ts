@@ -169,12 +169,17 @@ export const getCategories = async (): Promise<string[]> => {
 };
 
 export const getUserListings = async (userId: string): Promise<Listing[]> => {
-  const response = await fetch(`${API_URL}/api/listing/user/?user_id=${userId}`, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_URL}/api/listing/user?netid=${userId}`, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse<Listing[]>(response);
+  } catch (error) {
+    console.error('Error fetching user listings:', error);
+    throw error;
+  }
 };
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
