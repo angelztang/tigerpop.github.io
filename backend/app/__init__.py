@@ -20,18 +20,10 @@ def create_app(config_class=Config):
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
             "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
-            "supports_credentials": True
+            "supports_credentials": True,
+            "expose_headers": ["Content-Type", "Authorization", "X-Requested-With"]
         }
     })
-
-    # Add CORS headers to all responses
-    @app.after_request
-    def after_request(response):
-        response.headers.add('Access-Control-Allow-Origin', 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com')
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Requested-With')
-        response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
-        return response
 
     # Setup logging
     if not app.debug and not app.testing:
