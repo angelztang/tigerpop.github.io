@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { API_URL } from '../config';
 
-interface UserInfo {
+export interface UserInfo {
   netid: string;
   user_id?: number;
   access_token?: string;
