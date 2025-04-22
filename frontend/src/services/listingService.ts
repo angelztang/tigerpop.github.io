@@ -49,7 +49,6 @@ export interface CreateListingData {
   description: string;
   price: number;
   category: string;
-  images: string[];
   user_id: number;
   condition: string;
   netid: string;
@@ -83,20 +82,20 @@ export const getListing = async (id: number): Promise<Listing> => {
   return handleResponse(response);
 };
 
-export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  try {
-    const response = await fetch(`${API_URL}/api/listing/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-      credentials: 'include',
-      mode: 'cors'
-    });
-    return handleResponse<Listing>(response);
-  } catch (error) {
-    console.error('Error creating listing:', error);
-    throw error;
+export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
+  const response = await fetch(`${API_URL}/api/listing`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${localStorage.getItem('token')}`
+    },
+    body: JSON.stringify(listingData),
+  });
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to create listing');
   }
+  return response.json();
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {

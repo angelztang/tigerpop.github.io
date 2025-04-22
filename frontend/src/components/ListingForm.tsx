@@ -19,9 +19,7 @@ interface ListingFormData {
   price: number;
   category: string;
   condition: string;
-  images: string[];
   user_id: number;
-  netid: string;
 }
 
 const categories = [
@@ -50,13 +48,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     price: initialData.price || 0,
     category: initialData.category || '',
     condition: initialData.condition || 'good',
-    images: initialData.images || [],
-    user_id: initialData.user_id || 0,
-    netid: initialData.netid || localStorage.getItem('netid') || ''
+    user_id: initialData.user_id || 0
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -90,12 +87,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setError('');
+    setLoading(true);
 
     try {
       const userId = getUserId();
-      const netid = localStorage.getItem('netid');
-      if (!userId || !netid) {
+      if (!userId) {
         setError('User not authenticated. Please log in.');
         return;
       }
@@ -103,12 +100,11 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       const listingData: CreateListingData = {
         title: formData.title,
         description: formData.description,
-        price: formData.price,
+        price: parseFloat(formData.price),
         category: formData.category,
-        condition: formData.condition,
-        images: formData.images,
         user_id: parseInt(userId),
-        netid: netid
+        condition: formData.condition,
+        netid: localStorage.getItem('netid') || ''
       };
 
       // Validate required fields
@@ -129,6 +125,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred while submitting the listing');
+    } finally {
+      setLoading(false);
     }
   };
 

@@ -148,11 +148,10 @@ def create_listing():
         price = data.get('price')
         category = data.get('category', 'other')
         user_id = data.get('user_id')
-        images = data.get('images', [])
         condition = data.get('condition', 'good')
 
         # Validate required fields
-        if not all([title, description, price, user_id]):
+        if not all([title, description, price, user_id, category]):
             return jsonify({'error': 'Missing required fields'}), 400
 
         try:
@@ -176,13 +175,6 @@ def create_listing():
             db.session.add(new_listing)
             db.session.commit()
 
-            # Handle images if provided
-            if images:
-                for url in images:
-                    image = ListingImage(filename=url, listing_id=new_listing.id)
-                    db.session.add(image)
-                db.session.commit()
-
             return jsonify({
                 'id': new_listing.id,
                 'title': new_listing.title,
@@ -191,7 +183,6 @@ def create_listing():
                 'category': new_listing.category,
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
-                'images': [image.filename for image in new_listing.images],
                 'condition': new_listing.condition,
                 'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
@@ -199,11 +190,11 @@ def create_listing():
         except Exception as db_error:
             db.session.rollback()
             current_app.logger.error(f"Database error: {str(db_error)}")
-            return jsonify({'error': f'Database error: {str(db_error)}'}), 500
+            return jsonify({'error': 'Failed to create listing'}), 500
 
     except Exception as e:
         current_app.logger.error(f"Error creating listing: {str(e)}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({'error': 'Failed to create listing'}), 500
 
 @bp.route('/categories', methods=['GET'])
 def get_categories():
