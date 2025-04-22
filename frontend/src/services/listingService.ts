@@ -52,6 +52,7 @@ export interface CreateListingData {
   images: string[];
   user_id: number;
   condition: string;
+  netid: string;
 }
 
 export interface ListingFilters {

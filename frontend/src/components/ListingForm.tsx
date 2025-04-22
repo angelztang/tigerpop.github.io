@@ -91,7 +91,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     setError(null);
 
     try {
-      const userId = localStorage.getItem('user_id');
+      const userId = getUserId();
       if (!userId) {
         setError('User not authenticated. Please log in.');
         return;
@@ -99,7 +99,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
       const listingData: CreateListingData = {
         ...formData,
-        user_id: parseInt(userId)
+        user_id: parseInt(userId),
+        netid: localStorage.getItem('netid') || ''
       };
 
       // Validate required fields
