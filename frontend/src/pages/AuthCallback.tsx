@@ -1,36 +1,34 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { setNetid } from '../services/authService';
-import axios from 'axios';
-
-interface ValidationResponse {
-  netid: string;
-}
+import { validateTicket, setNetid } from '../services/authService';
+import { API_URL } from '../config';
 
 const AuthCallback: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const validateTicket = async () => {
+    const handleCallback = async () => {
       const searchParams = new URLSearchParams(location.search);
       const ticket = searchParams.get('ticket');
 
       if (!ticket) {
+        console.error('No ticket found in URL');
         window.location.href = '/login?error=no_ticket';
         return;
       }
 
       try {
-        // Send ticket to backend for validation
-        const response = await axios.get<ValidationResponse>('/api/auth/validate', {
-          params: {
-            ticket,
-            service: window.location.origin + '/auth/callback'
-          }
-        });
-
+        console.log('Validating ticket:', ticket);
+        const serviceUrl = `${window.location.origin}/auth/callback`;
+        console.log('Service URL:', serviceUrl);
+        
+        const userInfo = await validateTicket(ticket);
+        console.log('Validation successful:', userInfo);
+        
         // Store netid and redirect to dashboard
-        setNetid(response.data.netid);
+        setNetid(userInfo.netid);
+        console.log('Stored netid:', userInfo.netid);
+        
         window.location.href = '/dashboard';
       } catch (error) {
         console.error('Failed to validate ticket:', error);
@@ -38,7 +36,7 @@ const AuthCallback: React.FC = () => {
       }
     };
 
-    validateTicket();
+    handleCallback();
   }, [location]);
 
   return (

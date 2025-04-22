@@ -194,16 +194,23 @@ def validate_ticket_route():
     ticket = request.args.get('ticket')
     service_url = request.args.get('service')
     
+    current_app.logger.info(f"Validating ticket: {ticket}")
+    current_app.logger.info(f"Service URL: {service_url}")
+    
     if not ticket or not service_url:
+        current_app.logger.error("Missing ticket or service URL")
         return jsonify({'error': 'Missing ticket or service URL'}), 400
     
     # Validate ticket with CAS
     val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
+    current_app.logger.info(f"Validation URL: {val_url}")
     
     try:
         # Make request to CAS server
         response = requests.get(val_url)
         response.raise_for_status()
+        
+        current_app.logger.info(f"CAS Response: {response.text}")
         
         # Parse XML response
         root = ET.fromstring(response.text)
@@ -214,18 +221,25 @@ def validate_ticket_route():
             user = success.find('{http://www.yale.edu/tp/cas}user')
             if user is not None:
                 netid = user.text
+                current_app.logger.info(f"Found netid: {netid}")
                 
                 # Create or update user
                 user = User.query.filter_by(netid=netid).first()
                 if not user:
+                    current_app.logger.info(f"Creating new user with netid: {netid}")
                     user = User(netid=netid)
                     db.session.add(user)
                     db.session.commit()
+                    current_app.logger.info(f"Created new user with id: {user.id}")
+                else:
+                    current_app.logger.info(f"Found existing user with id: {user.id}")
                 
                 # Store in session and return
                 session['netid'] = netid
+                current_app.logger.info(f"Stored netid in session: {netid}")
                 return jsonify({'netid': netid}), 200
         
+        current_app.logger.error("Invalid ticket - no success element found in CAS response")
         return jsonify({'error': 'Invalid ticket'}), 401
         
     except Exception as e:
