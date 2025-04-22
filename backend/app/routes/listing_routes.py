@@ -153,6 +153,7 @@ def create_listing():
         category = data.get('category', 'other')
         user_id = data.get('user_id')
         condition = data.get('condition', 'good')
+        netid = data.get('netid')
 
         # Validate required fields
         if not all([title, description, price, user_id, category]):
@@ -172,7 +173,8 @@ def create_listing():
                 category=category,
                 status='available',
                 user_id=user_id,
-                condition=condition
+                condition=condition,
+                netid=netid
             )
 
             # Add listing to database
@@ -188,6 +190,7 @@ def create_listing():
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
                 'condition': new_listing.condition,
+                'netid': new_listing.netid,
                 'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
 
