@@ -1,4 +1,5 @@
 import { CAS_URL, FRONTEND_URL, API_URL } from '../config';
+import axios from 'axios';
 
 export interface UserInfo {
   netid: string;
@@ -92,4 +93,17 @@ export const getUserInfo = (): UserInfo | null => {
   const netid = localStorage.getItem('netid');
   console.log('Getting user info for netid:', netid);
   return netid ? { netid } : null;
+};
+
+export const validateTicket = async (ticket: string): Promise<UserInfo> => {
+    try {
+        const response = await axios.post<{ netid: string; user_id: number }>(`${API_URL}/api/auth/validate`, {
+            ticket,
+            service: `${API_URL}/api/auth/cas/callback`
+        });
+        return { netid: response.data.netid };
+    } catch (error) {
+        console.error('Error validating ticket:', error);
+        throw error;
+    }
 }; 

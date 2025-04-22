@@ -91,7 +91,7 @@ def extract_netid_from_cas_response(response_text):
 def validate(ticket, service_url=None):
     """Validate a login ticket by contacting the CAS server."""
     if not service_url:
-        # Default to frontend callback URL if no service URL provided
+        # Use the frontend callback URL as the service URL
         service_url = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/auth/callback'
     
     current_app.logger.info(f"Validating ticket: {ticket}")
