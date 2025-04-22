@@ -96,20 +96,28 @@ export const getUserInfo = (): UserInfo | null => {
   return netid ? { netid } : null;
 };
 
-export const validateTicket = async (ticket: string): Promise<UserInfo> => {
+export const validateTicket = async (ticket: string): Promise<UserInfo & { token?: string }> => {
     try {
         const serviceUrl = `${FRONTEND_URL}/auth/callback`;
-        const response = await axios.get<{ netid: string }>(`${API_URL}/api/auth/validate`, {
+        console.log('Validating ticket with service URL:', serviceUrl);
+        
+        const response = await axios.get<{ netid: string; token: string }>(`${API_URL}/api/auth/validate`, {
             params: {
                 ticket,
                 service: serviceUrl
             }
         });
         
-        // Store the netid in localStorage
-        setUserInfo({ netid: response.data.netid });
+        console.log('Validation response:', response.data);
         
-        return { netid: response.data.netid };
+        // Store the netid and token in localStorage
+        const userInfo = { 
+            netid: response.data.netid,
+            token: response.data.token 
+        };
+        setUserInfo(userInfo);
+        
+        return userInfo;
     } catch (error) {
         console.error('Error validating ticket:', error);
         throw error;

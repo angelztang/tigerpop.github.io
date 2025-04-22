@@ -97,9 +97,9 @@ def validate(ticket, service_url=None):
     current_app.logger.info(f"Validating ticket: {ticket}")
     current_app.logger.info(f"Service URL: {service_url}")
     
-    val_url = (_CAS_URL + 'serviceValidate' +
-              '?service=' + urllib.parse.quote(service_url) +
-              '&ticket=' + urllib.parse.quote(ticket))
+    val_url = (f'{CAS_SERVER}/serviceValidate' +
+              f'?service={urllib.parse.quote(service_url)}' +
+              f'&ticket={urllib.parse.quote(ticket)}')
     
     try:
         # Make the request with requests library for better error handling

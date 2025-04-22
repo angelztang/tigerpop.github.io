@@ -17,18 +17,17 @@ const AuthCallback: React.FC = () => {
           const response = await validateTicket(ticket);
           console.log('Successfully validated ticket for user:', response.netid);
           
-          // Store user info in localStorage
+          // Store user info and token in localStorage
           setUserInfo({ netid: response.netid });
-          
-          // Store token if provided
           if (response.token) {
             localStorage.setItem('token', response.token);
           }
           
-          // Redirect to dashboard after successful validation
-          navigate('/dashboard', { replace: true });
+          // Force a reload to update the UI
+          window.location.href = '/dashboard';
         } catch (error) {
           console.error('Error validating ticket:', error);
+          // Redirect to login with error message
           navigate('/login?error=auth_failed', { replace: true });
         }
       } else {
