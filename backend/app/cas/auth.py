@@ -107,9 +107,11 @@ def validate(ticket, service_url=None):
     try:
         # Make request to CAS server
         response = requests.get(val_url, verify=True)  # Always verify SSL in production
-        response.raise_for_status()
+        logger.info(f"CAS Response Status: {response.status_code}")
+        logger.info(f"CAS Response Headers: {response.headers}")
+        logger.info(f"CAS Response Text: {response.text}")
         
-        logger.info(f"CAS Response: {response.text}")
+        response.raise_for_status()
         
         # Parse XML response
         root = ET.fromstring(response.text)
@@ -122,14 +124,23 @@ def validate(ticket, service_url=None):
                 netid = user.text
                 logger.info(f"Found netid: {netid}")
                 return {'user': netid}
+            else:
+                logger.error("No user element found in authentication success")
+        else:
+            failure = root.find('.//{http://www.yale.edu/tp/cas}authenticationFailure')
+            if failure is not None:
+                logger.error(f"CAS authentication failure: {failure.text}")
+            else:
+                logger.error("No authentication success or failure element found in CAS response")
         
-        failure = root.find('.//{http://www.yale.edu/tp/cas}authenticationFailure')
-        if failure is not None:
-            logger.error(f"CAS authentication failure: {failure.text}")
-        
-        logger.error("Invalid ticket - no success element found in CAS response")
         return None
         
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error validating CAS ticket: {str(e)}")
+        if hasattr(e, 'response') and e.response is not None:
+            logger.error(f"Response status: {e.response.status_code}")
+            logger.error(f"Response text: {e.response.text}")
+        return None
     except Exception as e:
         logger.error(f"Error validating CAS ticket: {str(e)}")
         return None
