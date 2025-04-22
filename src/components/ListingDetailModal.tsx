@@ -193,6 +193,18 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                   {listing.status}
                 </span>
               </div>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold">Listed On</h3>
+                <p className="text-gray-600">
+                  {new Date(listing.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
             </div>
           </div>
 

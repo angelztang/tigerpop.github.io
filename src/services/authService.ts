@@ -47,9 +47,7 @@ export const initializeUser = async () => {
     const netid = getNetid();
     if (!netid) {
       console.error('No netid found during initialization');
-      // Redirect to login if no netid is found
-      login();
-      return;
+      throw new Error('No netid found');
     }
 
     console.log('Making request to initialize user');
@@ -63,13 +61,12 @@ export const initializeUser = async () => {
       mode: 'cors'
     });
 
+    if (response.status === 500) {
+      console.log('User might already exist, continuing with flow');
+      return { netid };
+    }
+
     if (!response.ok) {
-      if (response.status === 401) {
-        // If unauthorized, clear netid and redirect to login
-        localStorage.removeItem('netid');
-        login();
-        return;
-      }
       console.error('Failed to initialize user:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -79,6 +76,12 @@ export const initializeUser = async () => {
     return data;
   } catch (error) {
     console.error('Error initializing user:', error);
+    // If we get a 500 error, assume user exists and continue
+    const netid = getNetid();
+    if (netid) {
+      console.log('Continuing with existing user:', netid);
+      return { netid };
+    }
     throw error;
   }
 };

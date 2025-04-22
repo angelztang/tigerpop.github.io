@@ -364,3 +364,23 @@ def validate_session():
                 'email': user.email
             })
     return jsonify({'error': 'Not authenticated'}), 401
+
+@bp.route('/users/<int:user_id>', methods=['DELETE'])
+def delete_user(user_id):
+    """Delete a specific user by ID."""
+    try:
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+            
+        if user.netid != 'at4911':
+            return jsonify({'error': 'Unauthorized to delete this user'}), 403
+            
+        db.session.delete(user)
+        db.session.commit()
+        
+        return jsonify({'message': f'User {user_id} deleted successfully'}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error deleting user: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to delete user'}), 500
