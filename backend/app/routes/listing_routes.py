@@ -130,7 +130,7 @@ def get_listings():
             'status': listing.status,
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],  # Include image URLs
+            'images': [image.filename for image in listing.images],
             'condition': listing.condition
         } for listing in listings])
     except Exception as e:
@@ -155,6 +155,7 @@ def create_listing():
         category = data.get('category', 'other')
         user_id = data.get('user_id')
         condition = data.get('condition', 'good')
+        image_urls = data.get('images', [])
 
         # Validate required fields
         if not all([title, description, price, user_id, category]):
@@ -184,13 +185,21 @@ def create_listing():
                 condition=condition
             )
 
-            # Add listing to database
+            # Add listing to database first to get the ID
             db.session.add(new_listing)
             db.session.commit()
 
+            # Create image records if there are any
+            if image_urls:
+                for url in image_urls:
+                    image = ListingImage(filename=url, listing_id=new_listing.id)
+                    db.session.add(image)
+                db.session.commit()
+
             current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
 
-            return jsonify({
+            # Get the listing with its images
+            listing_data = {
                 'id': new_listing.id,
                 'title': new_listing.title,
                 'description': new_listing.description,
@@ -199,8 +208,11 @@ def create_listing():
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
                 'condition': new_listing.condition,
-                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
-            }), 201
+                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
+                'images': [image.filename for image in new_listing.images]
+            }
+
+            return jsonify(listing_data), 201
 
         except Exception as db_error:
             db.session.rollback()
@@ -388,7 +400,6 @@ def delete_listing(id):
 def get_single_listing(id):
     try:
         listing = Listing.query.get_or_404(id)
-        user = User.query.get(listing.user_id)
         return jsonify({
             'id': listing.id,
             'title': listing.title,
@@ -397,7 +408,6 @@ def get_single_listing(id):
             'category': listing.category,
             'status': listing.status,
             'user_id': listing.user_id,
-            'user_netid': user.netid if user else None,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
             'images': [image.filename for image in listing.images],
             'condition': listing.condition

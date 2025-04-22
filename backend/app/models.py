@@ -1,3 +1,12 @@
+class ListingImage(db.Model):
+    __tablename__ = 'listing_images'
+
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(255), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=False)
+
+    listing = db.relationship('Listing', backref=db.backref('images', lazy=True))
+
 class Listing(db.Model):
     __tablename__ = 'listings'
 
