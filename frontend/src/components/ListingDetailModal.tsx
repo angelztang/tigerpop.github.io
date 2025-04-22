@@ -81,6 +81,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold">{listing.title}</h2>
             <div className="flex space-x-2">
+              <span className="text-gray-500 text-sm">
+                Posted: {new Date(listing.created_at).toLocaleDateString()}
+              </span>
               <button
                 onClick={onHeartClick}
                 className={`p-2 rounded-full ${

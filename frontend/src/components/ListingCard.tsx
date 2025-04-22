@@ -75,6 +75,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             <p className="text-gray-500 text-sm mb-2">
               Condition: <span className="capitalize">{listing.condition || 'Not specified'}</span>
             </p>
+            <p className="text-gray-400 text-xs">
+              Posted: {new Date(listing.created_at).toLocaleDateString()}
+            </p>
           </div>
           <button
             onClick={(e) => {
