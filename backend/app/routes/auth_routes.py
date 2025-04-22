@@ -210,8 +210,8 @@ def validate_ticket_route():
         current_app.logger.error("Missing ticket")
         return jsonify({'error': 'Missing ticket'}), 400
     
-    # Use the provided service URL or default to the backend callback
-    service_url = service_url or f"{current_app.config['API_URL']}/api/auth/cas/login"
+    # Use the frontend URL as the service URL
+    service_url = service_url or f"{current_app.config['FRONTEND_URL']}/api/auth/cas/login"
     
     # Validate ticket with CAS
     val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
