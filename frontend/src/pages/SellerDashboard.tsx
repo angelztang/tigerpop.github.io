@@ -61,7 +61,8 @@ const SellerDashboard: React.FC = () => {
       }
 
       const listingData: CreateListingData = {
-        ...formData
+        ...formData,
+        netid: localStorage.getItem('netid') || ''
       };
 
       const response = await createListing(listingData);

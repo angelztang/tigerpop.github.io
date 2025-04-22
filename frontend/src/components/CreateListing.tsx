@@ -9,21 +9,23 @@ const CreateListing = () => {
     e.preventDefault();
     const formData = new FormData(e.target as HTMLFormElement);
     const userId = getUserId();
+    const netid = localStorage.getItem('netid');
 
-    if (!userId) {
-      console.error('User ID not found');
+    if (!userId || !netid) {
+      console.error('User ID or netid not found');
       return;
     }
 
     try {
-      const listingData: CreateListingData = {
+      const listingData = {
+        netid: netid,
         title: formData.get('title') as string,
         description: formData.get('description') as string,
         price: parseFloat(formData.get('price') as string),
         category: formData.get('category') as string,
         images: [], // You'll need to handle image uploads separately
-        user_id: parseInt(userId),
-        condition: formData.get('condition') as string
+        condition: formData.get('condition') as string,
+        user_id: parseInt(userId)
       };
 
       await createListing(listingData);

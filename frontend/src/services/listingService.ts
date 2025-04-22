@@ -84,14 +84,19 @@ export const getListing = async (id: number): Promise<Listing> => {
 };
 
 export const createListing = async (data: CreateListingData): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/api/listing/`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_URL}/api/listing/`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse<Listing>(response);
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    throw error;
+  }
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {

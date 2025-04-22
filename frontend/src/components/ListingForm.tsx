@@ -7,9 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { Listing, createListing, updateListing, uploadImages, CreateListingData } from '../services/listingService';
 
 interface ListingFormProps {
-  onSubmit: (data: ListingFormData) => void;
+  onSubmit: (data: any) => void;
   isSubmitting?: boolean;
-  initialData?: Partial<ListingFormData>;
+  initialData?: Partial<any>;
   onClose?: () => void;
 }
 
@@ -52,7 +52,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     condition: initialData.condition || 'good',
     images: initialData.images || [],
     user_id: initialData.user_id || 0,
-    netid: initialData.netid || ''
+    netid: initialData.netid || localStorage.getItem('netid') || ''
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -101,7 +101,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       }
 
       const listingData: CreateListingData = {
-        ...formData,
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        condition: formData.condition,
+        images: formData.images,
         user_id: parseInt(userId),
         netid: netid
       };
