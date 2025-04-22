@@ -210,8 +210,8 @@ def validate_ticket_route():
         current_app.logger.error("Missing ticket")
         return jsonify({'error': 'Missing ticket'}), 400
     
-    # Use the frontend callback URL as the service URL
-    service_url = service_url or f"{current_app.config['FRONTEND_URL']}/auth/callback"
+    # Use the provided service URL or default to the backend callback
+    service_url = service_url or f"{current_app.config['API_URL']}/api/auth/cas/login"
     
     # Validate ticket with CAS
     val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
@@ -246,10 +246,22 @@ def validate_ticket_route():
                 else:
                     current_app.logger.info(f"Found existing user with id: {user.id}")
                 
+                # Generate JWT token
+                access_token = create_access_token(
+                    identity=user.id,
+                    additional_claims={
+                        'netid': user.netid
+                    }
+                )
+                
                 # Store in session and return
                 session['netid'] = netid
+                session['access_token'] = access_token
                 current_app.logger.info(f"Stored netid in session: {netid}")
-                return jsonify({'netid': netid}), 200
+                return jsonify({
+                    'netid': netid,
+                    'access_token': access_token
+                }), 200
         
         current_app.logger.error("Invalid ticket - no success element found in CAS response")
         return jsonify({'error': 'Invalid ticket'}), 401

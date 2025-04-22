@@ -29,9 +29,9 @@ export const clearAuth = () => {
 };
 
 export const login = () => {
-  // Redirect to CAS login
-  const serviceUrl = `${window.location.origin}/auth/callback`;
-  window.location.href = `${API_URL}/api/auth/cas/login?service=${encodeURIComponent(serviceUrl)}`;
+  // Redirect to CAS login with frontend callback URL
+  const serviceUrl = `${API_URL}/api/auth/cas/login`;
+  window.location.href = `https://fed.princeton.edu/cas/login?service=${encodeURIComponent(serviceUrl)}`;
 };
 
 export const logout = () => {
@@ -41,7 +41,7 @@ export const logout = () => {
 
 export const validateTicket = async (ticket: string): Promise<UserInfo> => {
   try {
-    const serviceUrl = `${window.location.origin}/auth/callback`;
+    const serviceUrl = `${API_URL}/api/auth/cas/login`;
     const response = await axios.get<UserInfo>(`${API_URL}/api/auth/validate`, {
       params: {
         ticket,
