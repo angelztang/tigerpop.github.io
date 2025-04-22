@@ -481,8 +481,12 @@ def notify_seller(id):
                 'details': 'An unexpected error occurred'
             }), 500
 
-@bp.route('/<int:id>', methods=['PUT'])
+@bp.route('/<int:id>', methods=['PUT', 'OPTIONS'])
+@bp.route('/<int:id>/', methods=['PUT', 'OPTIONS'])
 def update_listing(id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         listing = Listing.query.get_or_404(id)
         
@@ -510,7 +514,7 @@ def update_listing(id):
         if 'images' in data:
             # Clear existing images
             ListingImage.query.filter_by(listing_id=listing.id).delete()
-            # Add new images
+            # Add new image
             try:
                 image_urls = json.loads(data['images']) if isinstance(data['images'], str) else data['images']
                 for image_url in image_urls:
@@ -533,7 +537,8 @@ def update_listing(id):
             'status': listing.status,
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]
+            'images': [image.filename for image in listing.images],
+            'condition': listing.condition
         })
     except Exception as e:
         db.session.rollback()
