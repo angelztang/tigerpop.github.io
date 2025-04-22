@@ -26,6 +26,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @bp.route('/upload', methods=['POST', 'OPTIONS'])
+@bp.route('/upload/', methods=['POST', 'OPTIONS'])
 def upload_images():
     if request.method == 'OPTIONS':
         return '', 200
