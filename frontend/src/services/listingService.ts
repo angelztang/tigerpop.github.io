@@ -5,7 +5,7 @@ import { getUserId } from './authService';
 const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
 
 // Helper function to handle API responses
-const handleResponse = async (response: Response) => {
+const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
