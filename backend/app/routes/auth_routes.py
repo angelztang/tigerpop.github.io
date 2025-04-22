@@ -202,7 +202,7 @@ def validate_ticket_route():
     current_app.logger.info(f"Validating ticket: {ticket}")
     current_app.logger.info(f"Service URL: {service_url}")
     
-    # Validate the ticket with CAS
+    # Validate the ticket with CAS using the frontend's service URL
     user_info = validate(ticket, service_url)
     if not user_info:
         current_app.logger.error("Failed to validate CAS ticket")
@@ -228,13 +228,14 @@ def validate_ticket_route():
         else:
             current_app.logger.info(f"Found existing user with id: {user.id}")
         
-        # Generate JWT token
-        token = generate_jwt_token(user)
+        # Store netid in session
+        session['netid'] = netid
+        current_app.logger.info(f"Stored netid in session: {netid}")
         
-        # Return user info and token
+        # Return user info
         return jsonify({
             'netid': netid,
-            'token': token
+            'authenticated': True
         }), 200
         
     except Exception as e:

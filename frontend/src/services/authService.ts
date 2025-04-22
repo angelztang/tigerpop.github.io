@@ -5,13 +5,12 @@ export interface UserInfo {
   netid: string;
   name?: string;
   email?: string;
-  token?: string;
 }
 
 export const login = () => {
   console.log('Starting login process');
   // Redirect to CAS login with frontend callback URL
-  const serviceUrl = `${FRONTEND_URL}/api/auth/cas/login`;
+  const serviceUrl = `${FRONTEND_URL}/auth/callback`;
   console.log('Redirecting to CAS with service URL:', serviceUrl);
   window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
 };
@@ -96,28 +95,21 @@ export const getUserInfo = (): UserInfo | null => {
   return netid ? { netid } : null;
 };
 
-export const validateTicket = async (ticket: string): Promise<UserInfo & { token?: string }> => {
+export const validateTicket = async (ticket: string): Promise<UserInfo> => {
     try {
         const serviceUrl = `${FRONTEND_URL}/auth/callback`;
         console.log('Validating ticket with service URL:', serviceUrl);
         
-        const response = await axios.get<{ netid: string; token: string }>(`${API_URL}/api/auth/validate`, {
+        const response = await axios.get<{ netid: string }>(`${API_URL}/api/auth/validate`, {
             params: {
                 ticket,
                 service: serviceUrl
-            }
+            },
+            withCredentials: true // Important for session cookies
         });
         
         console.log('Validation response:', response.data);
-        
-        // Store the netid and token in localStorage
-        const userInfo = { 
-            netid: response.data.netid,
-            token: response.data.token 
-        };
-        setUserInfo(userInfo);
-        
-        return userInfo;
+        return { netid: response.data.netid };
     } catch (error) {
         console.error('Error validating ticket:', error);
         throw error;

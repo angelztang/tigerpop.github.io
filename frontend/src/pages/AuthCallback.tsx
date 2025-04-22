@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { validateTicket, setUserInfo } from '../services/authService';
 
 const AuthCallback: React.FC = () => {
-  const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
@@ -17,27 +16,24 @@ const AuthCallback: React.FC = () => {
           const response = await validateTicket(ticket);
           console.log('Successfully validated ticket for user:', response.netid);
           
-          // Store user info and token in localStorage
+          // Store user info in localStorage
           setUserInfo({ netid: response.netid });
-          if (response.token) {
-            localStorage.setItem('token', response.token);
-          }
           
-          // Force a reload to update the UI
+          // Force a full page reload to update the UI state
           window.location.href = '/dashboard';
         } catch (error) {
           console.error('Error validating ticket:', error);
           // Redirect to login with error message
-          navigate('/login?error=auth_failed', { replace: true });
+          window.location.href = '/login?error=auth_failed';
         }
       } else {
         console.error('No ticket found in URL');
-        navigate('/login?error=no_ticket', { replace: true });
+        window.location.href = '/login?error=no_ticket';
       }
     };
 
     handleCallback();
-  }, [location, navigate]);
+  }, [location]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">
