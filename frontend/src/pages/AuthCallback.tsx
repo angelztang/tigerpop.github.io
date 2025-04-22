@@ -1,38 +1,44 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { validateTicket, setUserInfo } from '../services/authService';
+import { setNetid } from '../services/authService';
+import axios from 'axios';
+
+interface ValidationResponse {
+  netid: string;
+}
 
 const AuthCallback: React.FC = () => {
   const location = useLocation();
 
   useEffect(() => {
-    const handleCallback = async () => {
+    const validateTicket = async () => {
       const searchParams = new URLSearchParams(location.search);
       const ticket = searchParams.get('ticket');
 
-      if (ticket) {
-        try {
-          console.log('Validating CAS ticket:', ticket);
-          const response = await validateTicket(ticket);
-          console.log('Successfully validated ticket for user:', response.netid);
-          
-          // Store user info in localStorage
-          setUserInfo({ netid: response.netid });
-          
-          // Force a full page reload to update the UI state
-          window.location.href = '/dashboard';
-        } catch (error) {
-          console.error('Error validating ticket:', error);
-          // Redirect to login with error message
-          window.location.href = '/login?error=auth_failed';
-        }
-      } else {
-        console.error('No ticket found in URL');
+      if (!ticket) {
         window.location.href = '/login?error=no_ticket';
+        return;
+      }
+
+      try {
+        // Send ticket to backend for validation
+        const response = await axios.get<ValidationResponse>('/api/auth/validate', {
+          params: {
+            ticket,
+            service: window.location.origin + '/auth/callback'
+          }
+        });
+
+        // Store netid and redirect to dashboard
+        setNetid(response.data.netid);
+        window.location.href = '/dashboard';
+      } catch (error) {
+        console.error('Failed to validate ticket:', error);
+        window.location.href = '/login?error=validation_failed';
       }
     };
 
-    handleCallback();
+    validateTicket();
   }, [location]);
 
   return (

@@ -7,31 +7,31 @@ export interface UserInfo {
   email?: string;
 }
 
+// Simple login - redirect to CAS
 export const login = () => {
-  console.log('Starting login process');
-  // Redirect to CAS login with frontend callback URL
   const serviceUrl = `${FRONTEND_URL}/auth/callback`;
-  console.log('Redirecting to CAS with service URL:', serviceUrl);
   window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
 };
 
+// Simple logout - clear storage and redirect to home
 export const logout = () => {
-  console.log('Starting logout process');
-  // Clear netid and redirect to CAS logout
   localStorage.removeItem('netid');
-  window.location.href = `${API_URL}/api/auth/cas/logout`;
+  window.location.href = '/';
 };
 
-export const getNetid = () => {
-  const netid = localStorage.getItem('netid');
-  console.log('Getting netid:', netid);
-  return netid;
-};
-
+// Check if user is authenticated
 export const isAuthenticated = () => {
-  const authenticated = !!localStorage.getItem('netid');
-  console.log('Checking authentication:', authenticated);
-  return authenticated;
+  return !!localStorage.getItem('netid');
+};
+
+// Get the current user's netid
+export const getNetid = () => {
+  return localStorage.getItem('netid');
+};
+
+// Store the user's netid
+export const setNetid = (netid: string) => {
+  localStorage.setItem('netid', netid);
 };
 
 // For backward compatibility - returns netid as the user ID

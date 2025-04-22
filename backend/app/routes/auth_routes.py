@@ -13,6 +13,7 @@ import os
 import urllib.parse
 import requests
 from app.cas.auth import extract_netid_from_cas_response
+import xml.etree.ElementTree as ET
 
 bp = Blueprint('auth', __name__)
 logger = logging.getLogger(__name__)
@@ -193,55 +194,43 @@ def validate_ticket_route():
     ticket = request.args.get('ticket')
     service_url = request.args.get('service')
     
-    if not ticket:
-        return jsonify({'error': 'No ticket provided'}), 400
+    if not ticket or not service_url:
+        return jsonify({'error': 'Missing ticket or service URL'}), 400
     
-    if not service_url:
-        return jsonify({'error': 'No service URL provided'}), 400
-    
-    current_app.logger.info(f"Validating ticket: {ticket}")
-    current_app.logger.info(f"Service URL: {service_url}")
-    
-    # Validate the ticket with CAS using the frontend's service URL
-    user_info = validate(ticket, service_url)
-    if not user_info:
-        current_app.logger.error("Failed to validate CAS ticket")
-        return jsonify({'error': 'Invalid ticket'}), 401
-    
-    # Get the netid from the user info
-    netid = user_info.get('user')
-    if not netid:
-        current_app.logger.error("No netid found in CAS response")
-        return jsonify({'error': 'No netid found'}), 401
-    
-    current_app.logger.info(f"Successfully validated ticket for netid: {netid}")
+    # Validate ticket with CAS
+    val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
     
     try:
-        # Create or update user in database
-        user = User.query.filter_by(netid=netid).first()
-        if not user:
-            current_app.logger.info(f"Creating new user for netid: {netid}")
-            user = User(netid=netid)
-            db.session.add(user)
-            db.session.commit()
-            current_app.logger.info(f"Created new user with id: {user.id}")
-        else:
-            current_app.logger.info(f"Found existing user with id: {user.id}")
+        # Make request to CAS server
+        response = requests.get(val_url)
+        response.raise_for_status()
         
-        # Store netid in session
-        session['netid'] = netid
-        current_app.logger.info(f"Stored netid in session: {netid}")
+        # Parse XML response
+        root = ET.fromstring(response.text)
+        success = root.find('.//{http://www.yale.edu/tp/cas}authenticationSuccess')
         
-        # Return user info
-        return jsonify({
-            'netid': netid,
-            'authenticated': True
-        }), 200
+        if success is not None:
+            # Get netid from response
+            user = success.find('{http://www.yale.edu/tp/cas}user')
+            if user is not None:
+                netid = user.text
+                
+                # Create or update user
+                user = User.query.filter_by(netid=netid).first()
+                if not user:
+                    user = User(netid=netid)
+                    db.session.add(user)
+                    db.session.commit()
+                
+                # Store in session and return
+                session['netid'] = netid
+                return jsonify({'netid': netid}), 200
+        
+        return jsonify({'error': 'Invalid ticket'}), 401
         
     except Exception as e:
-        current_app.logger.error(f"Error creating/updating user: {str(e)}")
-        db.session.rollback()
-        return jsonify({'error': 'Failed to create/update user'}), 500
+        current_app.logger.error(f"Error validating ticket: {str(e)}")
+        return jsonify({'error': 'Validation failed'}), 500
 
 @bp.route('/users/initialize', methods=['POST'])
 def initialize_user():
