@@ -22,13 +22,14 @@ from functools import wraps
 
 _CAS_URL = 'https://fed.princeton.edu/cas/'  # Princeton CAS server
 _BACKEND_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'  # Backend URL
+_FRONTEND_URL = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'  # Frontend URL
 
 logger = logging.getLogger(__name__)
 
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com/api/auth/cas/callback'
+CAS_SERVICE = f'{_FRONTEND_URL}/auth/callback'
 
 #-----------------------------------------------------------------------
 
@@ -90,39 +91,45 @@ def extract_netid_from_cas_response(response_text):
 
 def validate(ticket, service_url=None):
     """Validate a login ticket by contacting the CAS server."""
-    if not service_url:
-        # Use the frontend callback URL as the service URL
-        service_url = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com/auth/callback'
-    
-    current_app.logger.info(f"Validating ticket: {ticket}")
-    current_app.logger.info(f"Service URL: {service_url}")
-    
-    val_url = (f'{CAS_SERVER}/serviceValidate' +
-              f'?service={urllib.parse.quote(service_url)}' +
-              f'&ticket={urllib.parse.quote(ticket)}')
-    
-    try:
-        # Make the request with requests library for better error handling
-        response = requests.get(val_url, verify=not current_app.debug)
-        response.raise_for_status()
-        result = response.text
-        
-        current_app.logger.info(f"CAS Response: {result}")
+    if not ticket:
+        logger.error("No ticket provided for validation")
+        return None
 
-        # Parse the XML response
-        root = ET.fromstring(result)
+    # Use the frontend callback URL as the service URL
+    service_url = service_url or CAS_SERVICE
+    logger.info(f"Validating ticket: {ticket}")
+    logger.info(f"Service URL: {service_url}")
+
+    # Construct the validation URL
+    val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
+    logger.info(f"Validation URL: {val_url}")
+
+    try:
+        # Make request to CAS server
+        response = requests.get(val_url, verify=True)  # Always verify SSL in production
+        response.raise_for_status()
+        
+        logger.info(f"CAS Response: {response.text}")
+        
+        # Parse XML response
+        root = ET.fromstring(response.text)
         success = root.find('.//{http://www.yale.edu/tp/cas}authenticationSuccess')
+        
         if success is not None:
+            # Get netid from response
             user = success.find('{http://www.yale.edu/tp/cas}user')
             if user is not None:
-                return {'user': user.text}
+                netid = user.text
+                logger.info(f"Found netid: {netid}")
+                return {'user': netid}
         
         failure = root.find('.//{http://www.yale.edu/tp/cas}authenticationFailure')
         if failure is not None:
             logger.error(f"CAS authentication failure: {failure.text}")
         
+        logger.error("Invalid ticket - no success element found in CAS response")
         return None
-
+        
     except Exception as e:
         logger.error(f"Error validating CAS ticket: {str(e)}")
         return None

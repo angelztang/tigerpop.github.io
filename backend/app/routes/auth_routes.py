@@ -197,9 +197,12 @@ def validate_ticket_route():
     current_app.logger.info(f"Validating ticket: {ticket}")
     current_app.logger.info(f"Service URL: {service_url}")
     
-    if not ticket or not service_url:
-        current_app.logger.error("Missing ticket or service URL")
-        return jsonify({'error': 'Missing ticket or service URL'}), 400
+    if not ticket:
+        current_app.logger.error("Missing ticket")
+        return jsonify({'error': 'Missing ticket'}), 400
+    
+    # Use the frontend callback URL as the service URL
+    service_url = service_url or f"{current_app.config['FRONTEND_URL']}/auth/callback"
     
     # Validate ticket with CAS
     val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
@@ -207,7 +210,7 @@ def validate_ticket_route():
     
     try:
         # Make request to CAS server
-        response = requests.get(val_url)
+        response = requests.get(val_url, verify=True)  # Always verify SSL in production
         response.raise_for_status()
         
         current_app.logger.info(f"CAS Response: {response.text}")
