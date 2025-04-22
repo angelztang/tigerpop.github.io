@@ -528,13 +528,28 @@ def update_listing(id):
         current_app.logger.error(f"Error updating listing: {str(e)}")
         return jsonify({'error': 'Failed to update listing'}), 500
 
-@bp.route('/<int:id>/heart', methods=['POST'])
+@bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
+@bp.route('/<int:id>/heart/', methods=['POST', 'OPTIONS'])
 @jwt_required()
 def heart_listing(id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         current_user_id = get_jwt_identity()
         if not current_user_id:
             return jsonify({'error': 'User not authenticated'}), 401
+
+        # Get the user's netid from the token
+        token_data = get_jwt()
+        netid = token_data.get('sub')
+        if not netid:
+            return jsonify({'error': 'Invalid token data'}), 401
+
+        # Get the user from the database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
 
         listing = Listing.query.get_or_404(id)
         if listing.status != 'available':
@@ -542,7 +557,7 @@ def heart_listing(id):
 
         # Check if already hearted
         existing_heart = HeartedListing.query.filter_by(
-            user_id=current_user_id,
+            user_id=user.id,
             listing_id=id
         ).first()
 
@@ -550,7 +565,7 @@ def heart_listing(id):
             return jsonify({'error': 'Listing already hearted'}), 400
 
         hearted_listing = HeartedListing(
-            user_id=current_user_id,
+            user_id=user.id,
             listing_id=id
         )
         db.session.add(hearted_listing)
@@ -559,19 +574,35 @@ def heart_listing(id):
         return jsonify({'message': 'Listing hearted successfully'}), 200
     except Exception as e:
         current_app.logger.error(f"Error hearting listing: {str(e)}")
+        current_app.logger.exception("Full traceback:")
         db.session.rollback()
         return jsonify({'error': 'Failed to heart listing'}), 500
 
-@bp.route('/<int:id>/heart', methods=['DELETE'])
+@bp.route('/<int:id>/heart', methods=['DELETE', 'OPTIONS'])
+@bp.route('/<int:id>/heart/', methods=['DELETE', 'OPTIONS'])
 @jwt_required()
 def unheart_listing(id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         current_user_id = get_jwt_identity()
         if not current_user_id:
             return jsonify({'error': 'User not authenticated'}), 401
 
+        # Get the user's netid from the token
+        token_data = get_jwt()
+        netid = token_data.get('sub')
+        if not netid:
+            return jsonify({'error': 'Invalid token data'}), 401
+
+        # Get the user from the database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
         hearted_listing = HeartedListing.query.filter_by(
-            user_id=current_user_id,
+            user_id=user.id,
             listing_id=id
         ).first_or_404()
 
@@ -581,6 +612,7 @@ def unheart_listing(id):
         return jsonify({'message': 'Listing unhearted successfully'}), 200
     except Exception as e:
         current_app.logger.error(f"Error unhearting listing: {str(e)}")
+        current_app.logger.exception("Full traceback:")
         return jsonify({'error': 'Failed to unheart listing'}), 500
 
 @bp.route('/hearted', methods=['GET', 'OPTIONS'])
@@ -591,16 +623,11 @@ def get_hearted_listings():
         return '', 200
         
     try:
-        current_user_id = get_jwt_identity()
-        current_app.logger.info(f"Fetching hearted listings for user_id: {current_user_id}")
-        
-        if not current_user_id:
-            current_app.logger.error("No user_id found in JWT token")
-            return jsonify({'error': 'User not authenticated'}), 401
-
         # Get the user's netid from the token
         token_data = get_jwt()
         netid = token_data.get('sub')
+        current_app.logger.info(f"Fetching hearted listings for netid: {netid}")
+        
         if not netid:
             current_app.logger.error("No netid found in JWT token")
             return jsonify({'error': 'Invalid token data'}), 401
