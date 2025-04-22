@@ -21,6 +21,7 @@ interface ListingFormData {
   condition: string;
   images: string[];
   user_id: number;
+  netid: string;
 }
 
 const categories = [
@@ -50,7 +51,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     category: initialData.category || '',
     condition: initialData.condition || 'good',
     images: initialData.images || [],
-    user_id: initialData.user_id || 0
+    user_id: initialData.user_id || 0,
+    netid: initialData.netid || ''
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -92,7 +94,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
     try {
       const userId = getUserId();
-      if (!userId) {
+      const netid = localStorage.getItem('netid');
+      if (!userId || !netid) {
         setError('User not authenticated. Please log in.');
         return;
       }
@@ -100,7 +103,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       const listingData: CreateListingData = {
         ...formData,
         user_id: parseInt(userId),
-        netid: localStorage.getItem('netid') || ''
+        netid: netid
       };
 
       // Validate required fields
