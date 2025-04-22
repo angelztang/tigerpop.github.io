@@ -129,6 +129,10 @@ export const deleteListing = async (id: number): Promise<void> => {
   return handleResponse(response);
 };
 
+interface UploadResponse {
+  urls: string[];
+}
+
 export const uploadImages = async (files: File[]): Promise<string[]> => {
   try {
     const formData = new FormData();
@@ -147,7 +151,7 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
       mode: 'cors'
     });
     
-    const data = await handleResponse(response);
+    const data = await handleResponse<UploadResponse>(response);
     if (!data.urls || !Array.isArray(data.urls)) {
       throw new Error('Invalid response format from server');
     }
