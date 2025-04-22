@@ -146,6 +146,8 @@ def create_listing():
         else:
             data = request.form.to_dict()
 
+        current_app.logger.info(f"Received listing creation request with data: {data}")
+
         # Get required fields
         title = data.get('title')
         description = data.get('description')
@@ -156,8 +158,16 @@ def create_listing():
         netid = data.get('netid')
 
         # Validate required fields
-        if not all([title, description, price, user_id, category]):
-            return jsonify({'error': 'Missing required fields'}), 400
+        if not all([title, description, price, user_id, category, netid]):
+            missing_fields = []
+            if not title: missing_fields.append('title')
+            if not description: missing_fields.append('description')
+            if not price: missing_fields.append('price')
+            if not user_id: missing_fields.append('user_id')
+            if not category: missing_fields.append('category')
+            if not netid: missing_fields.append('netid')
+            current_app.logger.error(f"Missing required fields: {missing_fields}")
+            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
 
         try:
             # Validate price
@@ -181,6 +191,8 @@ def create_listing():
             db.session.add(new_listing)
             db.session.commit()
 
+            current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
+
             return jsonify({
                 'id': new_listing.id,
                 'title': new_listing.title,
@@ -197,6 +209,7 @@ def create_listing():
         except Exception as db_error:
             db.session.rollback()
             current_app.logger.error(f"Database error: {str(db_error)}")
+            current_app.logger.exception("Full traceback:")
             return jsonify({'error': 'Failed to create listing'}), 500
 
     except Exception as e:
