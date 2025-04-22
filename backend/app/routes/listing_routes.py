@@ -356,8 +356,12 @@ def request_to_buy(id):
         }
     })
 
-@bp.route('/<int:id>/status', methods=['PATCH'])
+@bp.route('/<int:id>/status', methods=['PATCH', 'OPTIONS'])
+@bp.route('/<int:id>/status/', methods=['PATCH', 'OPTIONS'])
 def update_listing_status(id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         listing = Listing.query.get_or_404(id)
         data = request.get_json()
@@ -395,6 +399,10 @@ def delete_listing(id):
     db.session.commit()
     
     return '', 204
+
+@bp.route('/<int:id>', methods=['OPTIONS'])
+def handle_options_id(id):
+    return '', 200
 
 @bp.route('/<int:id>', methods=['GET'])
 def get_single_listing(id):
