@@ -84,17 +84,25 @@ export const getListing = async (id: number): Promise<Listing> => {
 };
 
 export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
+  const netid = localStorage.getItem('netid');
+  if (!netid) {
+    throw new Error('User netid not found. Please log in again.');
+  }
+
   const response = await fetch(`${API_URL}/api/listing`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Authorization': `Bearer ${localStorage.getItem('token')}`
     },
-    body: JSON.stringify(listingData),
+    body: JSON.stringify({
+      ...listingData,
+      netid: netid
+    }),
   });
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to create listing');
+    throw new Error(errorData.error || 'Failed to create listing');
   }
   return response.json();
 };
