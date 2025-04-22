@@ -42,13 +42,13 @@ const conditions = [
 ];
 
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
-  const [formData, setFormData] = useState<ListingFormData>({
-    title: initialData.title || '',
-    description: initialData.description || '',
-    price: initialData.price || 0,
-    category: initialData.category || '',
-    condition: initialData.condition || 'good',
-    user_id: initialData.user_id || 0
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    price: 0,
+    category: '',
+    condition: 'good',
+    user_id: 0
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
@@ -100,7 +100,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       const listingData: CreateListingData = {
         title: formData.title,
         description: formData.description,
-        price: parseFloat(formData.price),
+        price: formData.price,
         category: formData.category,
         user_id: parseInt(userId),
         condition: formData.condition,
