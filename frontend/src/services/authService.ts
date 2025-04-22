@@ -1,37 +1,97 @@
-import { CAS_URL, FRONTEND_URL, API_URL } from '../config';
 import axios from 'axios';
+import { API_URL } from '../config';
 
-export interface UserInfo {
+interface UserInfo {
   netid: string;
-  name?: string;
-  email?: string;
+  user_id?: number;
+  access_token?: string;
 }
 
-// Simple login - redirect to CAS
-export const login = () => {
-  const serviceUrl = `${FRONTEND_URL}/auth/callback`;
-  window.location.href = `${CAS_URL}/login?service=${encodeURIComponent(serviceUrl)}`;
+export const setNetid = (netid: string) => {
+  localStorage.setItem('netid', netid);
 };
 
-// Simple logout - clear storage and redirect to home
-export const logout = () => {
+export const getNetid = (): string | null => {
+  return localStorage.getItem('netid');
+};
+
+export const setToken = (token: string) => {
+  localStorage.setItem('access_token', token);
+};
+
+export const getToken = (): string | null => {
+  return localStorage.getItem('access_token');
+};
+
+export const clearAuth = () => {
   localStorage.removeItem('netid');
-  window.location.href = '/';
+  localStorage.removeItem('access_token');
+};
+
+export const login = () => {
+  // Redirect to CAS login
+  const serviceUrl = `${window.location.origin}/auth/callback`;
+  window.location.href = `${API_URL}/api/auth/cas/login?service=${encodeURIComponent(serviceUrl)}`;
+};
+
+export const logout = () => {
+  clearAuth();
+  window.location.href = `${API_URL}/api/auth/cas/logout`;
+};
+
+export const validateTicket = async (ticket: string): Promise<UserInfo> => {
+  try {
+    const serviceUrl = `${window.location.origin}/auth/callback`;
+    const response = await axios.get<UserInfo>(`${API_URL}/api/auth/validate`, {
+      params: {
+        ticket,
+        service: serviceUrl
+      }
+    });
+    
+    if (response.data.netid) {
+      setNetid(response.data.netid);
+      if (response.data.access_token) {
+        setToken(response.data.access_token);
+      }
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('Failed to validate ticket:', error);
+    throw error;
+  }
+};
+
+export const checkUser = async (): Promise<UserInfo> => {
+  try {
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('No netid found');
+    }
+
+    const response = await axios.post<UserInfo>(`${API_URL}/api/auth/users/check`, {
+      netid
+    }, {
+      headers: {
+        'Authorization': `Bearer ${getToken()}`
+      }
+    });
+
+    if (response.data.access_token) {
+      setToken(response.data.access_token);
+    }
+
+    return response.data;
+  } catch (error) {
+    console.error('Failed to check user:', error);
+    throw error;
+  }
 };
 
 // Check if user is authenticated
 export const isAuthenticated = () => {
   return !!localStorage.getItem('netid');
-};
-
-// Get the current user's netid
-export const getNetid = () => {
-  return localStorage.getItem('netid');
-};
-
-// Store the user's netid
-export const setNetid = (netid: string) => {
-  localStorage.setItem('netid', netid);
 };
 
 // For backward compatibility - returns netid as the user ID
@@ -93,25 +153,4 @@ export const getUserInfo = (): UserInfo | null => {
   const netid = localStorage.getItem('netid');
   console.log('Getting user info for netid:', netid);
   return netid ? { netid } : null;
-};
-
-export const validateTicket = async (ticket: string): Promise<UserInfo> => {
-    try {
-        const serviceUrl = `${FRONTEND_URL}/auth/callback`;
-        console.log('Validating ticket with service URL:', serviceUrl);
-        
-        const response = await axios.get<{ netid: string }>(`${API_URL}/api/auth/validate`, {
-            params: {
-                ticket,
-                service: serviceUrl
-            },
-            withCredentials: true // Important for session cookies
-        });
-        
-        console.log('Validation response:', response.data);
-        return { netid: response.data.netid };
-    } catch (error) {
-        console.error('Error validating ticket:', error);
-        throw error;
-    }
 }; 

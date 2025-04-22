@@ -130,9 +130,6 @@ def cas_login():
         current_app.logger.error("No netid found in CAS response")
         return jsonify({'error': 'No netid found'}), 401
     
-    # Store the netid in the session
-    session['netid'] = netid
-    
     # Check if user exists in database
     user = User.query.filter_by(netid=netid).first()
     if not user:
@@ -142,8 +139,20 @@ def cas_login():
         db.session.commit()
         current_app.logger.info(f"Created new user: {netid}")
     
-    # Redirect back to frontend with the netid
-    frontend_url = f"{FRONTEND_URL}/auth/callback?netid={netid}"
+    # Generate JWT token
+    access_token = create_access_token(
+        identity=user.id,
+        additional_claims={
+            'netid': user.netid
+        }
+    )
+    
+    # Store the netid in the session
+    session['netid'] = netid
+    session['access_token'] = access_token
+    
+    # Redirect back to frontend with the netid and token
+    frontend_url = f"{current_app.config['FRONTEND_URL']}/auth/callback?netid={netid}&token={access_token}"
     return redirect(frontend_url)
 
 @bp.route('/cas/logout', methods=['GET'])
@@ -285,35 +294,49 @@ def initialize_user():
         return jsonify({'error': 'Failed to initialize user'}), 500
 
 @bp.route('/users/check', methods=['POST'])
-@jwt_required()
 def check_user():
     """Check if user exists, create if they don't."""
     try:
-        # Get the current user from the JWT token
-        current_user = get_jwt_identity()
-        netid = current_user.get('netid')
-        
+        # Get netid from session or request
+        netid = session.get('netid') or request.json.get('netid')
         if not netid:
-            logger.error("No netid found in JWT token")
-            return jsonify({'error': 'No netid found in token'}), 401
+            current_app.logger.error("No netid found in session or request")
+            return jsonify({'error': 'No netid found'}), 401
             
-        # Simplified user check and creation
+        current_app.logger.info(f"Checking user with netid: {netid}")
+        
+        # Check if user exists
         user = User.query.filter_by(netid=netid).first()
         if not user:
             # Create new user if they don't exist
+            current_app.logger.info(f"Creating new user with netid: {netid}")
             user = User(netid=netid)
             db.session.add(user)
             db.session.commit()
-            logger.info(f"Created new user with netid: {netid}")
+            current_app.logger.info(f"Created new user with id: {user.id}")
+        else:
+            current_app.logger.info(f"Found existing user with id: {user.id}")
         
+        # Generate new JWT token
+        access_token = create_access_token(
+            identity=user.id,
+            additional_claims={
+                'netid': user.netid
+            }
+        )
+        
+        # Store token in session
+        session['access_token'] = access_token
+        
+        current_app.logger.info(f"User check successful for netid: {netid}")
         return jsonify({
-            'message': 'User checked successfully',
+            'netid': user.netid,
             'user_id': user.id,
-            'netid': user.netid
+            'access_token': access_token
         }), 200
         
     except Exception as e:
-        logger.error(f"Error checking user: {str(e)}")
+        current_app.logger.error(f"Error checking user: {str(e)}")
         db.session.rollback()
         return jsonify({'error': 'Failed to check user'}), 500
 
