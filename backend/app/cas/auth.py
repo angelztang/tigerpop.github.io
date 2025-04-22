@@ -96,7 +96,7 @@ def validate(ticket, service_url=None):
         return None
 
     # Use the frontend callback URL as the service URL
-    service_url = service_url or CAS_SERVICE
+    service_url = service_url or f'{_FRONTEND_URL}/api/auth/cas/login'
     logger.info(f"Validating ticket: {ticket}")
     logger.info(f"Service URL: {service_url}")
 
