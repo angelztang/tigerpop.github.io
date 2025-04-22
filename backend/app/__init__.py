@@ -15,13 +15,12 @@ def create_app(config_class=Config):
     CORS(app, resources={
         r"/api/*": {
             "origins": [
-                "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com",
-                "http://localhost:3000"
+                "http://localhost:3000",
+                "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Access-Control-Allow-Origin"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Access-Control-Allow-Origin", "Accept"],
             "supports_credentials": True,
-            "expose_headers": ["Content-Type", "Authorization", "X-Requested-With"],
             "max_age": 3600
         }
     })

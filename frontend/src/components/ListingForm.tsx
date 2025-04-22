@@ -23,22 +23,22 @@ interface ListingFormData {
 }
 
 const categories = [
-  'tops',
-  'bottoms',
-  'dresses',
-  'shoes',
-  'furniture',
-  'appliances', 
-  'books',
-  'other'
+  'Tops',
+  'Bottoms',
+  'Dresses',
+  'Shoes',
+  'Furniture',
+  'Appliances', 
+  'Books',
+  'Other'
 ];
 
 const conditions = [
-  'new',
-  'like new',
-  'good',
-  'fair',
-  'poor'
+  'New',
+  'Like New',
+  'Good',
+  'Fair',
+  'Poor'
 ];
 
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
