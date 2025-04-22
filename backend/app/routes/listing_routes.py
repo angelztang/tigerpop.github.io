@@ -404,8 +404,12 @@ def delete_listing(id):
 def handle_options_id(id):
     return '', 200
 
-@bp.route('/<int:id>', methods=['GET'])
+@bp.route('/<int:id>', methods=['GET', 'OPTIONS'])
+@bp.route('/<int:id>/', methods=['GET', 'OPTIONS'])
 def get_single_listing(id):
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         listing = Listing.query.get_or_404(id)
         return jsonify({
