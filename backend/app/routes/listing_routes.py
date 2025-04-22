@@ -155,17 +155,15 @@ def create_listing():
         category = data.get('category', 'other')
         user_id = data.get('user_id')
         condition = data.get('condition', 'good')
-        netid = data.get('netid')
 
         # Validate required fields
-        if not all([title, description, price, user_id, category, netid]):
+        if not all([title, description, price, user_id, category]):
             missing_fields = []
             if not title: missing_fields.append('title')
             if not description: missing_fields.append('description')
             if not price: missing_fields.append('price')
             if not user_id: missing_fields.append('user_id')
             if not category: missing_fields.append('category')
-            if not netid: missing_fields.append('netid')
             current_app.logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
 
@@ -183,8 +181,7 @@ def create_listing():
                 category=category,
                 status='available',
                 user_id=user_id,
-                condition=condition,
-                netid=netid
+                condition=condition
             )
 
             # Add listing to database
@@ -202,7 +199,6 @@ def create_listing():
                 'status': new_listing.status,
                 'user_id': new_listing.user_id,
                 'condition': new_listing.condition,
-                'netid': new_listing.netid,
                 'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None
             }), 201
 
