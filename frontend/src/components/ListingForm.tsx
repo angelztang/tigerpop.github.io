@@ -109,7 +109,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         description: formData.description,
         price: formData.price,
         category: formData.category,
-        user_id: parseInt(userId),
         condition: formData.condition,
         netid: netid
       };

@@ -49,9 +49,8 @@ export interface CreateListingData {
   description: string;
   price: number;
   category: string;
-  user_id: number;
-  condition: string;
   netid: string;
+  condition: string;
   images?: string[];
 }
 
