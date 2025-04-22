@@ -380,25 +380,46 @@ def update_listing_status(id):
         current_app.logger.error(f"Error updating listing status: {str(e)}")
         return jsonify({'error': 'Failed to update listing status'}), 500
 
-@bp.route('/<int:id>', methods=['DELETE'])
+@bp.route('/<int:id>', methods=['DELETE', 'OPTIONS'])
+@bp.route('/<int:id>/', methods=['DELETE', 'OPTIONS'])
+@jwt_required()
 def delete_listing(id):
-    listing = Listing.query.get_or_404(id)
-    user_id = 1  # Default user_id for testing
+    if request.method == 'OPTIONS':
+        return '', 200
+        
+    try:
+        listing = Listing.query.get_or_404(id)
+        
+        # Get the user's netid from the token
+        token_data = get_jwt()
+        netid = token_data.get('sub')
+        if not netid:
+            return jsonify({'error': 'Invalid token data'}), 401
+
+        # Get the user from the database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Check if the user is the owner of the listing
+        if listing.user_id != user.id:
+            return jsonify({'error': 'Unauthorized'}), 403
     
-    if listing.user_id != user_id:
-        return jsonify({'error': 'Unauthorized'}), 403
-    
-    # Delete associated images
-    for image in listing.images:
-        try:
-            os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], image.filename))
-        except OSError:
-            pass
-    
-    db.session.delete(listing)
-    db.session.commit()
-    
-    return '', 204
+        # Delete associated images
+        for image in listing.images:
+            try:
+                os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], image.filename))
+            except OSError:
+                pass
+        
+        db.session.delete(listing)
+        db.session.commit()
+        
+        return '', 204
+    except Exception as e:
+        db.session.rollback()
+        current_app.logger.error(f"Error deleting listing: {str(e)}")
+        return jsonify({'error': 'Failed to delete listing'}), 500
 
 @bp.route('/<int:id>', methods=['OPTIONS'])
 def handle_options_id(id):
@@ -483,12 +504,28 @@ def notify_seller(id):
 
 @bp.route('/<int:id>', methods=['PUT', 'OPTIONS'])
 @bp.route('/<int:id>/', methods=['PUT', 'OPTIONS'])
+@jwt_required()
 def update_listing(id):
     if request.method == 'OPTIONS':
         return '', 200
         
     try:
         listing = Listing.query.get_or_404(id)
+        
+        # Get the user's netid from the token
+        token_data = get_jwt()
+        netid = token_data.get('sub')
+        if not netid:
+            return jsonify({'error': 'Invalid token data'}), 401
+
+        # Get the user from the database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Check if the user is the owner of the listing
+        if listing.user_id != user.id:
+            return jsonify({'error': 'Unauthorized'}), 403
         
         # Handle both JSON and form data
         if request.is_json:
