@@ -94,11 +94,11 @@ export const isAuthenticated = () => {
   return !!localStorage.getItem('netid');
 };
 
-// For backward compatibility - returns netid as the user ID
+// For backward compatibility - returns user_id from localStorage
 export const getUserId = () => {
-  const netid = localStorage.getItem('netid');
-  console.log('Getting user ID (netid):', netid);
-  return netid;
+  const userId = localStorage.getItem('user_id');
+  console.log('Getting user ID:', userId);
+  return userId;
 };
 
 // Initialize user in database
@@ -138,6 +138,12 @@ export const initializeUser = async () => {
 
     const data = await response.json();
     console.log('User checked successfully:', data);
+    
+    // Store user_id in localStorage
+    if (data.user_id) {
+      localStorage.setItem('user_id', data.user_id.toString());
+    }
+    
     return data;
   } catch (error) {
     console.error('Error checking user:', error);
