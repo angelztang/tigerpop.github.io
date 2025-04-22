@@ -583,9 +583,13 @@ def unheart_listing(id):
         current_app.logger.error(f"Error unhearting listing: {str(e)}")
         return jsonify({'error': 'Failed to unheart listing'}), 500
 
-@bp.route('/hearted', methods=['GET'])
+@bp.route('/hearted', methods=['GET', 'OPTIONS'])
+@bp.route('/hearted/', methods=['GET', 'OPTIONS'])
 @jwt_required()
 def get_hearted_listings():
+    if request.method == 'OPTIONS':
+        return '', 200
+        
     try:
         current_user_id = get_jwt_identity()
         if not current_user_id:
