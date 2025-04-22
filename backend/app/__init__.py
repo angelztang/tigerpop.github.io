@@ -19,9 +19,10 @@ def create_app(config_class=Config):
                 "http://localhost:3000"
             ],
             "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Access-Control-Allow-Origin"],
             "supports_credentials": True,
-            "expose_headers": ["Content-Type", "Authorization", "X-Requested-With"]
+            "expose_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+            "max_age": 3600
         }
     })
 
