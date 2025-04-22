@@ -592,15 +592,36 @@ def get_hearted_listings():
         
     try:
         current_user_id = get_jwt_identity()
+        current_app.logger.info(f"Fetching hearted listings for user_id: {current_user_id}")
+        
         if not current_user_id:
+            current_app.logger.error("No user_id found in JWT token")
             return jsonify({'error': 'User not authenticated'}), 401
 
-        hearted_listings = HeartedListing.query.filter_by(user_id=current_user_id).all()
+        # Get the user's netid from the token
+        token_data = get_jwt()
+        netid = token_data.get('sub')
+        if not netid:
+            current_app.logger.error("No netid found in JWT token")
+            return jsonify({'error': 'Invalid token data'}), 401
+
+        # Get the user from the database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            current_app.logger.error(f"User not found for netid: {netid}")
+            return jsonify({'error': 'User not found'}), 404
+
+        # Get hearted listings
+        hearted_listings = HeartedListing.query.filter_by(user_id=user.id).all()
         listing_ids = [hl.listing_id for hl in hearted_listings]
         
+        # Get the actual listings
         listings = Listing.query.filter(Listing.id.in_(listing_ids)).all()
         
+        current_app.logger.info(f"Found {len(listings)} hearted listings for user {netid}")
         return jsonify([listing.to_dict() for listing in listings]), 200
+        
     except Exception as e:
         current_app.logger.error(f"Error fetching hearted listings: {str(e)}")
+        current_app.logger.exception("Full traceback:")
         return jsonify({'error': 'Failed to fetch hearted listings'}), 500
