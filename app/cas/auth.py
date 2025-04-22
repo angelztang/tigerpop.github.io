@@ -5,7 +5,8 @@ import urllib.parse
 import re
 import json
 import logging
-from flask import current_app, request, redirect, url_for, session, jsonify
+from flask import current_app, request, redirect, url_for, session, jsonify, abort
+import ssl
 from flask_jwt_extended import create_access_token
 from ..extensions import db
 from ..models import User
@@ -21,20 +22,21 @@ from functools import wraps
 
 _CAS_URL = 'https://fed.princeton.edu/cas/'  # Princeton CAS server
 _BACKEND_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com'  # Backend URL
+_FRONTEND_URL = 'https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com'  # Frontend URL
 
 logger = logging.getLogger(__name__)
 
 cas_bp = Blueprint('cas', __name__)
 
 CAS_SERVER = 'https://fed.princeton.edu/cas'
-CAS_SERVICE = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com/api/auth/cas/callback'
+CAS_SERVICE = f'{_FRONTEND_URL}/auth/callback'
 
 #-----------------------------------------------------------------------
 
 def strip_ticket(url):
     """Strip the ticket parameter from a URL."""
     if url is None:
-        return None
+        return "something is badly wrong"
     url = re.sub(r'ticket=[^&]*&?', '', url)
     url = re.sub(r'\?&?$|&$', '', url)
     return url
@@ -87,51 +89,60 @@ def extract_netid_from_cas_response(response_text):
         current_app.logger.error(f"Error extracting netid from CAS response: {str(e)}")
         return None
 
-def validate_cas_ticket(ticket, service_url=None):
-    """Validate the CAS ticket with the CAS server."""
-    validate_url = f'{CAS_SERVER}/serviceValidate'
-    # Use provided service URL or fall back to CAS_SERVICE
-    service_url = service_url or CAS_SERVICE
-    
+def validate(ticket, service_url=None):
+    """Validate a login ticket by contacting the CAS server."""
+    if not ticket:
+        logger.error("No ticket provided for validation")
+        return None
+
+    # Use the frontend callback URL as the service URL
+    service_url = service_url or f'{_FRONTEND_URL}/auth/callback'
+    logger.info(f"Validating ticket: {ticket}")
+    logger.info(f"Service URL: {service_url}")
+
+    # Construct the validation URL
+    val_url = f'{CAS_SERVER}/serviceValidate?service={urllib.parse.quote(service_url)}&ticket={urllib.parse.quote(ticket)}'
+    logger.info(f"Validation URL: {val_url}")
+
     try:
-        # Log the request details
-        current_app.logger.info(f"Validating ticket: {ticket}")
-        current_app.logger.info(f"Service URL: {service_url}")
+        # Make request to CAS server
+        response = requests.get(val_url, verify=True)  # Always verify SSL in production
+        logger.info(f"CAS Response Status: {response.status_code}")
+        logger.info(f"CAS Response Headers: {response.headers}")
+        logger.info(f"CAS Response Text: {response.text}")
         
-        # For development, if the ticket starts with 'ST-', consider it valid
-        if ticket and ticket.startswith('ST-'):
-            current_app.logger.info("Development mode: Accepting ST- ticket")
-            # In development mode, use a test netid
-            # This is for testing purposes only
-            netid = "testuser"
-            current_app.logger.info(f"Development mode: Using test netid: {netid}")
-            return netid
+        response.raise_for_status()
         
-        # Proceed with normal validation
-        response = requests.get(validate_url, params={
-            'ticket': ticket,
-            'service': service_url
-        }, timeout=10)  # Add timeout
-        current_app.logger.info(f"CAS validation URL: {response.url}")
-        current_app.logger.info(f"CAS validation response: {response.text}")
+        # Parse XML response
+        root = ET.fromstring(response.text)
+        success = root.find('.//{http://www.yale.edu/tp/cas}authenticationSuccess')
         
-        if response.status_code == 200:
-            # Extract netid directly from the response
-            netid = extract_netid_from_cas_response(response.text)
-            if netid:
-                current_app.logger.info(f"Successfully validated ticket for netid: {netid}")
-                return netid
+        if success is not None:
+            # Get netid from response
+            user = success.find('{http://www.yale.edu/tp/cas}user')
+            if user is not None:
+                netid = user.text
+                logger.info(f"Found netid: {netid}")
+                return {'user': netid}
+            else:
+                logger.error("No user element found in authentication success")
         else:
-            current_app.logger.error(f"CAS validation failed with status code: {response.status_code}")
+            failure = root.find('.//{http://www.yale.edu/tp/cas}authenticationFailure')
+            if failure is not None:
+                logger.error(f"CAS authentication failure: {failure.text}")
+            else:
+                logger.error("No authentication success or failure element found in CAS response")
+        
         return None
-    except requests.exceptions.Timeout:
-        current_app.logger.error("CAS validation timeout")
-        return None
+        
     except requests.exceptions.RequestException as e:
-        current_app.logger.error(f"CAS validation request error: {str(e)}")
+        logger.error(f"Request error validating CAS ticket: {str(e)}")
+        if hasattr(e, 'response') and e.response is not None:
+            logger.error(f"Response status: {e.response.status_code}")
+            logger.error(f"Response text: {e.response.text}")
         return None
     except Exception as e:
-        current_app.logger.error(f"CAS validation error: {str(e)}")
+        logger.error(f"Error validating CAS ticket: {str(e)}")
         return None
 
 def create_or_update_user(netid):
@@ -186,7 +197,7 @@ def cas_login():
     current_app.logger.info(f"Got ticket: {ticket}")
     
     # Validate the ticket
-    netid = validate_cas_ticket(ticket)
+    netid = validate(ticket)
     if not netid:
         current_app.logger.error("Failed to validate CAS ticket")
         return redirect(f'{CAS_SERVICE}/login?error=invalid_ticket')
@@ -279,4 +290,15 @@ def init_auth(app):
     app.config.setdefault('CAS_LOGIN_ROUTE', '/login')
     app.config.setdefault('CAS_LOGOUT_ROUTE', '/logout')
     app.config.setdefault('CAS_VALIDATE_ROUTE', '/serviceValidate')
-    app.config.setdefault('CAS_TOKEN_SESSION_KEY', '_CAS_TOKEN') 
+    app.config.setdefault('CAS_TOKEN_SESSION_KEY', '_CAS_TOKEN')
+
+    @app.route('/api/logoutcas', methods=['GET'])
+    def logoutcas():
+        logout_url = (_CAS_URL + 'logout?service=' +
+                    urllib.parse.quote(re.sub('logoutcas', 'logoutapp', request.url)))
+        abort(redirect(logout_url))
+
+    @app.route('/api/logoutapp', methods=['GET'])
+    def logoutapp():
+        session.clear()
+        return redirect('/') 

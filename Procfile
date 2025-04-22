@@ -1,1 +1,1 @@
-web: serve -s build 0 --single
+web: gunicorn wsgi:app 
