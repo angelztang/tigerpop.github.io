@@ -5,6 +5,7 @@ export interface UserInfo {
   netid: string;
   name?: string;
   email?: string;
+  token?: string;
 }
 
 export const login = () => {
@@ -97,10 +98,17 @@ export const getUserInfo = (): UserInfo | null => {
 
 export const validateTicket = async (ticket: string): Promise<UserInfo> => {
     try {
-        const response = await axios.post<{ netid: string; user_id: number }>(`${API_URL}/api/auth/validate`, {
-            ticket,
-            service: `${API_URL}/api/auth/cas/callback`
+        const serviceUrl = `${FRONTEND_URL}/auth/callback`;
+        const response = await axios.get<{ netid: string }>(`${API_URL}/api/auth/validate`, {
+            params: {
+                ticket,
+                service: serviceUrl
+            }
         });
+        
+        // Store the netid in localStorage
+        setUserInfo({ netid: response.data.netid });
+        
         return { netid: response.data.netid };
     } catch (error) {
         console.error('Error validating ticket:', error);

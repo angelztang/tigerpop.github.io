@@ -187,12 +187,11 @@ def verify_token():
         logger.error(f"Token verification error: {str(e)}")
         return jsonify({'error': 'Invalid token'}), 401
 
-@bp.route('/validate', methods=['POST'])
+@bp.route('/validate', methods=['GET'])
 def validate_ticket_route():
     """Validate a CAS ticket and return user info."""
-    data = request.get_json()
-    ticket = data.get('ticket')
-    service_url = data.get('service')
+    ticket = request.args.get('ticket')
+    service_url = request.args.get('service')
     
     if not ticket:
         return jsonify({'error': 'No ticket provided'}), 400
@@ -200,30 +199,48 @@ def validate_ticket_route():
     if not service_url:
         return jsonify({'error': 'No service URL provided'}), 400
     
-    # Validate the ticket
+    current_app.logger.info(f"Validating ticket: {ticket}")
+    current_app.logger.info(f"Service URL: {service_url}")
+    
+    # Validate the ticket with CAS
     user_info = validate(ticket, service_url)
     if not user_info:
+        current_app.logger.error("Failed to validate CAS ticket")
         return jsonify({'error': 'Invalid ticket'}), 401
     
     # Get the netid from the user info
     netid = user_info.get('user')
     if not netid:
+        current_app.logger.error("No netid found in CAS response")
         return jsonify({'error': 'No netid found'}), 401
     
-    # Check if user exists in database
-    user = User.query.filter_by(netid=netid).first()
-    if not user:
-        # Create new user
-        user = User(netid=netid)
-        db.session.add(user)
-        db.session.commit()
-        current_app.logger.info(f"Created new user: {netid}")
+    current_app.logger.info(f"Successfully validated ticket for netid: {netid}")
     
-    # Return user info
-    return jsonify({
-        'netid': netid,
-        'user_id': user.id
-    })
+    try:
+        # Create or update user in database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            current_app.logger.info(f"Creating new user for netid: {netid}")
+            user = User(netid=netid)
+            db.session.add(user)
+            db.session.commit()
+            current_app.logger.info(f"Created new user with id: {user.id}")
+        else:
+            current_app.logger.info(f"Found existing user with id: {user.id}")
+        
+        # Generate JWT token
+        token = generate_jwt_token(user)
+        
+        # Return user info and token
+        return jsonify({
+            'netid': netid,
+            'token': token
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error creating/updating user: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to create/update user'}), 500
 
 @bp.route('/users/initialize', methods=['POST'])
 def initialize_user():
