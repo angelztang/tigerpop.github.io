@@ -18,12 +18,24 @@ def create_app(config_class=Config):
                 "http://localhost:3000",
                 "https://tigerpop-marketplace-frontend-df8f1fbc1309.herokuapp.com"
             ],
-            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Access-Control-Allow-Origin", "Accept"],
+            "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+            "allow_headers": ["Content-Type", "Authorization", "X-Requested-With", "Access-Control-Allow-Origin", "Accept", "Access-Control-Request-Method", "Access-Control-Request-Headers"],
             "supports_credentials": True,
+            "expose_headers": ["Content-Type", "Authorization"],
             "max_age": 3600
         }
     })
+
+    @app.before_request
+    def handle_preflight():
+        if request.method == "OPTIONS":
+            response = app.make_default_options_response()
+            response.headers["Access-Control-Allow-Origin"] = request.headers.get("Origin", "*")
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+            response.headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With, Access-Control-Allow-Origin, Accept, Access-Control-Request-Method, Access-Control-Request-Headers"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = "3600"
+            return response
 
     # Setup logging
     if not app.debug and not app.testing:
