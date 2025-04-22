@@ -113,11 +113,12 @@ export const initializeUser = async () => {
       return;
     }
 
-    console.log('Making request to initialize user');
+    console.log('Making request to check user');
     const response = await fetch(`${API_URL}/api/auth/users/check`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
       },
       body: JSON.stringify({ netid }),
       credentials: 'include',
@@ -131,15 +132,15 @@ export const initializeUser = async () => {
         login();
         return;
       }
-      console.error('Failed to initialize user:', response.status, response.statusText);
+      console.error('Failed to check user:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('User initialized successfully:', data);
+    console.log('User checked successfully:', data);
     return data;
   } catch (error) {
-    console.error('Error initializing user:', error);
+    console.error('Error checking user:', error);
     throw error;
   }
 };
