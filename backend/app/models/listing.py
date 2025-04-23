@@ -9,6 +9,8 @@ class Listing(db.Model):
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     price = db.Column(db.Float, nullable=False)
+    starting_price = db.Column(db.Float, nullable=True)  # For auctions
+    pricing_mode = db.Column(db.String(20), default='fixed')  # 'fixed' or 'auction'
     category = db.Column(db.String(50))
     status = db.Column(db.String(20), default='available')
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
@@ -19,7 +21,7 @@ class Listing(db.Model):
     # Add relationship with ListingImage
     images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, title, description, price, category, status, user_id, condition='good', created_at=None):
+    def __init__(self, title, description, price, category, status, user_id, condition='good', created_at=None, starting_price=None, pricing_mode='fixed'):
         self.title = title
         self.description = description
         self.price = price
@@ -27,6 +29,8 @@ class Listing(db.Model):
         self.status = status
         self.user_id = user_id
         self.condition = condition
+        self.starting_price = starting_price
+        self.pricing_mode = pricing_mode
         if created_at:
             self.created_at = created_at
     
@@ -42,7 +46,9 @@ class Listing(db.Model):
             'buyer_id': self.buyer_id,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'images': [image.filename for image in self.images],
-            'condition': self.condition
+            'condition': self.condition,
+            'starting_price': self.starting_price,
+            'pricing_mode': self.pricing_mode
         }
     
     def __repr__(self):

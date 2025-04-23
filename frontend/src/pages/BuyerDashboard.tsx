@@ -167,6 +167,20 @@ const BuyerDashboard: React.FC = () => {
           onClose={() => setSelectedListing(null)}
           onHeartClick={() => handleHeartClick(selectedListing.id)}
           isHearted={heartedListings.some(l => l.id === selectedListing.id)}
+          onHeart={() => handleHeartClick(selectedListing.id)}
+          onUnheart={() => handleHeartClick(selectedListing.id)}
+          onRequestToBuy={() => {
+            // Implement request to buy functionality
+            console.log('Request to buy:', selectedListing.id);
+          }}
+          onPlaceBid={async (amount) => {
+            try {
+              // Implement bid functionality
+              console.log('Placing bid:', amount);
+            } catch (error) {
+              console.error('Error placing bid:', error);
+            }
+          }}
         />
       )}
     </div>

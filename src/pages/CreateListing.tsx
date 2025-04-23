@@ -8,6 +8,8 @@ interface ListingFormData {
   title: string;
   description: string;
   price: number;
+  starting_price: number;
+  pricing_mode: string;
   category: string;
   images: string[];
   condition: string;
@@ -35,7 +37,9 @@ const CreateListing: React.FC = () => {
         netid: netid,
         title: formData.title,
         description: formData.description,
+        pricing_mode: formData.pricing_mode,
         price: formData.price,
+        starting_price: formData.starting_price,
         category: formData.category,
         images: formData.images || [],
         condition: formData.condition,

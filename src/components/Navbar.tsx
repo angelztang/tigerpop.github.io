@@ -25,13 +25,17 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, userInfo }) => {
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+    const trimmedQuery = searchQuery.trim();
+    if (trimmedQuery) {
+      navigate(`/marketplace?search=${encodeURIComponent(trimmedQuery)}`);
+      // Clear the search input after navigation
+      setSearchQuery('');
     }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
       handleSearch(e);
     }
   };

@@ -44,6 +44,8 @@ export interface Listing {
   seller_id: number;
   buyer_id?: number;
   hearts_count?: number;
+  pricing_mode: 'fixed' | 'auction';
+  starting_price?: number;
 }
 
 export interface CreateListingData {
@@ -54,6 +56,7 @@ export interface CreateListingData {
   netid: string;
   condition: string;
   images?: string[];
+  pricing_mode: 'fixed' | 'auction';
 }
 
 export interface ListingFilters {
@@ -110,51 +113,34 @@ export const getListing = async (id: number): Promise<Listing> => {
   return handleResponse(response);
 };
 
-export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
-  try {
-    const netid = getNetid();
-    if (!netid) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user info from auth service
-    const userInfo = await getUserInfo();
-    if (!userInfo || !userInfo.user_id) {
-      throw new Error('Failed to get user information');
-    }
-
-    const response = await fetch(`${API_URL}/api/listing`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        ...listingData,
-        user_id: userInfo.user_id
-      }),
-      credentials: 'include',
-      mode: 'cors'
-    });
-
-    return handleResponse(response);
-  } catch (error) {
-    console.error('Error creating listing:', error);
-    throw error;
+export const createListing = async (formData: FormData): Promise<Listing> => {
+  const response = await fetch('/api/listings', {
+    method: 'POST',
+    body: formData,
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to create listing');
   }
+  
+  return response.json();
 };
 
-export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
-  try {
-    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-      credentials: 'include',
-      mode: 'cors'
-    });
-    return handleResponse(response);
-  } catch (error) {
-    console.error('Error updating listing:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to update listing');
+export const updateListing = async (listingId: number, formData: FormData): Promise<Listing> => {
+  const response = await fetch(`/api/listings/${listingId}`, {
+    method: 'PUT',
+    body: formData,
+    credentials: 'include',
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to update listing');
   }
+  
+  return response.json();
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
@@ -429,5 +415,55 @@ export const getHotItems = async (): Promise<Listing[]> => {
     console.error('Error fetching hot items:', error);
     throw error;
   }
+};
+
+export interface Bid {
+  id: number;
+  listing_id: number;
+  bidder_id: number;
+  amount: number;
+  timestamp: string;
+}
+
+export const getBids = async (listingId: number): Promise<Bid[]> => {
+  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  return handleResponse(response);
+};
+
+export const placeBid = async (listingId: number, amount: number): Promise<Bid> => {
+  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({ amount }),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to place bid');
+  }
+  
+  return response.json();
+};
+
+export const closeBidding = async (listingId: number): Promise<Listing> => {
+  const response = await fetch(`${API_URL}/api/listing/${listingId}/close-bidding`, {
+    method: 'POST',
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to close bidding');
+  }
+  
+  return response.json();
 };
   

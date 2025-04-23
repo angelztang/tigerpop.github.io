@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
-import { Listing, getListings, heartListing, unheartListing, getHeartedListings } from '../services/listingService';
+import { Listing, getListings, heartListing, unheartListing, getHeartedListings, placeBid } from '../services/listingService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface PriceRange {
@@ -202,6 +202,25 @@ const MarketplacePage: React.FC = () => {
           isHearted={heartedListings.includes(selectedListing.id)}
           onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
+          onUpdate={() => {
+            getListings('?status=available').then(setListings);
+          }}
+          onHeart={() => handleHeartClick(selectedListing.id)}
+          onUnheart={() => handleHeartClick(selectedListing.id)}
+          onRequestToBuy={() => {
+            // Handle request to buy
+            console.log('Request to buy:', selectedListing.id);
+          }}
+          onPlaceBid={async (amount) => {
+            try {
+              await placeBid(selectedListing.id, amount);
+              // Refresh listings to update current price
+              const updatedListings = await getListings('?status=available');
+              setListings(updatedListings);
+            } catch (error) {
+              console.error('Error placing bid:', error);
+            }
+          }}
         />
       )}
     </div>

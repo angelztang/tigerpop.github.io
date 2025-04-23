@@ -4,6 +4,7 @@ import { isAuthenticated, getUserInfo, setUserInfo, UserInfo } from './services/
 import axios from 'axios';
 import Navbar from './components/Navbar';
 import MarketplacePage from './pages/MarketplacePage';
+import TestMarketplace from './pages/TestMarketplace';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import ListingDetail from './pages/ListingDetail';
@@ -75,7 +76,9 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-100">
       <Navbar authenticated={authenticated} userInfo={userInfo} />
       <Routes>
-        <Route path="/" element={<MarketplacePage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
+        <Route path="/test-marketplace" element={<TestMarketplace />} />
+        <Route path="/" element={<Navigate to="/marketplace" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/dashboard"

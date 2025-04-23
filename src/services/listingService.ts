@@ -1,6 +1,6 @@
 // Handles fetching, creating, and updating listings (API calls)
 
-import { getUserId } from './authService';
+import { getUserId, getNetid, getUserInfo } from './authService';
 
 const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
 
@@ -43,6 +43,7 @@ export interface Listing {
   condition: string;
   seller_id: number;
   buyer_id?: number;
+  hearts_count?: number;
 }
 
 export interface CreateListingData {
@@ -65,13 +66,39 @@ export interface ListingFilters {
 }
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
-  const url = filters ? `${API_URL}/api/listing/${filters}` : `${API_URL}/api/listing/`;
-  const response = await fetch(url, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const baseUrl = `${API_URL}/api/listing`;
+    // Always include status=available
+    const baseFilters = '?status=available';
+    const url = filters ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}` : `${baseUrl}${baseFilters}`;
+    console.log('Fetching listings from:', url);
+    
+    const response = await fetch(url, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Error response:', errorData);
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Raw response data:', data);
+    
+    // Ensure we have an array of listings
+    if (!Array.isArray(data)) {
+      console.error('Expected array of listings, got:', data);
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in getListings:', error);
+    throw error;
+  }
 };
 
 export const getListing = async (id: number): Promise<Listing> => {
@@ -84,41 +111,34 @@ export const getListing = async (id: number): Promise<Listing> => {
 };
 
 export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
-  const netid = localStorage.getItem('netid');
-  if (!netid) {
-    throw new Error('User netid not found. Please log in again.');
+  try {
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user info from auth service
+    const userInfo = await getUserInfo();
+    if (!userInfo || !userInfo.user_id) {
+      throw new Error('Failed to get user information');
+    }
+
+    const response = await fetch(`${API_URL}/api/listing`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        ...listingData,
+        user_id: userInfo.user_id
+      }),
+      credentials: 'include',
+      mode: 'cors'
+    });
+
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    throw error;
   }
-
-  // First get the user_id from the netid
-  const userResponse = await fetch(`${API_URL}/api/user?netid=${netid}`, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-
-  if (!userResponse.ok) {
-    throw new Error('Failed to get user information');
-  }
-
-  const userData = await userResponse.json();
-  const user_id = userData.id;
-
-  const response = await fetch(`${API_URL}/api/listing`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      ...listingData,
-      user_id: user_id
-    }),
-    credentials: 'include',
-    mode: 'cors'
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to create listing');
-  }
-  return response.json();
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
@@ -146,7 +166,16 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    // Refresh the page after successful status update
+    window.location.reload();
+    return data;
   } catch (error) {
     console.error('Error updating listing status:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to update listing status');
@@ -154,28 +183,33 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  const userId = getUserId();
-  if (!userId) {
-    throw new Error('User not authenticated');
+  try {
+    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    // For 204 No Content responses, we don't need to parse the response
+    if (response.status === 204) {
+      // Refresh the page after successful deletion
+      window.location.reload();
+      return;
+    }
+    
+    // For other successful responses, handle them normally
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error deleting listing:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to delete listing');
   }
-  const response = await fetch(`${API_URL}/api/listing/${id}/?user_id=${userId}`, {
-    method: 'DELETE',
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to delete listing');
-  }
-  
-  // For 204 No Content responses, we don't need to parse the response
-  if (response.status === 204) {
-    return;
-  }
-  
-  // For other successful responses, handle them normally
-  return handleResponse(response);
 };
 
 interface UploadResponse {
@@ -294,74 +328,106 @@ export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
 
 export const heartListing = async (id: number): Promise<void> => {
   try {
-    const token = localStorage.getItem('token');
-    const netid = localStorage.getItem('netid');
-    if (!token || !netid) {
-      throw new Error('Please log in to heart listings');
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
     }
-    const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
+
+    const response = await fetch(`${API_URL}/api/listing/${id}/heart`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error('Please log in to heart listings');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    throw new Error('Failed to heart listing');
+  } catch (error) {
+    console.error('Error hearting listing:', error);
+    throw error;
   }
 };
 
 export const unheartListing = async (id: number): Promise<void> => {
   try {
-    const token = localStorage.getItem('token');
-    const netid = localStorage.getItem('netid');
-    if (!token || !netid) {
-      throw new Error('Please log in to unheart listings');
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
     }
-    const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
+
+    const response = await fetch(`${API_URL}/api/listing/${id}/heart`, {
       method: 'DELETE',
       headers: getHeaders(),
       body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error('Please log in to unheart listings');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    throw new Error('Failed to unheart listing');
+  } catch (error) {
+    console.error('Error unhearting listing:', error);
+    throw error;
   }
 };
 
 export const getHeartedListings = async (): Promise<Listing[]> => {
   try {
-    const token = localStorage.getItem('token');
-    const netid = localStorage.getItem('netid');
-    if (!token || !netid) {
-      return [];
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
     }
+
     const response = await fetch(`${API_URL}/api/listing/hearted/?netid=${netid}`, {
       headers: getHeaders(),
       credentials: 'include',
       mode: 'cors'
     });
+    
     if (!response.ok) {
-      if (response.status === 401) return [];
-      if (response.status === 422) {
-        console.warn('Failed to fetch hearted listings (422)');
-        return [];
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    return handleResponse(response);
+    
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    return data;
   } catch (error) {
     console.error('Error fetching hearted listings:', error);
-    return [];
+    throw error;
+  }
+};
+
+export const getHotItems = async (): Promise<Listing[]> => {
+  try {
+    const response = await fetch(`${API_URL}/api/listing/hot/`, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching hot items:', error);
+    throw error;
   }
 };
   

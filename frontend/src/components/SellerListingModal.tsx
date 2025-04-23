@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Listing, updateListing, updateListingStatus, deleteListing, uploadImages } from '../services/listingService';
+import React, { useState, useEffect } from 'react';
+import { Listing, updateListing, updateListingStatus, deleteListing, uploadImages, closeBidding, getBids, Bid } from '../services/listingService';
 
 interface SellerListingModalProps {
   listing: Listing;
@@ -17,6 +17,22 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
   const [newImages, setNewImages] = useState<File[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSoldModal, setShowSoldModal] = useState(false);
+  const [bids, setBids] = useState<Bid[]>([]);
+
+  useEffect(() => {
+    if (listing.pricing_mode === 'auction') {
+      fetchBids();
+    }
+  }, [listing.id]);
+
+  const fetchBids = async () => {
+    try {
+      const fetchedBids = await getBids(listing.id);
+      setBids(fetchedBids);
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+    }
+  };
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => 
@@ -99,6 +115,21 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
     } catch (error: any) {
       console.error('Error deleting listing:', error);
       setError(error.response?.data?.error || 'Failed to delete listing');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleCloseBidding = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      const updatedListing = await closeBidding(listing.id);
+      onUpdate(updatedListing);
+      onClose();
+    } catch (err) {
+      setError('Failed to close bidding');
+      console.error('Error closing bidding:', err);
     } finally {
       setIsSubmitting(false);
     }
@@ -224,9 +255,36 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                       className="border rounded px-2 py-1 w-full"
                     />
                   ) : (
-                    <p className="text-2xl font-bold text-orange-500">${listing.price}</p>
+                    <div>
+                      <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
+                      {listing.pricing_mode === 'auction' && listing.starting_price && (
+                        <p className="text-sm text-gray-600">
+                          Starting Price: ${listing.starting_price.toFixed(2)}
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
+
+                {/* Bid History for Auction Listings */}
+                {listing.pricing_mode === 'auction' && bids.length > 0 && (
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-2">Bid History</h3>
+                    <div className="space-y-2">
+                      {bids.map((bid) => (
+                        <div key={bid.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                          <span className="text-gray-600">
+                            ${bid.amount.toFixed(2)}
+                          </span>
+                          <span className="text-sm text-gray-500">
+                            {new Date(bid.timestamp).toLocaleString()}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Category</h3>
                   {isEditing ? (
@@ -291,6 +349,15 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   >
                     Edit Listing
                   </button>
+                  {listing.status === 'available' && listing.pricing_mode === 'auction' && (
+                    <button
+                      onClick={handleCloseBidding}
+                      disabled={isSubmitting}
+                      className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50"
+                    >
+                      Close Bidding
+                    </button>
+                  )}
                   {listing.status !== 'sold' && (
                     <button
                       onClick={() => setShowSoldModal(true)}

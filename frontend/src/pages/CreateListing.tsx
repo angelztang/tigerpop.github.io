@@ -13,6 +13,8 @@ interface ListingFormData {
   condition: string;
   user_id: number;
   netid: string;
+  pricing_mode: 'fixed' | 'auction';
+  starting_price?: number;
 }
 
 const CreateListing: React.FC = () => {
@@ -20,29 +22,11 @@ const CreateListing: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleSubmit = async (formData: ListingFormData) => {
+  const handleSubmit = async (formData: CreateListingData) => {
     setIsSubmitting(true);
     setError(null);
     try {
-      const userId = getUserId();
-      const netid = localStorage.getItem('netid');
-      if (!userId || !netid) {
-        setError('User not authenticated');
-        return;
-      }
-
-      const listingData = {
-        netid: netid,
-        title: formData.title,
-        description: formData.description,
-        price: formData.price,
-        category: formData.category,
-        images: formData.images || [],
-        condition: formData.condition,
-        user_id: parseInt(userId)
-      };
-
-      await createListing(listingData);
+      await createListing(formData);
       navigate('/dashboard');
     } catch (err) {
       setError('Failed to create listing. Please try again.');

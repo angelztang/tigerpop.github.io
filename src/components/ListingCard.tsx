@@ -11,9 +11,10 @@ interface ListingCardProps {
   onClick?: () => void;
   isHearted?: boolean;
   onHeartClick?: (id: number) => void;
+  isHot?: boolean;
 }
 
-const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, isHearted = false, onHeartClick }) => {
+const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, isHearted = false, onHeartClick, isHot = false }) => {
   const navigate = useNavigate();
 
   const handleCardClick = () => {
@@ -55,7 +56,12 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             className="w-full h-full object-cover"
           />
         )}
-        <div className="absolute top-2 right-2">
+        <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
+          {isHot && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+              🔥 Hot Item
+            </span>
+          )}
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
               listing.status

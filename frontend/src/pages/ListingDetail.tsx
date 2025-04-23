@@ -63,6 +63,12 @@ const ListingDetail: React.FC = () => {
           isHearted={isHearted}
           onHeartClick={handleHeartClick}
           onClose={() => navigate(-1)}
+          onHeart={handleHeartClick}
+          onUnheart={handleHeartClick}
+          onRequestToBuy={() => {
+            // Implement request to buy functionality
+            console.log('Request to buy:', listing.id);
+          }}
         />
       </div>
     </div>

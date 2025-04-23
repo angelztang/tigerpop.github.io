@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Listing } from '../services/listingService';
+import React, { useState, useEffect } from 'react';
+import { Listing, placeBid, getBids, Bid, closeBidding } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
+import { getUserId } from '../services/authService';
 
 interface ListingDetailModalProps {
   listing: Listing;
@@ -9,6 +10,11 @@ interface ListingDetailModalProps {
   onClose: () => void;
   onUpdate?: () => void;
   onListingUpdated?: () => void;
+  onHeart: () => void;
+  onUnheart: () => void;
+  onRequestToBuy: () => void;
+  onPlaceBid?: (amount: number) => void;
+  currentBid?: number;
 }
 
 const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ 
@@ -17,12 +23,77 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   onHeartClick,
   onClose, 
   onUpdate,
-  onListingUpdated
+  onListingUpdated,
+  onHeart,
+  onUnheart,
+  onRequestToBuy,
+  onPlaceBid,
+  currentBid
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bids, setBids] = useState<Bid[]>([]);
+  const [bidAmount, setBidAmount] = useState<number>(0);
+  const [bidError, setBidError] = useState<string | null>(null);
+  const userId = getUserId();
+  const isSeller = userId !== null && parseInt(userId) === listing.user_id;
+
+  useEffect(() => {
+    if (listing.pricing_mode === 'auction') {
+      fetchBids();
+    }
+  }, [listing.id]);
+
+  const fetchBids = async () => {
+    try {
+      const fetchedBids = await getBids(listing.id);
+      setBids(fetchedBids);
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+    }
+  };
+
+  const handlePlaceBid = async () => {
+    if (!bidAmount) {
+      setBidError('Please enter a bid amount');
+      return;
+    }
+
+    const amount = parseFloat(bidAmount.toString());
+    if (isNaN(amount) || amount <= 0) {
+      setBidError('Please enter a valid bid amount');
+      return;
+    }
+
+    if (bids.length > 0 && amount <= bids[0].amount) {
+      setBidError('Bid must be higher than current highest bid');
+      return;
+    }
+
+    const minBid = listing.starting_price || listing.price;
+    if (amount <= minBid) {
+      setBidError(`Bid must be higher than ${minBid}`);
+      return;
+    }
+
+    setIsSubmitting(true);
+    setBidError(null);
+
+    try {
+      await placeBid(listing.id, amount);
+      await fetchBids();
+      setBidAmount(0);
+      if (onUpdate) {
+        onUpdate();
+      }
+    } catch (error: any) {
+      setBidError(error.message || 'Failed to place bid');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => 
@@ -71,6 +142,13 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         return 'bg-white text-gray-800 border border-gray-300';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const handleBidSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (onPlaceBid && bidAmount > 0) {
+      onPlaceBid(bidAmount);
     }
   };
 
@@ -176,12 +254,88 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             <div>
               <h3 className="text-lg font-semibold mb-2">Description</h3>
               <p className="text-gray-600">{listing.description}</p>
+              
+              {/* Bid History */}
+              {listing.pricing_mode === 'auction' && bids.length > 0 && (
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold mb-2">Bid History</h3>
+                  <div className="space-y-2">
+                    {bids.map((bid) => (
+                      <div key={bid.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <span className="text-gray-600">
+                          ${bid.amount.toFixed(2)}
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          {new Date(bid.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+            
             <div>
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Price</h3>
-                <p className="text-2xl font-bold text-orange-500">${listing.price}</p>
+                <div>
+                  <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
+                  {listing.pricing_mode === 'auction' && listing.starting_price && (
+                    <p className="text-sm text-gray-600">
+                      Starting Price: ${listing.starting_price.toFixed(2)}
+                    </p>
+                  )}
+                </div>
               </div>
+
+              {/* Bidding Form */}
+              {listing.pricing_mode === 'auction' && listing.status === 'available' && !isSeller && (
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Place a Bid</h3>
+                  <div className="flex space-x-2">
+                    <input
+                      type="number"
+                      value={bidAmount || ''}
+                      onChange={(e) => setBidAmount(parseFloat(e.target.value))}
+                      className="border rounded px-2 py-1 flex-1"
+                      placeholder="Enter your bid"
+                      min={listing.starting_price}
+                      step="0.01"
+                    />
+                    <button
+                      onClick={handlePlaceBid}
+                      disabled={isSubmitting}
+                      className="bg-orange-500 text-white px-4 py-1 rounded hover:bg-orange-600 disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Placing Bid...' : 'Place Bid'}
+                    </button>
+                  </div>
+                  {bidError && (
+                    <p className="text-red-500 text-sm mt-1">{bidError}</p>
+                  )}
+                </div>
+              )}
+
+              {/* Close Bidding Button (for sellers) */}
+              {isSeller && listing.pricing_mode === 'auction' && listing.status === 'available' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      await closeBidding(listing.id);
+                      if (onUpdate) {
+                        onUpdate();
+                      }
+                      onClose();
+                    } catch (error: any) {
+                      setError(error.message || 'Failed to close bidding');
+                    }
+                  }}
+                  className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors"
+                >
+                  Close Bidding
+                </button>
+              )}
+
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Category</h3>
                 <p className="text-gray-600">{listing.category}</p>
@@ -231,4 +385,4 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   );
 };
 
-export default ListingDetailModal; 
+export default ListingDetailModal;

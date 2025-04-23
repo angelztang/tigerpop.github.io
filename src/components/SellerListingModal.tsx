@@ -183,7 +183,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={handleImageUpload}
                     className="block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
@@ -192,6 +192,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                       file:bg-orange-50 file:text-orange-700
                       hover:file:bg-orange-100"
                   />
+                  <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
                 </div>
               )}
             </div>
@@ -235,14 +236,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                       onChange={handleInputChange}
                       className="border rounded px-2 py-1 w-full"
                     >
-                      <option value="tops">tops</option>
-                      <option value="bottoms">bottoms</option>
-                      <option value="dresses">dresses</option>
-                      <option value="shoes">shoes</option>
-                      <option value="furniture">furniture</option>
-                      <option value="appliances">appliances</option>
-                      <option value="books">books</option>
-                      <option value="other">other</option>
+                      <option value="tops">Tops</option>
+                      <option value="bottoms">Bottoms</option>
+                      <option value="dresses">Dresses</option>
+                      <option value="shoes">Shoes</option>
+                      <option value="furniture">Furniture</option>
+                      <option value="appliances">Appliances</option>
+                      <option value="books">Books</option>
+                      <option value="other">Other</option>
                     </select>
                   ) : (
                     <p className="text-gray-600">{listing.category}</p>

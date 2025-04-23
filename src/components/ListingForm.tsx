@@ -17,6 +17,8 @@ interface ListingFormData {
   title: string;
   description: string;
   price: number;
+  starting_price: number;
+  pricing_mode: string;
   category: string;
   condition: string;
   user_id: number;
@@ -46,6 +48,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     title: '',
     description: '',
     price: 0,
+    starting_price: 0,
+    pricing_mode: 'fixed',
     category: '',
     condition: 'good',
     user_id: 0
@@ -105,12 +109,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       }
 
       const listingData: CreateListingData = {
-        title: formData.title,
-        description: formData.description,
-        price: formData.price,
-        category: formData.category,
-        condition: formData.condition,
-        netid: netid
+        ...formData,
+        netid: netid,
+        images: []
       };
 
       // Validate required fields
@@ -168,6 +169,72 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             />
           </div>
 
+          {/* Pricing Mode Selection (after Title, before Category) */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pricing Mode:</label>
+            <div className="flex space-x-4 mb-2">
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="pricing_mode"
+                  value="fixed"
+                  checked={formData.pricing_mode === 'fixed'}
+                  onChange={handleChange}
+                  className="mr-1"
+                />
+                Fixed Price
+              </label>
+              <label className="flex items-center">
+                <input
+                  type="radio"
+                  name="pricing_mode"
+                  value="auction"
+                  checked={formData.pricing_mode === 'auction'}
+                  onChange={handleChange}
+                  className="mr-1"
+                />
+                Auction (Accept Bids)
+              </label>
+            </div>
+          </div>
+
+          {/* Price or Starting Price */}
+          {formData.pricing_mode === 'fixed' ? (
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                Price:
+              </label>
+              <input
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                required
+                min={0}
+                step={0.01}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              />
+            </div>
+          ) : (
+            <div>
+              <label htmlFor="starting_price" className="block text-sm font-medium text-gray-700 mb-1">
+                Starting Price (Auction):
+              </label>
+              <input
+                type="number"
+                id="starting_price"
+                name="starting_price"
+                value={formData.starting_price}
+                onChange={handleChange}
+                required
+                min={0}
+                step={0.01}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              />
+            </div>
+          )}
+
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
               Category:
@@ -223,27 +290,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
             />
-          </div>
-
-          <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-              Price:
-            </label>
-            <div className="mt-1 relative rounded-md shadow-sm">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="text"
-                id="price"
-                name="price"
-                value={formData.price.toString()}
-                onChange={handleChange}
-                required
-                pattern="^\d+(\.\d{1,2})?$"
-                className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-              />
-            </div>
           </div>
 
           <div>

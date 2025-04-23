@@ -25,7 +25,8 @@ const CreateListing = () => {
         category: formData.get('category') as string,
         images: [], // You'll need to handle image uploads separately
         condition: formData.get('condition') as string,
-        user_id: parseInt(userId)
+        user_id: parseInt(userId),
+        pricing_mode: 'fixed' as const
       };
 
       await createListing(listingData);

@@ -3,10 +3,65 @@ from werkzeug.utils import secure_filename
 import os
 from ..extensions import db, mail
 from ..models import Listing, ListingImage, User, HeartedListing
+from ..models.bid import Bid
 from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
+
+# --- Email Notification Helpers ---
+def get_user_email(user_id):
+    user = User.query.get(user_id)
+    return getattr(user, 'email', None) if user else None
+
+def notify_seller_new_bid(listing, bid):
+    seller = User.query.get(listing.user_id)
+    if not seller or not getattr(seller, 'email', None):
+        current_app.logger.warning(f"No email for seller (user_id={listing.user_id})")
+        return
+    msg = Message(
+        subject=f"New Bid on Your Listing: {listing.title}",
+        recipients=[seller.email],
+        body=f"A new bid of ${bid.amount:.2f} was placed on your auction '{listing.title}'."
+    )
+    try:
+        mail.send(msg)
+        current_app.logger.info(f"Notified seller {seller.email} of new bid.")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send seller bid email: {e}")
+
+def notify_outbid(prev_bid, listing):
+    prev_bidder = User.query.get(prev_bid.bidder_id)
+    if not prev_bidder or not getattr(prev_bidder, 'email', None):
+        current_app.logger.warning(f"No email for outbid user (user_id={prev_bid.bidder_id})")
+        return
+    msg = Message(
+        subject=f"You've Been Outbid on {listing.title}",
+        recipients=[prev_bidder.email],
+        body=f"You've been outbid on '{listing.title}'. The new highest bid is ${prev_bid.amount:.2f}."
+    )
+    try:
+        mail.send(msg)
+        current_app.logger.info(f"Notified outbid user {prev_bidder.email}.")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send outbid email: {e}")
+
+def notify_winner(winning_bid, listing):
+    winner = User.query.get(winning_bid.bidder_id)
+    if not winner or not getattr(winner, 'email', None):
+        current_app.logger.warning(f"No email for winner (user_id={winning_bid.bidder_id})")
+        return
+    msg = Message(
+        subject=f"You Won the Auction: {listing.title}",
+        recipients=[winner.email],
+        body=f"Congratulations! You won the auction for '{listing.title}' with a bid of ${winning_bid.amount:.2f}."
+    )
+    try:
+        mail.send(msg)
+        current_app.logger.info(f"Notified winner {winner.email}.")
+    except Exception as e:
+        current_app.logger.error(f"Failed to send winner email: {e}")
+
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 import base64
 import io
@@ -26,7 +81,6 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @bp.route('/upload', methods=['POST', 'OPTIONS'])
-@bp.route('/upload/', methods=['POST', 'OPTIONS'])
 def upload_images():
     if request.method == 'OPTIONS':
         return '', 200
@@ -320,296 +374,64 @@ def get_buyer_listings():
         current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch buyer listings'}), 500
 
-@bp.route('/<int:id>/buy', methods=['POST'])
-def request_to_buy(id):
-    listing = Listing.query.get_or_404(id)
-    data = request.get_json()
-    
-    # Convert buyer_id to integer if it's not already
-    buyer_id = data.get('buyer_id')
-    try:
-        buyer_id = int(buyer_id)
-    except (ValueError, TypeError):
-        return jsonify({'error': 'Invalid buyer ID format'}), 400
-    
-    # Update listing with buyer information and set status to pending
-    listing.buyer_id = buyer_id
-    listing.status = 'pending'
-    db.session.commit()
-    
-    # Get seller's email
-    seller = User.query.get(listing.user_id)
-    
-    # Send email to seller
-    msg = Message(
-        subject=f'TigerPop: New Interest in Your Listing - {listing.title}',
-        recipients=[f'{seller.netid}@princeton.edu'],
-        body=f'Someone is interested in your listing "{listing.title}"', 
-        html=f'''
-            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                <h2 style="color: #4A90E2;">🎉 Someone is interested in your listing!</h2>
-                <p><strong>Title:</strong> {listing.title}</p>
-                <p><strong>Price:</strong> ${listing.price}</p>
-                <p><strong>Category:</strong> {listing.category}</p>
-                <hr style="margin: 20px 0;">
-                <p>You can <a href="http://localhost:3000/listings/{listing.id}" style="color: #4A90E2;">view and manage your listing here</a>.</p>
-                <p>– The <strong>TigerPop</strong> Team 🐯</p>
-            </div>
-        '''
-    )
-    
-    try:
-        mail.send(msg)
-    except Exception as e:
-        current_app.logger.error(f"Failed to send email: {str(e)}")
-    
-    return jsonify({
-        'message': 'Purchase request sent successfully',
-        'listing': {
-            'id': listing.id,
-            'status': listing.status,
-            'buyer_id': listing.buyer_id
-        }
-    })
-
-@bp.route('/<int:id>/status', methods=['PATCH', 'OPTIONS'])
-@bp.route('/<int:id>/status/', methods=['PATCH', 'OPTIONS'])
-def update_listing_status(id):
-    if request.method == 'OPTIONS':
-        return '', 200
-        
+@bp.route('/<int:id>/bids', methods=['POST'])
+def place_bid(id):
     try:
         listing = Listing.query.get_or_404(id)
         data = request.get_json()
         
-        if 'status' not in data:
-            return jsonify({'error': 'Status is required'}), 400
+        # Check if listing is an auction
+        if listing.pricing_mode != 'auction':
+            return jsonify({'error': 'Bids can only be placed on auction listings'}), 400
             
-        listing.status = data['status']
-        db.session.commit()
-        
-        return jsonify({
-            'id': listing.id,
-            'status': listing.status
-        })
-    except Exception as e:
-        current_app.logger.error(f"Error updating listing status: {str(e)}")
-        return jsonify({'error': 'Failed to update listing status'}), 500
-
-@bp.route('/<int:id>', methods=['DELETE', 'OPTIONS'])
-@bp.route('/<int:id>/', methods=['DELETE', 'OPTIONS'])
-def delete_listing(id):
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        listing = Listing.query.get_or_404(id)
-        
-        # Delete associated images
-        for image in listing.images:
-            try:
-                os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'], image.filename))
-            except OSError:
-                pass
-        
-        db.session.delete(listing)
-        db.session.commit()
-        
-        return '', 204
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error deleting listing: {str(e)}")
-        return jsonify({'error': 'Failed to delete listing'}), 500
-
-@bp.route('/<int:id>', methods=['OPTIONS'])
-def handle_options_id(id):
-    return '', 200
-
-@bp.route('/<int:id>', methods=['GET', 'OPTIONS'])
-@bp.route('/<int:id>/', methods=['GET', 'OPTIONS'])
-def get_single_listing(id):
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        listing = Listing.query.get_or_404(id)
-        return jsonify({
-            'id': listing.id,
-            'title': listing.title,
-            'description': listing.description,
-            'price': listing.price,
-            'category': listing.category,
-            'status': listing.status,
-            'user_id': listing.user_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],
-            'condition': listing.condition
-        })
-    except Exception as e:
-        current_app.logger.error(f"Error fetching listing {id}: {str(e)}")
-        return jsonify({'error': 'Failed to fetch listing'}), 500
-
-@bp.route('/<int:id>/notify', methods=['POST'])
-def notify_seller(id):
-    try:
-        listing = Listing.query.get_or_404(id)
-        seller = User.query.get(listing.user_id)
-        
-        if not seller or not seller.netid:
-            return jsonify({'error': 'Seller not found or no email address available'}), 404
+        # Convert bidder_id to integer if it's not already
+        bidder_id = data.get('bidder_id')
+        try:
+            bidder_id = int(bidder_id)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid bidder ID format'}), 400
             
-        # Change email message here!!
-        msg = Message(
-            subject=f'TigerPop: New Interest in Your Listing - {listing.title}',
-            recipients=[f'{seller.netid}@princeton.edu'],
-            body=f'Someone is interested in your listing "{listing.title}"', 
-            html=f'''
-            <div style="font-family: Arial, sans-serif; padding: 20px; background-color: #f9f9f9;">
-                <h2 style="color: #4A90E2;">🎉 Someone is interested in your listing!</h2>
-                <p><strong>Title:</strong> {listing.title}</p>
-                <p><strong>Price:</strong> ${listing.price}</p>
-                <p><strong>Category:</strong> {listing.category}</p>
-                <hr style="margin: 20px 0;">
-                <p>You can <a href="http://localhost:3000/listings/{listing.id}" style="color: #4A90E2;">view and manage your listing here</a>.</p>
-                <p>– The <strong>TigerPop</strong> Team 🐯</p>
-            </div>
-            '''
-        )
-        # Send email
-        mail.send(msg)
-        
-        return jsonify({
-            'message': 'Notification sent successfully',
-            'details': f'Email sent to {seller.netid}@princeton.edu'
-        })
-        
-    except Exception as e:
-        current_app.logger.error(f"Error sending notification: {str(e)}")
-        error_message = str(e)
-        if "BadCredentials" in error_message:
-            return jsonify({
-                'error': 'Email service configuration error',
-                'details': 'Please contact the administrator to fix the email settings'
-            }), 500
-        elif "Connection refused" in error_message:
-            return jsonify({
-                'error': 'Email service unavailable',
-                'details': 'Please try again later'
-            }), 500
-        else:
-            return jsonify({
-                'error': 'Failed to send notification',
-                'details': 'An unexpected error occurred'
-            }), 500
-
-@bp.route('/<int:id>', methods=['PUT', 'OPTIONS'])
-@bp.route('/<int:id>/', methods=['PUT', 'OPTIONS'])
-def update_listing(id):
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        listing = Listing.query.get_or_404(id)
-        
-        # Handle both JSON and form data
-        if request.is_json:
-            data = request.get_json()
-        else:
-            data = request.form.to_dict()
-        
-        # Update listing fields if provided
-        if 'title' in data:
-            listing.title = data['title']
-        if 'description' in data:
-            listing.description = data['description']
-        if 'price' in data:
-            try:
-                price = float(data['price'])
-                if price <= 0:
-                    return jsonify({'error': 'Price must be greater than 0'}), 400
-                listing.price = price
-            except ValueError:
-                return jsonify({'error': 'Invalid price format'}), 400
-        if 'category' in data:
-            listing.category = data['category']
-        if 'images' in data:
-            # Clear existing images
-            ListingImage.query.filter_by(listing_id=listing.id).delete()
-            # Add new image
-            try:
-                image_urls = json.loads(data['images']) if isinstance(data['images'], str) else data['images']
-                for image_url in image_urls:
-                    image = ListingImage(filename=image_url, listing_id=listing.id)
-                    db.session.add(image)
-            except json.JSONDecodeError:
-                current_app.logger.error("Failed to parse image URLs")
-                return jsonify({'error': 'Invalid image data format'}), 400
-        if 'condition' in data:
-            listing.condition = data['condition']
-        
-        db.session.commit()
-        
-        return jsonify({
-            'id': listing.id,
-            'title': listing.title,
-            'description': listing.description,
-            'price': listing.price,
-            'category': listing.category,
-            'status': listing.status,
-            'user_id': listing.user_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],
-            'condition': listing.condition
-        })
-    except Exception as e:
-        db.session.rollback()
-        current_app.logger.error(f"Error updating listing: {str(e)}")
-        return jsonify({'error': 'Failed to update listing'}), 500
-
-@bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
-@bp.route('/<int:id>/heart/', methods=['POST', 'OPTIONS'])
-def heart_listing(id):
-    if request.method == 'OPTIONS':
-        return '', 200
-        
-    try:
-        data = request.get_json()
-        netid = data.get('netid')
-        
-        if not netid:
-            return jsonify({'error': 'NetID is required'}), 400
-
-        # Get the user from the database
-        user = User.query.filter_by(netid=netid).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        listing = Listing.query.get_or_404(id)
+        # Check if bidder is the seller
+        if bidder_id == listing.user_id:
+            return jsonify({'error': 'Seller cannot bid on their own listing'}), 400
+            
+        # Convert amount to float if it's not already
+        amount = data.get('amount')
+        try:
+            amount = float(amount)
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid amount format'}), 400
+            
+        # Check if listing is available
         if listing.status != 'available':
             return jsonify({'error': 'Listing is not available'}), 400
-
-        # Check if already hearted
-        existing_heart = HeartedListing.query.filter_by(
-            user_id=user.id,
-            listing_id=id
-        ).first()
-
-        if existing_heart:
-            return jsonify({'error': 'Listing already hearted'}), 400
-
-        hearted_listing = HeartedListing(
-            user_id=user.id,
-            listing_id=id
-        )
-        db.session.add(hearted_listing)
+            
+        # Find previous highest bid (if any)
+        prev_highest_bid = Bid.query.filter_by(listing_id=listing.id).order_by(Bid.amount.desc()).first()
+        
+        # Validate bid amount
+        if prev_highest_bid and amount <= prev_highest_bid.amount:
+            return jsonify({'error': 'Bid must be higher than current highest bid'}), 400
+        elif amount <= listing.price:
+            return jsonify({'error': 'Bid must be higher than starting price'}), 400
+            
+        # Place the new bid
+        new_bid = Bid(listing_id=listing.id, bidder_id=bidder_id, amount=amount)
+        db.session.add(new_bid)
         db.session.commit()
-
-        return jsonify({'message': 'Listing hearted successfully'}), 200
+        
+        # Notify seller
+        notify_seller_new_bid(listing, new_bid)
+        
+        # Notify previous highest bidder if outbid and not the same as new bidder
+        if prev_highest_bid and prev_highest_bid.bidder_id != bidder_id:
+            notify_outbid(prev_highest_bid, listing)
+            
+        # Return success
+        return jsonify({'message': 'Bid placed successfully', 'bid': new_bid.to_dict()}), 201
     except Exception as e:
-        current_app.logger.error(f"Error hearting listing: {str(e)}")
-        current_app.logger.exception("Full traceback:")
-        db.session.rollback()
-        return jsonify({'error': 'Failed to heart listing'}), 500
+        current_app.logger.error(f"Error placing bid: {str(e)}")
+        return jsonify({'error': 'Failed to place bid'}), 500
 
 @bp.route('/<int:id>/heart', methods=['DELETE', 'OPTIONS'])
 @bp.route('/<int:id>/heart/', methods=['DELETE', 'OPTIONS'])
@@ -677,3 +499,53 @@ def get_hearted_listings():
         current_app.logger.error(f"Error fetching hearted listings: {str(e)}")
         current_app.logger.exception("Full traceback:")
         return jsonify({'error': 'Failed to fetch hearted listings'}), 500
+
+@bp.route('/<int:id>/close-bidding', methods=['POST'])
+def close_bidding(id):
+    try:
+        listing = Listing.query.get_or_404(id)
+        
+        # Check if listing is an auction
+        if listing.pricing_mode != 'auction':
+            return jsonify({'error': 'Only auction listings can be closed'}), 400
+            
+        # Check if listing is available
+        if listing.status != 'available':
+            return jsonify({'error': 'Listing is not available'}), 400
+            
+        # Get the highest bid
+        highest_bid = Bid.query.filter_by(listing_id=listing.id).order_by(Bid.amount.desc()).first()
+        
+        if highest_bid:
+            # Update listing status to pending and set buyer_id
+            listing.status = 'pending'
+            listing.buyer_id = highest_bid.bidder_id
+            db.session.commit()
+            
+            # Notify the winner
+            notify_winner(highest_bid, listing)
+            
+            return jsonify({
+                'message': 'Bidding closed successfully',
+                'listing': {
+                    'id': listing.id,
+                    'status': listing.status,
+                    'buyer_id': listing.buyer_id
+                }
+            }), 200
+        else:
+            # If no bids, just mark as sold
+            listing.status = 'sold'
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Bidding closed with no bids',
+                'listing': {
+                    'id': listing.id,
+                    'status': listing.status
+                }
+            }), 200
+            
+    except Exception as e:
+        current_app.logger.error(f"Error closing bidding: {str(e)}")
+        return jsonify({'error': 'Failed to close bidding'}), 500

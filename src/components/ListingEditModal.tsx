@@ -19,14 +19,14 @@ interface ListingFormData {
 }
 
 const categories = [
-  'tops',
-  'bottoms',
-  'dresses',
-  'shoes',
-  'furniture',
-  'appliances', 
-  'books',
-  'other'
+  'Tops',
+  'Bottoms',
+  'Dresses',
+  'Shoes',
+  'Furniture',
+  'Appliances', 
+  'Books',
+  'Other'
 ];
 
 const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, onUpdate }) => {
