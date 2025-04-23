@@ -10,6 +10,10 @@ class Bid(db.Model):
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships
+    listing = db.relationship('Listing', backref=db.backref('bids', lazy=True))
+    bidder = db.relationship('User', backref=db.backref('bids', lazy=True))
+
     def __init__(self, listing_id, bidder_id, amount, timestamp=None):
         self.listing_id = listing_id
         self.bidder_id = bidder_id

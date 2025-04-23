@@ -50,15 +50,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     price: 0,
     starting_price: 0,
     category: '',
-    condition: '',
+    condition: 'good',
     user_id: 0,
-    pricing_mode: 'fixed'
+    pricing_mode: 'fixed',
+    ...initialData
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [pricingMode, setPricingMode] = useState<'fixed' | 'auction'>('fixed');
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -71,11 +71,11 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     }
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: name === 'price' || name === 'starting_price' ? parseFloat(value) : value
     }));
   };
 
@@ -159,12 +159,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-red-100 text-red-800 p-4 rounded-md">
-              {error}
-            </div>
-          )}
-
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
               Title:
@@ -174,7 +168,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               id="title"
               name="title"
               value={formData.title}
-              onChange={handleChange}
+              onChange={handleInputChange}
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
             />
@@ -188,7 +182,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               id="category"
               name="category"
               value={formData.category}
-              onChange={handleChange}
+              onChange={handleInputChange}
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
             >
@@ -209,7 +203,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               id="condition"
               name="condition"
               value={formData.condition}
-              onChange={handleChange}
+              onChange={handleInputChange}
               required
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
             >
@@ -222,79 +216,70 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             </select>
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Pricing Mode *</label>
-            <div className="mt-1 space-x-4">
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              Pricing Mode
+            </label>
+            <div className="flex space-x-4">
               <label className="inline-flex items-center">
                 <input
                   type="radio"
+                  name="pricing_mode"
                   value="fixed"
                   checked={formData.pricing_mode === 'fixed'}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    pricing_mode: e.target.value as 'fixed' | 'auction'
-                  }))}
-                  className="text-orange-500 focus:ring-orange-500"
+                  onChange={handleInputChange}
+                  className="form-radio"
                 />
                 <span className="ml-2">Fixed Price</span>
               </label>
               <label className="inline-flex items-center">
                 <input
                   type="radio"
+                  name="pricing_mode"
                   value="auction"
                   checked={formData.pricing_mode === 'auction'}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    pricing_mode: e.target.value as 'fixed' | 'auction'
-                  }))}
-                  className="text-orange-500 focus:ring-orange-500"
+                  onChange={handleInputChange}
+                  className="form-radio"
                 />
                 <span className="ml-2">Auction</span>
               </label>
             </div>
           </div>
 
-          {formData.pricing_mode === 'fixed' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Price *</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className="block w-full pl-7 rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-              </div>
-            </div>
-          ) : (
-            <div>
-              <label className="block text-sm font-medium text-gray-700">Starting Price *</label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  id="starting_price"
-                  name="starting_price"
-                  value={formData.starting_price}
-                  onChange={handleChange}
-                  className="block w-full pl-7 rounded-md border-gray-300 focus:border-orange-500 focus:ring-orange-500"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-              </div>
+          {formData.pricing_mode === 'auction' && (
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2">
+                Starting Price
+              </label>
+              <input
+                type="number"
+                name="starting_price"
+                value={formData.starting_price}
+                onChange={handleInputChange}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                min="0"
+                step="0.01"
+                required
+              />
             </div>
           )}
+
+          <div>
+            <label className="block text-gray-700 text-sm font-bold mb-2">
+              {formData.pricing_mode === 'auction' ? 'Current Price' : 'Price'}
+            </label>
+            <input
+              type="number"
+              id="price"
+              name="price"
+              value={formData.price}
+              onChange={handleInputChange}
+              required
+              min="0"
+              step="0.01"
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            />
+          </div>
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
@@ -304,7 +289,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               id="description"
               name="description"
               value={formData.description}
-              onChange={handleChange}
+              onChange={handleInputChange}
               required
               rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
@@ -366,7 +351,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   : 'bg-orange-500 hover:bg-orange-600'
               } transition-colors`}
             >
-              Create Listing
+              {initialData ? 'Update Listing' : 'Create Listing'}
             </button>
           </div>
         </form>

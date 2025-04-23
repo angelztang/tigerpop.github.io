@@ -81,6 +81,7 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 @bp.route('/upload', methods=['POST', 'OPTIONS'])
+@bp.route('/upload/', methods=['POST', 'OPTIONS'])
 def upload_images():
     if request.method == 'OPTIONS':
         return '', 200
@@ -200,7 +201,10 @@ def get_listings():
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
             'images': [image.filename for image in listing.images],
-            'condition': listing.condition
+            'condition': listing.condition,
+            'starting_price': listing.starting_price,
+            'pricing_mode': listing.pricing_mode,
+            'current_bid': listing.get_current_bid()
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
@@ -225,6 +229,8 @@ def create_listing():
         user_id = data.get('user_id')
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
+        pricing_mode = data.get('pricing_mode', 'fixed')
+        starting_price = data.get('starting_price')
 
         # Validate required fields
         if not all([title, description, price, user_id, category]):
@@ -251,7 +257,9 @@ def create_listing():
                 category=category,
                 status='available',
                 user_id=user_id,
-                condition=condition
+                condition=condition,
+                pricing_mode=pricing_mode,
+                starting_price=starting_price
             )
 
             # Add listing to database first to get the ID
@@ -278,7 +286,10 @@ def create_listing():
                 'user_id': new_listing.user_id,
                 'condition': new_listing.condition,
                 'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
-                'images': [image.filename for image in new_listing.images]
+                'images': [image.filename for image in new_listing.images],
+                'starting_price': new_listing.starting_price,
+                'pricing_mode': new_listing.pricing_mode,
+                'current_bid': new_listing.get_current_bid()
             }
 
             return jsonify(listing_data), 201
