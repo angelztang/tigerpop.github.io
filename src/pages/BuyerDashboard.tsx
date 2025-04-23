@@ -39,6 +39,7 @@ const BuyerDashboard: React.FC = () => {
   const fetchHeartedListings = async () => {
     try {
       const hearted = await getHeartedListings();
+      console.log('Fetched hearted listings:', hearted); // Debug log
       setHeartedListings(hearted);
     } catch (error) {
       console.error('Error fetching hearted listings:', error);

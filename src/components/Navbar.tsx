@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { getNetid, logout } from '../services/authService';
+import { getNetid, logout, UserInfo } from '../services/authService';
 
 interface NavbarProps {
   authenticated: boolean;
-  netid: string | null;
+  userInfo: UserInfo | null;
 }
 
-const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
+const Navbar: React.FC<NavbarProps> = ({ authenticated, userInfo }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -64,10 +64,10 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, netid }) => {
                   >
                     <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
                       <span className="text-orange-600 font-semibold">
-                        {netid?.[0].toUpperCase()}
+                        {userInfo?.netid?.[0].toUpperCase()}
                       </span>
                     </div>
-                    <span className="text-gray-700">{netid}</span>
+                    <span className="text-gray-700">{userInfo?.netid}</span>
                   </div>
                   
                   {/* Profile Dropdown Menu */}

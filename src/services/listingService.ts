@@ -164,6 +164,17 @@ export const deleteListing = async (id: number): Promise<void> => {
     credentials: 'include',
     mode: 'cors'
   });
+  
+  if (!response.ok) {
+    throw new Error('Failed to delete listing');
+  }
+  
+  // For 204 No Content responses, we don't need to parse the response
+  if (response.status === 204) {
+    return;
+  }
+  
+  // For other successful responses, handle them normally
   return handleResponse(response);
 };
 

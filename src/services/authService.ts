@@ -156,8 +156,38 @@ export const setUserInfo = (userInfo: UserInfo) => {
   localStorage.setItem('netid', userInfo.netid);
 };
 
-export const getUserInfo = (): UserInfo | null => {
-  const netid = localStorage.getItem('netid');
-  console.log('Getting user info for netid:', netid);
-  return netid ? { netid } : null;
+export const getUserInfo = async (): Promise<UserInfo | null> => {
+  try {
+    const netid = getNetid();
+    if (!netid) {
+      return null;
+    }
+
+    const response = await fetch(`${API_URL}/api/auth/users/check`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${getToken()}`
+      },
+      body: JSON.stringify({ netid }),
+      credentials: 'include',
+      mode: 'cors'
+    });
+
+    if (!response.ok) {
+      if (response.status === 401) {
+        // If unauthorized, clear netid and redirect to login
+        localStorage.removeItem('netid');
+        login();
+        return null;
+      }
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error getting user info:', error);
+    return null;
+  }
 }; 
