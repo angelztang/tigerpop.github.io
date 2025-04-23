@@ -1,6 +1,6 @@
 // Handles fetching, creating, and updating listings (API calls)
 
-import { getUserId } from './authService';
+import { getUserId, getNetid, getUserInfo } from './authService';
 
 const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
 
@@ -65,7 +65,8 @@ export interface ListingFilters {
 }
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
-  const url = filters ? `${API_URL}/api/listing/${filters}` : `${API_URL}/api/listing/`;
+  const baseUrl = `${API_URL}/api/listing`;
+  const url = filters ? `${baseUrl}${filters}` : baseUrl;
   const response = await fetch(url, {
     headers: getHeaders(),
     credentials: 'include',
@@ -84,41 +85,34 @@ export const getListing = async (id: number): Promise<Listing> => {
 };
 
 export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
-  const netid = localStorage.getItem('netid');
-  if (!netid) {
-    throw new Error('User netid not found. Please log in again.');
+  try {
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
+    }
+
+    // Get user info from auth service
+    const userInfo = await getUserInfo();
+    if (!userInfo || !userInfo.user_id) {
+      throw new Error('Failed to get user information');
+    }
+
+    const response = await fetch(`${API_URL}/api/listing`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        ...listingData,
+        user_id: userInfo.user_id
+      }),
+      credentials: 'include',
+      mode: 'cors'
+    });
+
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Error creating listing:', error);
+    throw error;
   }
-
-  // First get the user_id from the netid
-  const userResponse = await fetch(`${API_URL}/api/user?netid=${netid}`, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-
-  if (!userResponse.ok) {
-    throw new Error('Failed to get user information');
-  }
-
-  const userData = await userResponse.json();
-  const user_id = userData.id;
-
-  const response = await fetch(`${API_URL}/api/listing`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      ...listingData,
-      user_id: user_id
-    }),
-    credentials: 'include',
-    mode: 'cors'
-  });
-
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.error || 'Failed to create listing');
-  }
-  return response.json();
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
