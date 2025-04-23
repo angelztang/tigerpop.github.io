@@ -54,30 +54,6 @@ const MarketplacePage: React.FC = () => {
     fetchListings();
   }, []);
 
-  // Calculate hot items (most hearted listings in the last 3 days)
-  const getHotItems = (): Listing[] => {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-
-    return listings
-      .filter(listing => {
-        const listingDate = new Date(listing.created_at);
-        return listingDate >= threeDaysAgo;
-      })
-      .sort((a, b) => {
-        // Sort by heart count (if available) or by recency
-        const aHearts = a.hearts_count || 0;
-        const bHearts = b.hearts_count || 0;
-        if (aHearts !== bHearts) {
-          return bHearts - aHearts;
-        }
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      })
-      .slice(0, 4); // Get top 4
-  };
-
-  const hotItems = getHotItems();
-
   const handlePriceClick = (max: number) => {
     setSelectedPrice(selectedPrice === max ? null : max);
   };
@@ -102,6 +78,14 @@ const MarketplacePage: React.FC = () => {
       const hearted = await getHeartedListings();
       setHeartedListings(hearted.map(listing => listing.id));
     }
+  };
+
+  // Function to determine if a listing is "hot" (created in the last 3 days and has hearts)
+  const isHotItem = (listing: Listing) => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+    const listingDate = new Date(listing.created_at);
+    return listingDate >= threeDaysAgo && (listing.hearts_count || 0) > 0;
   };
 
   const filteredListings = listings.filter(listing => {
@@ -145,11 +129,6 @@ const MarketplacePage: React.FC = () => {
             <div className="text-xl font-bold">
               Search results for "{searchQuery}"
             </div>
-          )}
-
-          {/* Hot Items Label */}
-          {!searchQuery && (
-            <h2 className="text-xl font-bold mb-6">🔥 Hot Items</h2>
           )}
 
           {/* Price Filters */}
@@ -198,7 +177,7 @@ const MarketplacePage: React.FC = () => {
                     isHearted={heartedListings.includes(listing.id)}
                     onHeartClick={() => handleHeartClick(listing.id)}
                     onClick={() => handleListingClick(listing)}
-                    isHot={false}
+                    isHot={isHotItem(listing)}
                   />
                 ))}
               </div>
