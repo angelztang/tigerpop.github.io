@@ -327,74 +327,64 @@ export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
 
 export const heartListing = async (id: number): Promise<void> => {
   try {
-    const token = localStorage.getItem('token');
-    const netid = localStorage.getItem('netid');
-    if (!token || !netid) {
-      throw new Error('Please log in to heart listings');
-    }
     const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error('Please log in to heart listings');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    throw new Error('Failed to heart listing');
+  } catch (error) {
+    console.error('Error hearting listing:', error);
+    throw error;
   }
 };
 
 export const unheartListing = async (id: number): Promise<void> => {
   try {
-    const token = localStorage.getItem('token');
-    const netid = localStorage.getItem('netid');
-    if (!token || !netid) {
-      throw new Error('Please log in to unheart listings');
-    }
-    const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
-      method: 'DELETE',
+    const response = await fetch(`${API_URL}/api/listing/${id}/unheart/`, {
+      method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      throw new Error('Please log in to unheart listings');
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    throw new Error('Failed to unheart listing');
+  } catch (error) {
+    console.error('Error unhearting listing:', error);
+    throw error;
   }
 };
 
 export const getHeartedListings = async (): Promise<Listing[]> => {
   try {
-    const token = localStorage.getItem('token');
-    const netid = localStorage.getItem('netid');
-    if (!token || !netid) {
-      return [];
-    }
-    const response = await fetch(`${API_URL}/api/listing/hearted/?netid=${netid}`, {
+    const response = await fetch(`${API_URL}/api/listing/hearted/`, {
       headers: getHeaders(),
       credentials: 'include',
       mode: 'cors'
     });
+    
     if (!response.ok) {
-      if (response.status === 401) return [];
-      if (response.status === 422) {
-        console.warn('Failed to fetch hearted listings (422)');
-        return [];
-      }
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
-    return handleResponse(response);
+    
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    return data;
   } catch (error) {
     console.error('Error fetching hearted listings:', error);
-    return [];
+    throw error;
   }
 };
   

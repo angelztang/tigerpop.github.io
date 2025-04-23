@@ -39,10 +39,11 @@ const BuyerDashboard: React.FC = () => {
   const fetchHeartedListings = async () => {
     try {
       const hearted = await getHeartedListings();
-      console.log('Fetched hearted listings:', hearted); // Debug log
+      console.log('Fetched hearted listings:', hearted);
       setHeartedListings(hearted);
     } catch (error) {
       console.error('Error fetching hearted listings:', error);
+      setHeartedListings([]);
     }
   };
 
@@ -56,7 +57,7 @@ const BuyerDashboard: React.FC = () => {
       const isHearted = heartedListings.some(listing => listing.id === id);
       if (isHearted) {
         await unheartListing(id);
-        setHeartedListings(heartedListings.filter(listing => listing.id !== id));
+        setHeartedListings(prev => prev.filter(listing => listing.id !== id));
       } else {
         await heartListing(id);
         // Refresh hearted listings to get the updated data
@@ -150,7 +151,7 @@ const BuyerDashboard: React.FC = () => {
               key={listing.id}
               listing={listing}
               isHearted={heartedListings.some(l => l.id === listing.id)}
-              onHeartClick={() => handleHeartClick(listing.id)}
+              onHeartClick={handleHeartClick}
               onClick={() => setSelectedListing(listing)}
             />
           ))}
@@ -160,10 +161,9 @@ const BuyerDashboard: React.FC = () => {
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
-          isHearted={heartedListings.some(l => l.id === selectedListing.id)}
-          onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
-          onUpdate={fetchListings}
+          onHeartClick={() => handleHeartClick(selectedListing.id)}
+          isHearted={heartedListings.some(l => l.id === selectedListing.id)}
         />
       )}
     </div>
