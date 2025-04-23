@@ -51,7 +51,17 @@ const MarketplacePage: React.FC = () => {
       }
     };
 
+    const fetchHeartedListings = async () => {
+      try {
+        const hearted = await getHeartedListings();
+        setHeartedListings(hearted.map(listing => listing.id));
+      } catch (error) {
+        console.error('Error fetching hearted listings:', error);
+      }
+    };
+
     fetchListings();
+    fetchHeartedListings();
   }, []);
 
   const handlePriceClick = (max: number) => {
@@ -68,9 +78,21 @@ const MarketplacePage: React.FC = () => {
       if (isHearted) {
         await unheartListing(id);
         setHeartedListings(prev => prev.filter(listingId => listingId !== id));
+        // Update the listings to reflect the new hearts count
+        setListings(prev => prev.map(listing => 
+          listing.id === id 
+            ? { ...listing, hearts_count: (listing.hearts_count || 0) - 1 }
+            : listing
+        ));
       } else {
         await heartListing(id);
         setHeartedListings(prev => [...prev, id]);
+        // Update the listings to reflect the new hearts count
+        setListings(prev => prev.map(listing => 
+          listing.id === id 
+            ? { ...listing, hearts_count: (listing.hearts_count || 0) + 1 }
+            : listing
+        ));
       }
     } catch (error) {
       console.error('Error toggling heart:', error);
@@ -80,12 +102,14 @@ const MarketplacePage: React.FC = () => {
     }
   };
 
-  // Function to determine if a listing is "hot" (created in the last 3 days and has hearts)
+  // Function to determine if a listing is "hot" (top 4 most hearted listings)
   const isHotItem = (listing: Listing) => {
-    const threeDaysAgo = new Date();
-    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
-    const listingDate = new Date(listing.created_at);
-    return listingDate >= threeDaysAgo && (listing.hearts_count || 0) > 0;
+    // Sort listings by hearts count in descending order
+    const sortedByHearts = [...listings].sort((a, b) => (b.hearts_count || 0) - (a.hearts_count || 0));
+    // Get the top 4 listings
+    const topFourListings = sortedByHearts.slice(0, 4);
+    // Check if the current listing is in the top 4
+    return topFourListings.some(topListing => topListing.id === listing.id);
   };
 
   const filteredListings = listings.filter(listing => {
