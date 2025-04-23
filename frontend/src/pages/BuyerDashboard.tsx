@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Listing, getBuyerListings, getHeartedListings, heartListing, unheartListing } from '../services/listingService';
-import { getNetid } from '../services/authService';
+import { getNetid, getUserId } from '../services/authService';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
 
@@ -16,6 +16,7 @@ const BuyerDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const currentUserId = parseInt(getUserId() || '0');
 
   const fetchListings = async () => {
     try {
@@ -170,17 +171,16 @@ const BuyerDashboard: React.FC = () => {
           onHeart={() => handleHeartClick(selectedListing.id)}
           onUnheart={() => handleHeartClick(selectedListing.id)}
           onRequestToBuy={() => {
-            // Implement request to buy functionality
             console.log('Request to buy:', selectedListing.id);
           }}
           onPlaceBid={async (amount) => {
             try {
-              // Implement bid functionality
               console.log('Placing bid:', amount);
             } catch (error) {
               console.error('Error placing bid:', error);
             }
           }}
+          currentUserId={currentUserId}
         />
       )}
     </div>

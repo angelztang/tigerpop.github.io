@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Listing, getListing, heartListing, unheartListing } from '../services/listingService';
-import { getNetid } from '../services/authService';
+import { getUserId } from '../services/authService';
 import ListingDetailModal from '../components/ListingDetailModal';
 
 const ListingDetail: React.FC = () => {
@@ -11,6 +11,7 @@ const ListingDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isHearted, setIsHearted] = useState(false);
+  const currentUserId = parseInt(getUserId() || '0');
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -47,6 +48,10 @@ const ListingDetail: React.FC = () => {
     }
   };
 
+  const handleUpdate = (updatedListing: Listing) => {
+    setListing(updatedListing);
+  };
+
   if (loading) {
     return <div className="text-center py-12">Loading...</div>;
   }
@@ -63,12 +68,16 @@ const ListingDetail: React.FC = () => {
           isHearted={isHearted}
           onHeartClick={handleHeartClick}
           onClose={() => navigate(-1)}
+          onUpdate={handleUpdate}
+          onListingUpdated={() => {}}
           onHeart={handleHeartClick}
           onUnheart={handleHeartClick}
           onRequestToBuy={() => {
             // Implement request to buy functionality
             console.log('Request to buy:', listing.id);
           }}
+          currentBid={listing.current_bid}
+          currentUserId={currentUserId}
         />
       </div>
     </div>

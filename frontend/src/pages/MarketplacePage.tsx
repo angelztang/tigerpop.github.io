@@ -3,6 +3,7 @@ import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
 import { Listing, getListings, heartListing, unheartListing, getHeartedListings, placeBid } from '../services/listingService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
+import { getUserId } from '../services/authService';
 
 interface PriceRange {
   label: string;
@@ -20,6 +21,7 @@ const MarketplacePage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
+  const currentUserId = parseInt(getUserId() || '0');
 
   // Clear search parameter from URL on mount
   useEffect(() => {
@@ -208,19 +210,22 @@ const MarketplacePage: React.FC = () => {
           onHeart={() => handleHeartClick(selectedListing.id)}
           onUnheart={() => handleHeartClick(selectedListing.id)}
           onRequestToBuy={() => {
-            // Handle request to buy
             console.log('Request to buy:', selectedListing.id);
           }}
           onPlaceBid={async (amount) => {
             try {
-              await placeBid(selectedListing.id, amount);
-              // Refresh listings to update current price
+              await placeBid({
+                listing_id: selectedListing.id,
+                bidder_id: currentUserId,
+                amount
+              });
               const updatedListings = await getListings('?status=available');
               setListings(updatedListings);
             } catch (error) {
               console.error('Error placing bid:', error);
             }
           }}
+          currentUserId={currentUserId}
         />
       )}
     </div>

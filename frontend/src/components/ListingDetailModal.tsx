@@ -16,6 +16,7 @@ interface ListingDetailModalProps {
   onRequestToBuy: () => void;
   currentBid?: number;
   currentUserId: number;
+  onPlaceBid?: (amount: number) => Promise<void>;
 }
 
 const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ 
@@ -29,7 +30,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   onUnheart,
   onRequestToBuy,
   currentBid,
-  currentUserId
+  currentUserId,
+  onPlaceBid
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
