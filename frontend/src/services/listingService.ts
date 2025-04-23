@@ -333,7 +333,7 @@ export const heartListing = async (id: number): Promise<void> => {
       throw new Error('User not authenticated');
     }
 
-    const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
+    const response = await fetch(`${API_URL}/api/listing/${id}/heart`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ netid }),
@@ -358,8 +358,8 @@ export const unheartListing = async (id: number): Promise<void> => {
       throw new Error('User not authenticated');
     }
 
-    const response = await fetch(`${API_URL}/api/listing/${id}/unheart`, {
-      method: 'POST',
+    const response = await fetch(`${API_URL}/api/listing/${id}/heart`, {
+      method: 'DELETE',
       headers: getHeaders(),
       body: JSON.stringify({ netid }),
       credentials: 'include',
