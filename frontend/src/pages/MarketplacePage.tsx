@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
-import { Listing, getListings, getHotItems } from '../services/listingService';
+import { Listing, getListings } from '../services/listingService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface PriceRange {
@@ -12,7 +12,6 @@ interface PriceRange {
 const MarketplacePage: React.FC = () => {
   console.log('MarketplacePage component mounted');
   const [listings, setListings] = useState<Listing[]>([]);
-  const [hotItems, setHotItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
@@ -38,27 +37,46 @@ const MarketplacePage: React.FC = () => {
   ];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchListings = async () => {
       try {
         console.log('Fetching listings...');
-        const [listingsData, hotItemsData] = await Promise.all([
-          getListings('?status=available'),
-          getHotItems()
-        ]);
-        console.log('Received listings:', listingsData);
-        console.log('Received hot items:', hotItemsData);
-        setListings(listingsData);
-        setHotItems(hotItemsData);
+        const data = await getListings('?status=available');
+        console.log('Received listings:', data);
+        setListings(data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching listings:', error);
         setError('Failed to load listings');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
+    fetchListings();
   }, []);
+
+  // Calculate hot items (most hearted listings in the last 3 days)
+  const getHotItems = (): Listing[] => {
+    const threeDaysAgo = new Date();
+    threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+    return listings
+      .filter(listing => {
+        const listingDate = new Date(listing.created_at);
+        return listingDate >= threeDaysAgo;
+      })
+      .sort((a, b) => {
+        // Sort by heart count (if available) or by recency
+        const aHearts = a.hearts_count || 0;
+        const bHearts = b.hearts_count || 0;
+        if (aHearts !== bHearts) {
+          return bHearts - aHearts;
+        }
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      })
+      .slice(0, 4); // Get top 4
+  };
+
+  const hotItems = getHotItems();
 
   const handlePriceClick = (max: number) => {
     setSelectedPrice(selectedPrice === max ? null : max);
