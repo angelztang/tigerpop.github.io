@@ -43,6 +43,7 @@ export interface Listing {
   condition: string;
   seller_id: number;
   buyer_id?: number;
+  hearts_count?: number;
 }
 
 export interface CreateListingData {
