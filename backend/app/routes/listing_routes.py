@@ -552,21 +552,16 @@ def update_listing(id):
 
 @bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
 @bp.route('/<int:id>/heart/', methods=['POST', 'OPTIONS'])
-@jwt_required()
 def heart_listing(id):
     if request.method == 'OPTIONS':
         return '', 200
         
     try:
-        current_user_id = get_jwt_identity()
-        if not current_user_id:
-            return jsonify({'error': 'User not authenticated'}), 401
-
-        # Get the user's netid from the token
-        token_data = get_jwt()
-        netid = token_data.get('sub')
+        data = request.get_json()
+        netid = data.get('netid')
+        
         if not netid:
-            return jsonify({'error': 'Invalid token data'}), 401
+            return jsonify({'error': 'NetID is required'}), 400
 
         # Get the user from the database
         user = User.query.filter_by(netid=netid).first()
@@ -602,21 +597,16 @@ def heart_listing(id):
 
 @bp.route('/<int:id>/heart', methods=['DELETE', 'OPTIONS'])
 @bp.route('/<int:id>/heart/', methods=['DELETE', 'OPTIONS'])
-@jwt_required()
 def unheart_listing(id):
     if request.method == 'OPTIONS':
         return '', 200
         
     try:
-        current_user_id = get_jwt_identity()
-        if not current_user_id:
-            return jsonify({'error': 'User not authenticated'}), 401
-
-        # Get the user's netid from the token
-        token_data = get_jwt()
-        netid = token_data.get('sub')
+        data = request.get_json()
+        netid = data.get('netid')
+        
         if not netid:
-            return jsonify({'error': 'Invalid token data'}), 401
+            return jsonify({'error': 'NetID is required'}), 400
 
         # Get the user from the database
         user = User.query.filter_by(netid=netid).first()
@@ -639,20 +629,17 @@ def unheart_listing(id):
 
 @bp.route('/hearted', methods=['GET', 'OPTIONS'])
 @bp.route('/hearted/', methods=['GET', 'OPTIONS'])
-@jwt_required()
 def get_hearted_listings():
     if request.method == 'OPTIONS':
         return '', 200
         
     try:
-        # Get the user's netid from the token
-        token_data = get_jwt()
-        netid = token_data.get('sub')
+        netid = request.args.get('netid')
         current_app.logger.info(f"Fetching hearted listings for netid: {netid}")
         
         if not netid:
-            current_app.logger.error("No netid found in JWT token")
-            return jsonify({'error': 'Invalid token data'}), 401
+            current_app.logger.error("No netid provided in request")
+            return jsonify({'error': 'NetID is required'}), 400
 
         # Get the user from the database
         user = User.query.filter_by(netid=netid).first()
