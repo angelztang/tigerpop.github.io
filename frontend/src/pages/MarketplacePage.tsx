@@ -1,56 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import ListingCard from '../components/ListingCard';
 import { Listing, getListings } from '../services/listingService';
 
 const MarketplacePage: React.FC = () => {
-  console.log('MarketplacePage component mounted');
+  console.log('MARKETPLACE PAGE IS MOUNTING!');
   const [listings, setListings] = useState<Listing[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    console.log('MARKETPLACE PAGE EFFECT RUNNING!');
     const fetchListings = async () => {
       try {
-        console.log('Fetching listings...');
+        console.log('MARKETPLACE PAGE FETCHING LISTINGS!');
         const data = await getListings('?status=available');
-        console.log('Received listings:', data);
-        
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid response format');
-        }
-        
+        console.log('MARKETPLACE PAGE GOT LISTINGS:', data);
         setListings(data);
       } catch (error) {
-        console.error('Error fetching listings:', error);
-        setError('Failed to load listings');
-      } finally {
-        setLoading(false);
+        console.error('MARKETPLACE PAGE ERROR:', error);
       }
     };
-
     fetchListings();
   }, []);
 
-  if (loading) {
-    return <div className="p-4">Loading...</div>;
-  }
-
-  if (error) {
-    return <div className="p-4 text-red-500">{error}</div>;
-  }
+  console.log('MARKETPLACE PAGE RENDERING WITH LISTINGS:', listings);
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Marketplace</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {listings.map((listing) => (
-          <ListingCard
-            key={listing.id}
-            listing={listing}
-            isHearted={false}
-            onHeartClick={() => {}}
-            onClick={() => {}}
-          />
+    <div style={{ padding: '20px' }}>
+      <h1>Marketplace</h1>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '20px' }}>
+        {listings.map(listing => (
+          <div key={listing.id} style={{ border: '1px solid #ccc', padding: '10px' }}>
+            <h2>{listing.title}</h2>
+            <p>${listing.price}</p>
+            {listing.images && listing.images[0] && (
+              <img src={listing.images[0]} alt={listing.title} style={{ width: '100%', height: '200px', objectFit: 'cover' }} />
+            )}
+          </div>
         ))}
       </div>
     </div>

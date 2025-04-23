@@ -67,8 +67,9 @@ export interface ListingFilters {
 export const getListings = async (filters?: string): Promise<Listing[]> => {
   try {
     const baseUrl = `${API_URL}/api/listing`;
-    // Don't add status=available by default, let the backend handle filtering
-    const url = filters ? `${baseUrl}${filters}` : baseUrl;
+    // Always include status=available
+    const baseFilters = '?status=available';
+    const url = filters ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}` : `${baseUrl}${baseFilters}`;
     console.log('Fetching listings from:', url);
     
     const response = await fetch(url, {

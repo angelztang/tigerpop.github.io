@@ -75,7 +75,8 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-gray-100">
       <Navbar authenticated={authenticated} userInfo={userInfo} />
       <Routes>
-        <Route path="/" element={<MarketplacePage />} />
+        <Route path="/marketplace" element={<MarketplacePage />} />
+        <Route path="/" element={<Navigate to="/marketplace" replace />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/dashboard"
