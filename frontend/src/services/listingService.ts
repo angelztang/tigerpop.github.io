@@ -7,7 +7,8 @@ const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com
 // Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
   return response.json();
 };
@@ -107,25 +108,35 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/api/listing/${id}/`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Error updating listing:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to update listing');
+  }
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/api/listing/${id}/status/`, {
-    method: 'PATCH',
-    headers: getHeaders(),
-    body: JSON.stringify({ status }),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_URL}/api/listing/${id}/status/`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ status }),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Error updating listing status:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to update listing status');
+  }
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
