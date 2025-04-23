@@ -11,7 +11,7 @@ type FilterTab = 'all' | 'pending' | 'purchased' | 'hearted';
 const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
-  const [heartedListings, setHeartedListings] = useState<number[]>([]);
+  const [heartedListings, setHeartedListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
@@ -27,6 +27,7 @@ const BuyerDashboard: React.FC = () => {
       }
       const data = await getBuyerListings(netid);
       setListings(data);
+      setError(null);
     } catch (err) {
       setError('Failed to fetch listings');
       console.error('Error:', err);
@@ -35,26 +36,30 @@ const BuyerDashboard: React.FC = () => {
     }
   };
 
+  const fetchHeartedListings = async () => {
+    try {
+      const hearted = await getHeartedListings();
+      setHeartedListings(hearted);
+    } catch (error) {
+      console.error('Error fetching hearted listings:', error);
+    }
+  };
+
   useEffect(() => {
     fetchListings();
+    fetchHeartedListings();
   }, []);
 
   const handleHeartClick = async (id: number) => {
     try {
-      if (heartedListings.includes(id)) {
+      const isHearted = heartedListings.some(listing => listing.id === id);
+      if (isHearted) {
         await unheartListing(id);
-        setHeartedListings(heartedListings.filter(listingId => listingId !== id));
+        setHeartedListings(heartedListings.filter(listing => listing.id !== id));
       } else {
         await heartListing(id);
-        setHeartedListings([...heartedListings, id]);
-      }
-      // If we're on the hearted filter, refresh the listings
-      if (activeFilter === 'hearted') {
-        const netid = getNetid();
-        if (netid) {
-          const response = await getBuyerListings(netid);
-          setListings(response);
-        }
+        // Refresh hearted listings to get the updated data
+        await fetchHeartedListings();
       }
     } catch (error) {
       console.error('Error toggling heart:', error);
@@ -65,9 +70,10 @@ const BuyerDashboard: React.FC = () => {
     if (activeFilter === 'all') return true;
     if (activeFilter === 'pending') return listing.status === 'pending';
     if (activeFilter === 'purchased') return listing.status === 'sold';
-    if (activeFilter === 'hearted') return heartedListings.includes(listing.id);
     return false;
   });
+
+  const displayListings = activeFilter === 'hearted' ? heartedListings : filteredListings;
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
@@ -112,15 +118,11 @@ const BuyerDashboard: React.FC = () => {
             activeFilter === 'hearted' ? 'bg-orange-500 text-white' : 'bg-gray-200'
           }`}
         >
-          Hearted
+          Hearted ({heartedListings.length})
         </button>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-        </div>
-      ) : listings.length === 0 ? (
+      {displayListings.length === 0 ? (
         <div className="text-center text-gray-500 py-8">
           <p className="text-xl">No items found</p>
           <p className="text-sm mt-2">
@@ -132,12 +134,13 @@ const BuyerDashboard: React.FC = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredListings.map((listing) => (
+          {displayListings.map((listing) => (
             <ListingCard
               key={listing.id}
               listing={listing}
-              isHearted={heartedListings.includes(listing.id)}
+              isHearted={heartedListings.some(l => l.id === listing.id)}
               onHeartClick={() => handleHeartClick(listing.id)}
+              onClick={() => setSelectedListing(listing)}
             />
           ))}
         </div>
@@ -146,7 +149,7 @@ const BuyerDashboard: React.FC = () => {
       {selectedListing && (
         <ListingDetailModal
           listing={selectedListing}
-          isHearted={heartedListings.includes(selectedListing.id)}
+          isHearted={heartedListings.some(l => l.id === selectedListing.id)}
           onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
           onUpdate={fetchListings}

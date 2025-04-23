@@ -7,7 +7,8 @@ const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com
 // Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
   return response.json();
 };
@@ -18,7 +19,7 @@ const getHeaders = () => {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
   };
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -49,9 +50,8 @@ export interface CreateListingData {
   description: string;
   price: number;
   category: string;
-  user_id: number;
-  condition: string;
   netid: string;
+  condition: string;
   images?: string[];
 }
 
@@ -89,17 +89,31 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
     throw new Error('User netid not found. Please log in again.');
   }
 
+  // First get the user_id from the netid
+  const userResponse = await fetch(`${API_URL}/api/user?netid=${netid}`, {
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
+  });
+
+  if (!userResponse.ok) {
+    throw new Error('Failed to get user information');
+  }
+
+  const userData = await userResponse.json();
+  const user_id = userData.id;
+
   const response = await fetch(`${API_URL}/api/listing`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${localStorage.getItem('token')}`
-    },
+    headers: getHeaders(),
     body: JSON.stringify({
       ...listingData,
-      netid: netid
+      user_id: user_id
     }),
+    credentials: 'include',
+    mode: 'cors'
   });
+
   if (!response.ok) {
     const errorData = await response.json();
     throw new Error(errorData.error || 'Failed to create listing');
@@ -108,25 +122,35 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
 };
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/api/listing/${id}/`, {
-    method: 'PUT',
-    headers: getHeaders(),
-    body: JSON.stringify(data),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Error updating listing:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to update listing');
+  }
 };
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/api/listing/${id}/status/`, {
-    method: 'PATCH',
-    headers: getHeaders(),
-    body: JSON.stringify({ status }),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const response = await fetch(`${API_URL}/api/listing/${id}/status/`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify({ status }),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    return handleResponse(response);
+  } catch (error) {
+    console.error('Error updating listing status:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to update listing status');
+  }
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
@@ -260,12 +284,14 @@ export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
 export const heartListing = async (id: number): Promise<void> => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
+    const netid = localStorage.getItem('netid');
+    if (!token || !netid) {
       throw new Error('Please log in to heart listings');
     }
     const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
       method: 'POST',
       headers: getHeaders(),
+      body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
@@ -281,12 +307,14 @@ export const heartListing = async (id: number): Promise<void> => {
 export const unheartListing = async (id: number): Promise<void> => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
+    const netid = localStorage.getItem('netid');
+    if (!token || !netid) {
       throw new Error('Please log in to unheart listings');
     }
     const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
       method: 'DELETE',
       headers: getHeaders(),
+      body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
@@ -302,10 +330,11 @@ export const unheartListing = async (id: number): Promise<void> => {
 export const getHeartedListings = async (): Promise<Listing[]> => {
   try {
     const token = localStorage.getItem('token');
-    if (!token) {
+    const netid = localStorage.getItem('netid');
+    if (!token || !netid) {
       return [];
     }
-    const response = await fetch(`${API_URL}/api/listing/hearted/`, {
+    const response = await fetch(`${API_URL}/api/listing/hearted/?netid=${netid}`, {
       headers: getHeaders(),
       credentials: 'include',
       mode: 'cors'
