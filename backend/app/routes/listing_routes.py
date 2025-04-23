@@ -317,7 +317,7 @@ def request_to_buy(id):
     except (ValueError, TypeError):
         return jsonify({'error': 'Invalid buyer ID format'}), 400
     
-    # Update listing with buyer information
+    # Update listing with buyer information and set status to pending
     listing.buyer_id = buyer_id
     listing.status = 'pending'
     db.session.commit()
@@ -352,7 +352,8 @@ def request_to_buy(id):
         'message': 'Purchase request sent successfully',
         'listing': {
             'id': listing.id,
-            'status': listing.status
+            'status': listing.status,
+            'buyer_id': listing.buyer_id
         }
     })
 

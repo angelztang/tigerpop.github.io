@@ -188,7 +188,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
               </div>
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Condition</h3>
-                <p className="text-gray-600">{listing.condition || 'Not specified'}</p>
+                <p className="text-gray-600">{listing.condition}</p>
               </div>
               <div className="mb-4">
                 <h3 className="text-lg font-semibold">Status</h3>
