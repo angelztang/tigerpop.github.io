@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
-import { Listing, getListings, heartListing, unheartListing } from '../services/listingService';
+import { Listing, getListings, heartListing, unheartListing, getHeartedListings } from '../services/listingService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface PriceRange {
