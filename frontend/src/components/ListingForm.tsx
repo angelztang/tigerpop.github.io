@@ -4,12 +4,12 @@ import { getUserId } from '../services/authService';
 // Popup Modal that appears when users click "Create Listing"
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Listing, createListing, updateListing, uploadImages, CreateListingData } from '../services/listingService';
+import { Listing, createListing, updateListing, uploadImages, CreateListingData as ApiCreateListingData } from '../services/listingService';
 
 interface ListingFormProps {
-  onSubmit: (data: CreateListingData) => void;
+  onSubmit: (data: ApiCreateListingData) => void;
   isSubmitting?: boolean;
-  initialData?: Partial<CreateListingData>;
+  initialData?: Partial<ApiCreateListingData>;
   onClose?: () => void;
 }
 
@@ -21,6 +21,19 @@ interface ListingFormData {
   category: string;
   condition: string;
   user_id: number;
+  pricing_mode: 'fixed' | 'auction';
+  images: string[];
+  is_auction: boolean;
+  min_bid_increment: number;
+}
+
+interface FormCreateListingData {
+  title: string;
+  description: string;
+  price: number;
+  category: string;
+  condition: string;
+  images: string[];
   pricing_mode: 'fixed' | 'auction';
 }
 
@@ -53,6 +66,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     condition: 'good',
     user_id: 0,
     pricing_mode: 'fixed',
+    images: [],
+    is_auction: false,
+    min_bid_increment: 1.0,
     ...initialData
   });
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
@@ -109,18 +125,20 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         return;
       }
 
-      const listingData: CreateListingData = {
+      // Convert form data to CreateListingData format
+      const createListingData: ApiCreateListingData = {
         title: formData.title,
         description: formData.description,
         price: formData.price,
         category: formData.category,
         condition: formData.condition,
-        netid: netid,
-        pricing_mode: formData.pricing_mode
+        images: formData.images,
+        pricing_mode: formData.is_auction ? 'auction' : 'fixed',
+        netid: localStorage.getItem('netid') || ''
       };
 
       // Validate required fields
-      if (!listingData.title || !listingData.description || !listingData.price || !listingData.category) {
+      if (!createListingData.title || !createListingData.description || !createListingData.price || !createListingData.category) {
         setError('Please fill in all required fields');
         return;
       }
@@ -128,10 +146,10 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       // Handle image uploads if there are any
       if (selectedFiles.length > 0) {
         const uploadedUrls = await uploadImages(selectedFiles);
-        listingData.images = uploadedUrls;
+        createListingData.images = uploadedUrls;
       }
 
-      await onSubmit(listingData);
+      await onSubmit(createListingData);
       if (onClose) {
         onClose();
       }
@@ -264,21 +282,59 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             </div>
           )}
 
-          <div>
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              {formData.pricing_mode === 'auction' ? 'Current Price' : 'Price'}
-            </label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleInputChange}
-              required
-              min="0"
-              step="0.01"
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            />
+          <div className="space-y-4">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="is_auction"
+                checked={formData.is_auction}
+                onChange={(e) => setFormData({ ...formData, is_auction: e.target.checked })}
+                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              />
+              <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-900">
+                Enable bidding for this item
+              </label>
+            </div>
+
+            {formData.is_auction && (
+              <div>
+                <label htmlFor="min_bid_increment" className="block text-sm font-medium text-gray-700">
+                  Minimum Bid Increment ($)
+                </label>
+                <input
+                  type="number"
+                  id="min_bid_increment"
+                  value={formData.min_bid_increment}
+                  onChange={(e) => setFormData({ ...formData, min_bid_increment: parseFloat(e.target.value) })}
+                  step="0.01"
+                  min="0.01"
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                  required={formData.is_auction}
+                />
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                {formData.is_auction ? 'Starting Price ($)' : 'Price ($)'}
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
+                </div>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formData.price}
+                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                  step="0.01"
+                  min="0.01"
+                  required
+                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
+              </div>
+            </div>
           </div>
 
           <div>
