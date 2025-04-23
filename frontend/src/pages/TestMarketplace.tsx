@@ -1,22 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import ListingCard from '../components/ListingCard';
 import { Listing, getListings } from '../services/listingService';
-import { useSearchParams } from 'react-router-dom';
+import ListingCard from '../components/ListingCard';
 
 interface PriceRange {
   label: string;
   max: number;
 }
 
-const MarketplacePage: React.FC = () => {
-  console.log('MarketplacePage component mounted');
+const TestMarketplace: React.FC = () => {
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
-  const [searchParams] = useSearchParams();
-  const searchQuery = searchParams.get('search')?.toLowerCase() || '';
 
   const priceRanges: PriceRange[] = [
     { label: 'Under $10', max: 10 },
@@ -28,12 +24,12 @@ const MarketplacePage: React.FC = () => {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        console.log('Fetching listings...');
+        console.log('TEST: Fetching listings...');
         const data = await getListings('?status=available');
-        console.log('Received listings:', data);
+        console.log('TEST: Got listings:', data);
         setListings(data);
       } catch (error) {
-        console.error('Error fetching listings:', error);
+        console.error('TEST: Error:', error);
         setError('Failed to load listings');
       } finally {
         setLoading(false);
@@ -56,18 +52,7 @@ const MarketplacePage: React.FC = () => {
   };
 
   const filteredListings = listings.filter(listing => {
-    // Apply price filter
     if (selectedPrice && listing.price > selectedPrice) return false;
-    
-    // Apply search filter
-    if (searchQuery) {
-      const matchesSearch = 
-        listing.title.toLowerCase().includes(searchQuery) ||
-        listing.description.toLowerCase().includes(searchQuery) ||
-        listing.category.toLowerCase().includes(searchQuery);
-      if (!matchesSearch) return false;
-    }
-    
     return true;
   });
 
@@ -91,13 +76,6 @@ const MarketplacePage: React.FC = () => {
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-col space-y-8">
-          {/* Search Results Header */}
-          {searchQuery && (
-            <div className="text-xl font-bold">
-              Search results for "{searchQuery}"
-            </div>
-          )}
-
           {/* Price Filters */}
           <div>
             <h2 className="text-xl font-bold mb-4">Price Range</h2>
@@ -128,9 +106,7 @@ const MarketplacePage: React.FC = () => {
             {filteredListings.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-xl text-gray-600">
-                  {searchQuery
-                    ? `No items found matching "${searchQuery}"`
-                    : selectedPrice
+                  {selectedPrice
                     ? `No items found under $${selectedPrice}`
                     : 'No items available in the marketplace yet'}
                 </p>
@@ -155,4 +131,4 @@ const MarketplacePage: React.FC = () => {
   );
 };
 
-export default MarketplacePage; 
+export default TestMarketplace; 
