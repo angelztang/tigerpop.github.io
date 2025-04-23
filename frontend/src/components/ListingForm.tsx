@@ -129,12 +129,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       const createListingData: ApiCreateListingData = {
         title: formData.title,
         description: formData.description,
-        price: formData.price,
+        price: formData.is_auction ? (formData.starting_price || 0) : formData.price,
         category: formData.category,
         condition: formData.condition,
         images: formData.images,
         pricing_mode: formData.is_auction ? 'auction' : 'fixed',
-        netid: localStorage.getItem('netid') || ''
+        netid: netid
       };
 
       // Validate required fields
