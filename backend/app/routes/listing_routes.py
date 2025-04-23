@@ -107,6 +107,8 @@ def get_listings():
         # Get query parameters for filtering
         max_price = request.args.get('max_price', type=float)
         category = request.args.get('category')
+        search = request.args.get('search')
+        status = request.args.get('status', 'available')
         
         # Start with base query
         query = Listing.query
@@ -116,6 +118,19 @@ def get_listings():
             query = query.filter(Listing.price <= max_price)
         if category:
             query = query.filter(Listing.category.ilike(category))
+        if status:
+            query = query.filter(Listing.status == status)
+            
+        # Apply search filter if search query is provided
+        if search:
+            search_terms = search.split()
+            for term in search_terms:
+                query = query.filter(
+                    db.or_(
+                        Listing.title.ilike(f'%{term}%'),
+                        Listing.description.ilike(f'%{term}%')
+                    )
+                )
             
         # Get all listings
         listings = query.order_by(Listing.created_at.desc()).all()
