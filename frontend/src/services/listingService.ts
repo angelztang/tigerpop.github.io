@@ -67,7 +67,7 @@ export interface ListingFilters {
 export const getListings = async (filters?: string): Promise<Listing[]> => {
   try {
     const baseUrl = `${API_URL}/api/listing`;
-    const url = filters ? `${baseUrl}${filters}` : baseUrl;
+    const url = filters ? `${baseUrl}${filters}` : `${baseUrl}?status=available`;
     console.log('Fetching listings from:', url);
     
     const response = await fetch(url, {
@@ -83,8 +83,19 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
     }
     
     const data = await response.json();
-    console.log('Received listings:', data);
-    return data;
+    console.log('Raw response data:', data);
+    
+    // Ensure we have an array of listings
+    if (!Array.isArray(data)) {
+      console.error('Expected array of listings, got:', data);
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    // Filter for available listings if not already filtered
+    const availableListings = data.filter(listing => listing.status === 'available');
+    console.log('Available listings:', availableListings);
+    
+    return availableListings;
   } catch (error) {
     console.error('Error in getListings:', error);
     throw error;

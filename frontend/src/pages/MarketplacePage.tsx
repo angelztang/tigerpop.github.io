@@ -65,7 +65,9 @@ const MarketplacePage: React.FC = () => {
       }
       
       const url = `?${params.toString()}`;
+      console.log('Fetching listings with URL:', url);
       const data = await getListings(url);
+      console.log('Received listings data:', data);
       setListings(data);
     } catch (error) {
       console.error('Error fetching listings:', error);
