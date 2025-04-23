@@ -358,7 +358,7 @@ export const unheartListing = async (id: number): Promise<void> => {
       throw new Error('User not authenticated');
     }
 
-    const response = await fetch(`${API_URL}/api/listing/${id}/unheart/`, {
+    const response = await fetch(`${API_URL}/api/listing/${id}/unheart`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ netid }),

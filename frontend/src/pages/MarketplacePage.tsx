@@ -105,9 +105,15 @@ const MarketplacePage: React.FC = () => {
   // Function to determine if a listing is "hot" (top 4 most hearted listings)
   const isHotItem = (listing: Listing) => {
     // Sort listings by hearts count in descending order
-    const sortedByHearts = [...listings].sort((a, b) => (b.hearts_count || 0) - (a.hearts_count || 0));
-    // Get the top 4 listings
+    const sortedByHearts = [...listings].sort((a, b) => {
+      const aHearts = a.hearts_count || 0;
+      const bHearts = b.hearts_count || 0;
+      return bHearts - aHearts;
+    });
+    
+    // Get the top 4 listings with the most hearts
     const topFourListings = sortedByHearts.slice(0, 4);
+    
     // Check if the current listing is in the top 4
     return topFourListings.some(topListing => topListing.id === listing.id);
   };
