@@ -83,7 +83,7 @@ const MarketplacePage: React.FC = () => {
         setHeartedListings(prev => [...prev, id]);
       }
       
-      // Refresh listings to update hearts count and hot items
+      // Refresh listings to update hearts count
       const updatedListings = await getListings('?status=available');
       setListings(updatedListings);
     } catch (error) {
@@ -96,22 +96,6 @@ const MarketplacePage: React.FC = () => {
       setListings(updatedListings);
       setHeartedListings(hearted.map(listing => listing.id));
     }
-  };
-
-  // Function to determine if a listing is "hot" (top 4 most hearted listings)
-  const isHotItem = (listing: Listing) => {
-    // Sort listings by hearts count in descending order
-    const sortedByHearts = [...listings].sort((a, b) => {
-      const aHearts = a.hearts_count || 0;
-      const bHearts = b.hearts_count || 0;
-      return bHearts - aHearts;
-    });
-    
-    // Get the top 4 listings with the most hearts
-    const topFourListings = sortedByHearts.slice(0, 4);
-    
-    // Check if the current listing is in the top 4
-    return topFourListings.some(topListing => topListing.id === listing.id);
   };
 
   const filteredListings = listings.filter(listing => {
@@ -203,7 +187,6 @@ const MarketplacePage: React.FC = () => {
                     isHearted={heartedListings.includes(listing.id)}
                     onHeartClick={() => handleHeartClick(listing.id)}
                     onClick={() => handleListingClick(listing)}
-                    isHot={isHotItem(listing)}
                   />
                 ))}
               </div>
