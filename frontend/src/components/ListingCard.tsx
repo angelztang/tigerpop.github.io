@@ -62,6 +62,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
               🔥 Hot Item
             </span>
           )}
+          {listing.pricing_mode === 'auction' && (
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              🏷️ Auction
+            </span>
+          )}
           <span
             className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
               listing.status
