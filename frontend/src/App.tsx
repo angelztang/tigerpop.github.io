@@ -18,23 +18,25 @@ interface AuthResponse {
 const App: React.FC = () => {
   const [authenticated, setAuthenticated] = useState<boolean>(false);
   const [userInfo, setUserInfoState] = useState<UserInfo | null>(null);
+  const [loading, setLoading] = useState(true);
   const location = useLocation();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Handle CAS callback
-    if (location.pathname === '/auth/callback') {
-      const ticket = new URLSearchParams(location.search).get('ticket');
-      if (ticket) {
-        // Validate ticket with backend, including service URL
-        const serviceUrl = `${FRONTEND_URL}/auth/callback`;
-        axios.get<AuthResponse>(`${API_URL}/api/auth/validate`, {
-          params: {
-            ticket,
-            service: serviceUrl
-          }
-        })
-          .then(response => {
+    const checkAuth = async () => {
+      // Handle CAS callback
+      if (location.pathname === '/auth/callback') {
+        const ticket = new URLSearchParams(location.search).get('ticket');
+        if (ticket) {
+          // Validate ticket with backend, including service URL
+          const serviceUrl = `${FRONTEND_URL}/auth/callback`;
+          try {
+            const response = await axios.get<AuthResponse>(`${API_URL}/api/auth/validate`, {
+              params: {
+                ticket,
+                service: serviceUrl
+              }
+            });
             const { netid, token } = response.data;
             // Store token and netid in localStorage
             localStorage.setItem('token', token);
@@ -45,40 +47,42 @@ const App: React.FC = () => {
             setUserInfoState(newUserInfo);
             setAuthenticated(true);
             navigate('/dashboard', { replace: true });
-          })
-          .catch(error => {
+          } catch (error) {
             console.error('Error validating ticket:', error);
             navigate('/login?error=auth_failed', { replace: true });
-          });
+          }
+        }
+      } else {
+        // Check if user is authenticated
+        const isAuth = isAuthenticated();
+        if (isAuth) {
+          const currentUserInfo = await getUserInfo();
+          setUserInfoState(currentUserInfo);
+        }
+        setAuthenticated(isAuth);
       }
-    } else {
-      // Check if user is authenticated
-      const isAuth = isAuthenticated();
-      const currentUserInfo = getUserInfo();
-      setAuthenticated(isAuth);
-      setUserInfoState(currentUserInfo);
-    }
+      setLoading(false);
+    };
+
+    checkAuth();
   }, [location, navigate]);
+
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
-      <Navbar authenticated={authenticated} netid={userInfo?.netid || null} />
-      <main className="container mx-auto px-4 py-8">
-        <Routes>
-          <Route path="/" element={<MarketplacePage />} />
-          <Route path="/marketplace" element={<MarketplacePage />} />
-          <Route path="/auth/callback" element={<div>Authenticating...</div>} />
-          <Route 
-            path="/login" 
-            element={authenticated ? <Navigate to="/dashboard" /> : <LoginPage />} 
-          />
-          <Route 
-            path="/dashboard" 
-            element={authenticated ? <Dashboard /> : <Navigate to="/login" />} 
-          />
-          <Route path="/listings/:id" element={<ListingDetail />} />
-        </Routes>
-      </main>
+      <Navbar authenticated={authenticated} userInfo={userInfo} />
+      <Routes>
+        <Route path="/" element={<MarketplacePage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/dashboard"
+          element={authenticated ? <Dashboard /> : <Navigate to="/login" />}
+        />
+        <Route path="/listing/:id" element={<ListingDetail />} />
+      </Routes>
     </div>
   );
 };
