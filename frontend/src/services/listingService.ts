@@ -65,14 +65,30 @@ export interface ListingFilters {
 }
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
-  const baseUrl = `${API_URL}/api/listing`;
-  const url = filters ? `${baseUrl}${filters}` : baseUrl;
-  const response = await fetch(url, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  try {
+    const baseUrl = `${API_URL}/api/listing`;
+    const url = filters ? `${baseUrl}${filters}` : baseUrl;
+    console.log('Fetching listings from:', url);
+    
+    const response = await fetch(url, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      console.error('Error response:', errorData);
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Received listings:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in getListings:', error);
+    throw error;
+  }
 };
 
 export const getListing = async (id: number): Promise<Listing> => {
@@ -140,7 +156,16 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    // Refresh the page after successful status update
+    window.location.reload();
+    return data;
   } catch (error) {
     console.error('Error updating listing status:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to update listing status');
@@ -148,28 +173,33 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
 };
 
 export const deleteListing = async (id: number): Promise<void> => {
-  const userId = getUserId();
-  if (!userId) {
-    throw new Error('User not authenticated');
+  try {
+    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    // For 204 No Content responses, we don't need to parse the response
+    if (response.status === 204) {
+      // Refresh the page after successful deletion
+      window.location.reload();
+      return;
+    }
+    
+    // For other successful responses, handle them normally
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Error deleting listing:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to delete listing');
   }
-  const response = await fetch(`${API_URL}/api/listing/${id}/?user_id=${userId}`, {
-    method: 'DELETE',
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  
-  if (!response.ok) {
-    throw new Error('Failed to delete listing');
-  }
-  
-  // For 204 No Content responses, we don't need to parse the response
-  if (response.status === 204) {
-    return;
-  }
-  
-  // For other successful responses, handle them normally
-  return handleResponse(response);
 };
 
 interface UploadResponse {

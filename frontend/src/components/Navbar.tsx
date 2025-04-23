@@ -27,6 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, userInfo }) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/marketplace?search=${encodeURIComponent(searchQuery.trim())}`);
+      setSearchQuery(''); // Clear the search input after navigation
     }
   };
 
