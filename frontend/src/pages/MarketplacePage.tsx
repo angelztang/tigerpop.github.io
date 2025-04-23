@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
-import { Listing, getListings } from '../services/listingService';
+import { Listing, getListings, heartListing, unheartListing } from '../services/listingService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface PriceRange {
@@ -87,11 +87,21 @@ const MarketplacePage: React.FC = () => {
   };
 
   const handleHeartClick = async (id: number) => {
-    setHeartedListings(prev => 
-      prev.includes(id) 
-        ? prev.filter(listingId => listingId !== id)
-        : [...prev, id]
-    );
+    try {
+      const isHearted = heartedListings.includes(id);
+      if (isHearted) {
+        await unheartListing(id);
+        setHeartedListings(prev => prev.filter(listingId => listingId !== id));
+      } else {
+        await heartListing(id);
+        setHeartedListings(prev => [...prev, id]);
+      }
+    } catch (error) {
+      console.error('Error toggling heart:', error);
+      // Refresh hearted listings to ensure consistency
+      const hearted = await getHeartedListings();
+      setHeartedListings(hearted.map(listing => listing.id));
+    }
   };
 
   const filteredListings = listings.filter(listing => {
@@ -137,23 +147,9 @@ const MarketplacePage: React.FC = () => {
             </div>
           )}
 
-          {/* Hot Items Section */}
-          {hotItems.length > 0 && !searchQuery && (
-            <div>
-              <h2 className="text-xl font-bold mb-6">🔥 Hot Items</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {hotItems.map((listing) => (
-                  <ListingCard
-                    key={listing.id}
-                    listing={listing}
-                    isHearted={heartedListings.includes(listing.id)}
-                    onHeartClick={() => handleHeartClick(listing.id)}
-                    onClick={() => handleListingClick(listing)}
-                    isHot={true}
-                  />
-                ))}
-              </div>
-            </div>
+          {/* Hot Items Label */}
+          {!searchQuery && (
+            <h2 className="text-xl font-bold mb-6">🔥 Hot Items</h2>
           )}
 
           {/* Price Filters */}
@@ -202,7 +198,7 @@ const MarketplacePage: React.FC = () => {
                     isHearted={heartedListings.includes(listing.id)}
                     onHeartClick={() => handleHeartClick(listing.id)}
                     onClick={() => handleListingClick(listing)}
-                    isHot={hotItems.some(hotItem => hotItem.id === listing.id)}
+                    isHot={false}
                   />
                 ))}
               </div>
