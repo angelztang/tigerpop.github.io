@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
-import { Listing, getListings } from '../services/listingService';
-import { useSearchParams } from 'react-router-dom';
+import ListingDetailModal from '../components/ListingDetailModal';
+import { Listing, getListings, getHotItems } from '../services/listingService';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 
 interface PriceRange {
   label: string;
@@ -11,12 +12,23 @@ interface PriceRange {
 const MarketplacePage: React.FC = () => {
   console.log('MarketplacePage component mounted');
   const [listings, setListings] = useState<Listing[]>([]);
+  const [hotItems, setHotItems] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
-  const [searchParams] = useSearchParams();
+  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
+
+  // Clear search parameter from URL on mount
+  useEffect(() => {
+    if (searchQuery) {
+      searchParams.delete('search');
+      setSearchParams(searchParams);
+    }
+  }, []);
 
   const priceRanges: PriceRange[] = [
     { label: 'Under $10', max: 10 },
@@ -26,25 +38,34 @@ const MarketplacePage: React.FC = () => {
   ];
 
   useEffect(() => {
-    const fetchListings = async () => {
+    const fetchData = async () => {
       try {
         console.log('Fetching listings...');
-        const data = await getListings('?status=available');
-        console.log('Received listings:', data);
-        setListings(data);
+        const [listingsData, hotItemsData] = await Promise.all([
+          getListings('?status=available'),
+          getHotItems()
+        ]);
+        console.log('Received listings:', listingsData);
+        console.log('Received hot items:', hotItemsData);
+        setListings(listingsData);
+        setHotItems(hotItemsData);
       } catch (error) {
-        console.error('Error fetching listings:', error);
+        console.error('Error fetching data:', error);
         setError('Failed to load listings');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchListings();
+    fetchData();
   }, []);
 
   const handlePriceClick = (max: number) => {
     setSelectedPrice(selectedPrice === max ? null : max);
+  };
+
+  const handleListingClick = (listing: Listing) => {
+    setSelectedListing(listing);
   };
 
   const handleHeartClick = async (id: number) => {
@@ -98,6 +119,25 @@ const MarketplacePage: React.FC = () => {
             </div>
           )}
 
+          {/* Hot Items Section */}
+          {hotItems.length > 0 && !searchQuery && (
+            <div>
+              <h2 className="text-xl font-bold mb-6">🔥 Hot Items</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {hotItems.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                    isHearted={heartedListings.includes(listing.id)}
+                    onHeartClick={() => handleHeartClick(listing.id)}
+                    onClick={() => handleListingClick(listing)}
+                    isHot={true}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Price Filters */}
           <div>
             <h2 className="text-xl font-bold mb-4">Price Range</h2>
@@ -143,7 +183,8 @@ const MarketplacePage: React.FC = () => {
                     listing={listing}
                     isHearted={heartedListings.includes(listing.id)}
                     onHeartClick={() => handleHeartClick(listing.id)}
-                    onClick={() => {}}
+                    onClick={() => handleListingClick(listing)}
+                    isHot={hotItems.some(hotItem => hotItem.id === listing.id)}
                   />
                 ))}
               </div>
@@ -151,6 +192,16 @@ const MarketplacePage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Listing Detail Modal */}
+      {selectedListing && (
+        <ListingDetailModal
+          listing={selectedListing}
+          isHearted={heartedListings.includes(selectedListing.id)}
+          onHeartClick={() => handleHeartClick(selectedListing.id)}
+          onClose={() => setSelectedListing(null)}
+        />
+      )}
     </div>
   );
 };

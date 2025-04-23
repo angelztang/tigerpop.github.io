@@ -57,6 +57,7 @@ const BuyerDashboard: React.FC = () => {
       const isHearted = heartedListings.some(listing => listing.id === id);
       if (isHearted) {
         await unheartListing(id);
+        // Update local state immediately for better UX
         setHeartedListings(prev => prev.filter(listing => listing.id !== id));
       } else {
         await heartListing(id);
@@ -65,6 +66,8 @@ const BuyerDashboard: React.FC = () => {
       }
     } catch (error) {
       console.error('Error toggling heart:', error);
+      // Refresh hearted listings to ensure consistency
+      await fetchHeartedListings();
     }
   };
 

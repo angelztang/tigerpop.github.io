@@ -327,9 +327,15 @@ export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
 
 export const heartListing = async (id: number): Promise<void> => {
   try {
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
+    }
+
     const response = await fetch(`${API_URL}/api/listing/${id}/heart/`, {
       method: 'POST',
       headers: getHeaders(),
+      body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
@@ -346,9 +352,15 @@ export const heartListing = async (id: number): Promise<void> => {
 
 export const unheartListing = async (id: number): Promise<void> => {
   try {
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
+    }
+
     const response = await fetch(`${API_URL}/api/listing/${id}/unheart/`, {
       method: 'POST',
       headers: getHeaders(),
+      body: JSON.stringify({ netid }),
       credentials: 'include',
       mode: 'cors'
     });
@@ -365,7 +377,12 @@ export const unheartListing = async (id: number): Promise<void> => {
 
 export const getHeartedListings = async (): Promise<Listing[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/hearted/`, {
+    const netid = getNetid();
+    if (!netid) {
+      throw new Error('User not authenticated');
+    }
+
+    const response = await fetch(`${API_URL}/api/listing/hearted/?netid=${netid}`, {
       headers: getHeaders(),
       credentials: 'include',
       mode: 'cors'
@@ -384,6 +401,31 @@ export const getHeartedListings = async (): Promise<Listing[]> => {
     return data;
   } catch (error) {
     console.error('Error fetching hearted listings:', error);
+    throw error;
+  }
+};
+
+export const getHotItems = async (): Promise<Listing[]> => {
+  try {
+    const response = await fetch(`${API_URL}/api/listing/hot/`, {
+      headers: getHeaders(),
+      credentials: 'include',
+      mode: 'cors'
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching hot items:', error);
     throw error;
   }
 };
