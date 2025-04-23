@@ -9,12 +9,11 @@ interface ListingDetailModalProps {
   isHearted: boolean;
   onHeartClick: () => void;
   onClose: () => void;
-  onUpdate: (updatedListing: Listing) => void;
+  onUpdate?: (updatedListing: Listing) => void;
   onListingUpdated?: () => void;
   onHeart: () => void;
   onUnheart: () => void;
   onRequestToBuy: () => void;
-  onPlaceBid?: (amount: number) => void;
   currentBid?: number;
   currentUserId: number;
 }
@@ -29,7 +28,6 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   onHeart,
   onUnheart,
   onRequestToBuy,
-  onPlaceBid,
   currentBid,
   currentUserId
 }) => {
@@ -38,7 +36,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const [notificationSent, setNotificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [bids, setBids] = useState<Bid[]>([]);
-  const [bidAmount, setBidAmount] = useState<number>(0);
+  const [bidAmount, setBidAmount] = useState<string>('');
   const [bidError, setBidError] = useState<string | null>(null);
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
@@ -64,7 +62,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       return;
     }
 
-    const amount = parseFloat(bidAmount.toString());
+    const amount = parseFloat(bidAmount);
     if (isNaN(amount) || amount <= 0) {
       setBidError('Please enter a valid bid amount');
       return;
@@ -79,12 +77,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     setBidError(null);
 
     try {
-      await placeBid(listing.id, amount);
+      await placeBid({
+        listing_id: listing.id,
+        bidder_id: currentUserId,
+        amount
+      });
       await fetchBids();
-      setBidAmount(0);
-      if (onUpdate) {
-        onUpdate({ ...listing, current_bid: amount });
-      }
+      setBidAmount('');
+      onUpdate?.({ ...listing, current_bid: amount });
     } catch (error: any) {
       setBidError(error.message || 'Failed to place bid');
     } finally {
@@ -110,19 +110,15 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     try {
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
-      if (onUpdate) {
-        onUpdate({ ...listing, status: 'pending' });
-      }
-      if (onListingUpdated) {
-        onListingUpdated();
-      }
+      onUpdate?.({ ...listing, status: 'pending' });
+      onListingUpdated?.();
       setTimeout(() => {
         onClose();
       }, 2000);
-    } catch (error: any) {
-      console.error('Error sending notification:', error);
-      const errorMessage = error.response?.data?.error || 'Failed to send notification';
-      const errorDetails = error.response?.data?.details || '';
+    } catch (err: unknown) {
+      console.error('Error sending notification:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
+      const errorDetails = err instanceof Error && 'details' in err ? (err as any).details : '';
       setError(`${errorMessage}${errorDetails ? `: ${errorDetails}` : ''}`);
     } finally {
       setIsSubmitting(false);
@@ -142,24 +138,18 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     }
   };
 
-  const handleBidSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (onPlaceBid && bidAmount > 0) {
-      onPlaceBid(bidAmount);
-    }
-  };
-
   const handleCloseBidding = async () => {
     setIsSubmitting(true);
     setError(null);
 
     try {
       await closeBidding(listing.id);
-      onUpdate({ ...listing, status: 'pending' });
+      onUpdate?.({ ...listing, status: 'pending' });
       onClose();
-    } catch (error) {
-      setError('Failed to close bidding');
-      console.error('Error closing bidding:', error);
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to close bidding';
+      setError(errorMessage);
+      console.error('Error closing bidding:', err);
     } finally {
       setIsSubmitting(false);
     }

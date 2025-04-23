@@ -63,8 +63,9 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
 
       setBidAmount('');
       await fetchBids();
-    } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to place bid');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to place bid';
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

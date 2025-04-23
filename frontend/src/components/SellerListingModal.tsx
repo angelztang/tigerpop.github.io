@@ -124,8 +124,8 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
     setIsSubmitting(true);
     setError(null);
     try {
-      const updatedListing = await closeBidding(listing.id);
-      onUpdate(updatedListing);
+      await closeBidding(listing.id);
+      onUpdate({ ...listing, status: 'pending' });
       onClose();
     } catch (err) {
       setError('Failed to close bidding');
