@@ -246,23 +246,19 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
               <div>
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Price</h3>
-                  {isEditing ? (
-                    <input
-                      type="number"
-                      name="price"
-                      value={editedListing.price}
-                      onChange={handleInputChange}
-                      className="border rounded px-2 py-1 w-full"
-                    />
-                  ) : (
+                  {listing.pricing_mode === 'auction' ? (
                     <div>
-                      <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
-                      {listing.pricing_mode === 'auction' && listing.starting_price && (
+                      <p className="text-2xl font-bold">
+                        Starting Price: ${listing.starting_price?.toFixed(2) || '0.00'}
+                      </p>
+                      {listing.current_bid && (
                         <p className="text-sm text-gray-600">
-                          Starting Price: ${listing.starting_price.toFixed(2)}
+                          Current Bid: ${listing.current_bid.toFixed(2)}
                         </p>
                       )}
                     </div>
+                  ) : (
+                    <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
                   )}
                 </div>
 

@@ -92,6 +92,32 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
           </div>
         )}
 
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold">Price</h3>
+          {listing.pricing_mode === 'auction' ? (
+            <div>
+              <p className="text-2xl font-bold">
+                Starting Price: ${listing.starting_price?.toFixed(2) || '0.00'}
+              </p>
+              {listing.current_bid && (
+                <p className="text-sm text-gray-600">
+                  Current Bid: ${listing.current_bid.toFixed(2)}
+                </p>
+              )}
+              <p className="text-sm text-gray-500 mt-1">
+                Note: Pricing mode and starting price cannot be changed once listing is created
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
+              <p className="text-sm text-gray-500 mt-1">
+                Note: Pricing mode cannot be changed once listing is created
+              </p>
+            </div>
+          )}
+        </div>
+
         <ListingForm
           onSubmit={handleSubmit}
           isSubmitting={isSubmitting}

@@ -234,54 +234,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             </select>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-gray-700 text-sm font-bold mb-2">
-              Pricing Mode
-            </label>
-            <div className="flex space-x-4">
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="pricing_mode"
-                  value="fixed"
-                  checked={formData.pricing_mode === 'fixed'}
-                  onChange={handleInputChange}
-                  className="form-radio"
-                />
-                <span className="ml-2">Fixed Price</span>
-              </label>
-              <label className="inline-flex items-center">
-                <input
-                  type="radio"
-                  name="pricing_mode"
-                  value="auction"
-                  checked={formData.pricing_mode === 'auction'}
-                  onChange={handleInputChange}
-                  className="form-radio"
-                />
-                <span className="ml-2">Auction</span>
-              </label>
-            </div>
-          </div>
-
-          {formData.pricing_mode === 'auction' && (
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2">
-                Starting Price
-              </label>
-              <input
-                type="number"
-                name="starting_price"
-                value={formData.starting_price}
-                onChange={handleInputChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                min="0"
-                step="0.01"
-                required
-              />
-            </div>
-          )}
-
           <div className="space-y-4">
             <div className="flex items-center">
               <input
@@ -292,49 +244,55 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
               <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-900">
-                Enable bidding for this item
+                Accept bids for this item
               </label>
             </div>
 
-            {formData.is_auction && (
+            {formData.is_auction ? (
               <div>
-                <label htmlFor="min_bid_increment" className="block text-sm font-medium text-gray-700">
-                  Minimum Bid Increment ($)
+                <label htmlFor="starting_price" className="block text-sm font-medium text-gray-700">
+                  Starting Price ($)
                 </label>
-                <input
-                  type="number"
-                  id="min_bid_increment"
-                  value={formData.min_bid_increment}
-                  onChange={(e) => setFormData({ ...formData, min_bid_increment: parseFloat(e.target.value) })}
-                  step="0.01"
-                  min="0.01"
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-                  required={formData.is_auction}
-                />
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="starting_price"
+                    name="starting_price"
+                    value={formData.starting_price}
+                    onChange={(e) => setFormData({ ...formData, starting_price: parseFloat(e.target.value) })}
+                    step="0.01"
+                    min="0.01"
+                    required
+                    className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                  Price ($)
+                </label>
+                <div className="mt-1 relative rounded-md shadow-sm">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <span className="text-gray-500 sm:text-sm">$</span>
+                  </div>
+                  <input
+                    type="number"
+                    id="price"
+                    name="price"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    step="0.01"
+                    min="0.01"
+                    required
+                    className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  />
+                </div>
               </div>
             )}
-
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                {formData.is_auction ? 'Starting Price ($)' : 'Price ($)'}
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  value={formData.price}
-                  onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                  step="0.01"
-                  min="0.01"
-                  required
-                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                />
-              </div>
-            </div>
           </div>
 
           <div>
