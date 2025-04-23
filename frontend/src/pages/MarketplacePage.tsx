@@ -78,26 +78,22 @@ const MarketplacePage: React.FC = () => {
       if (isHearted) {
         await unheartListing(id);
         setHeartedListings(prev => prev.filter(listingId => listingId !== id));
-        // Update the listings to reflect the new hearts count
-        setListings(prev => prev.map(listing => 
-          listing.id === id 
-            ? { ...listing, hearts_count: (listing.hearts_count || 0) - 1 }
-            : listing
-        ));
       } else {
         await heartListing(id);
         setHeartedListings(prev => [...prev, id]);
-        // Update the listings to reflect the new hearts count
-        setListings(prev => prev.map(listing => 
-          listing.id === id 
-            ? { ...listing, hearts_count: (listing.hearts_count || 0) + 1 }
-            : listing
-        ));
       }
+      
+      // Refresh listings to update hearts count and hot items
+      const updatedListings = await getListings('?status=available');
+      setListings(updatedListings);
     } catch (error) {
       console.error('Error toggling heart:', error);
-      // Refresh hearted listings to ensure consistency
-      const hearted = await getHeartedListings();
+      // Refresh both listings and hearted listings to ensure consistency
+      const [updatedListings, hearted] = await Promise.all([
+        getListings('?status=available'),
+        getHeartedListings()
+      ]);
+      setListings(updatedListings);
       setHeartedListings(hearted.map(listing => listing.id));
     }
   };
