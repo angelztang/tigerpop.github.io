@@ -382,7 +382,6 @@ def update_listing_status(id):
 
 @bp.route('/<int:id>', methods=['DELETE', 'OPTIONS'])
 @bp.route('/<int:id>/', methods=['DELETE', 'OPTIONS'])
-@jwt_required()
 def delete_listing(id):
     if request.method == 'OPTIONS':
         return '', 200
@@ -390,21 +389,6 @@ def delete_listing(id):
     try:
         listing = Listing.query.get_or_404(id)
         
-        # Get the user's netid from the token
-        token_data = get_jwt()
-        netid = token_data.get('sub')
-        if not netid:
-            return jsonify({'error': 'Invalid token data'}), 401
-
-        # Get the user from the database
-        user = User.query.filter_by(netid=netid).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Check if the user is the owner of the listing
-        if listing.user_id != user.id:
-            return jsonify({'error': 'Unauthorized'}), 403
-    
         # Delete associated images
         for image in listing.images:
             try:
@@ -504,28 +488,12 @@ def notify_seller(id):
 
 @bp.route('/<int:id>', methods=['PUT', 'OPTIONS'])
 @bp.route('/<int:id>/', methods=['PUT', 'OPTIONS'])
-@jwt_required()
 def update_listing(id):
     if request.method == 'OPTIONS':
         return '', 200
         
     try:
         listing = Listing.query.get_or_404(id)
-        
-        # Get the user's netid from the token
-        token_data = get_jwt()
-        netid = token_data.get('sub')
-        if not netid:
-            return jsonify({'error': 'Invalid token data'}), 401
-
-        # Get the user from the database
-        user = User.query.filter_by(netid=netid).first()
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Check if the user is the owner of the listing
-        if listing.user_id != user.id:
-            return jsonify({'error': 'Unauthorized'}), 403
         
         # Handle both JSON and form data
         if request.is_json:
