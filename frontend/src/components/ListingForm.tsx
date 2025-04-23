@@ -365,7 +365,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   : 'bg-orange-500 hover:bg-orange-600'
               } transition-colors`}
             >
-              {initialData ? 'Update Listing' : 'Create Listing'}
+              {Object.keys(initialData).length > 0 ? 'Update Listing' : 'Create Listing'}
             </button>
           </div>
         </form>
