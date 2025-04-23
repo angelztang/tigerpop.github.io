@@ -183,7 +183,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   <input
                     type="file"
                     multiple
-                    accept="image/*"
+                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
                     onChange={handleImageUpload}
                     className="block w-full text-sm text-gray-500
                       file:mr-4 file:py-2 file:px-4
@@ -192,6 +192,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                       file:bg-orange-50 file:text-orange-700
                       hover:file:bg-orange-100"
                   />
+                  <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
                 </div>
               )}
             </div>

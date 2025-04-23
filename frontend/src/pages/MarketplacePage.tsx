@@ -64,10 +64,14 @@ const MarketplacePage: React.FC = () => {
         params.append('search', searchQuery);
       }
       
-      const url = `?${params.toString()}`;
+      const url = params.toString() ? `?${params.toString()}` : '';
       console.log('Fetching listings with URL:', url);
       const data = await getListings(url);
       console.log('Received listings data:', data);
+      if (!Array.isArray(data)) {
+        console.error('Expected array of listings, got:', data);
+        throw new Error('Invalid response format: expected array of listings');
+      }
       setListings(data);
     } catch (error) {
       console.error('Error fetching listings:', error);
