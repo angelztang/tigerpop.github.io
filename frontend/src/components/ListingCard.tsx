@@ -43,6 +43,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
     }
   };
 
+  console.log('Listing pricing_mode:', listing.pricing_mode);
+
   return (
     <div
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
@@ -58,7 +60,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             />
           )}
           <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
-            {listing.pricing_mode === 'auction' && (
+            {listing.pricing_mode?.toLowerCase() === 'auction' && (
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                 🏷️ Auction
               </span>
