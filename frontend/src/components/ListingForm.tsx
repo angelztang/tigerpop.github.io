@@ -293,7 +293,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description:
+              Description (Please include the size of the item if applicable):
             </label>
             <textarea
               id="description"
