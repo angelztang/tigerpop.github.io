@@ -140,8 +140,18 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       };
 
       // Validate required fields
-      if (!createListingData.title || !createListingData.description || !createListingData.price || !createListingData.category) {
+      if (!createListingData.title || !createListingData.description || !createListingData.category) {
         setError('Please fill in all required fields');
+        return;
+      }
+
+      if (createListingData.pricing_mode === 'fixed' && !createListingData.price) {
+        setError('Please enter a price for fixed price listings');
+        return;
+      }
+
+      if (createListingData.pricing_mode === 'auction' && !createListingData.starting_price) {
+        setError('Please enter a starting price for auction listings');
         return;
       }
 
@@ -270,8 +280,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                     type="number"
                     id="starting_price"
                     name="starting_price"
-                    value={formData.starting_price}
-                    onChange={(e) => setFormData({ ...formData, starting_price: parseFloat(e.target.value) })}
+                    value={formData.starting_price || ''}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      setFormData(prev => ({
+                        ...prev,
+                        starting_price: isNaN(value) ? undefined : value
+                      }));
+                    }}
                     step="0.01"
                     min="0.01"
                     required
