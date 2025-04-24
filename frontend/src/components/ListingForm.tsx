@@ -140,7 +140,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         category: formData.category,
         condition: formData.condition,
         images: formData.images,
-        pricing_mode: formData.is_auction ? 'auction' : 'fixed',
+        pricing_mode: formData.pricing_mode,
         netid: netid,
         user_id: parseInt(userId),
         price: formData.price
