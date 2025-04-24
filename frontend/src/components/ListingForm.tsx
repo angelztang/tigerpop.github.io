@@ -16,7 +16,7 @@ interface ListingFormProps {
 interface ListingFormData {
   title: string;
   description: string;
-  price: number;
+  price?: number;
   starting_price?: number;
   category: string;
   condition: string;

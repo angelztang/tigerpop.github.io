@@ -12,7 +12,7 @@ interface ListingEditModalProps {
 interface ListingFormData {
   title: string;
   description: string;
-  price: number;
+  price?: number;
   category: string;
   images?: string[];
   condition: string;
@@ -59,7 +59,7 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
     try {
       await updateListing(listing.id, {
         ...formData,
-        price: parseFloat(formData.price.toString())
+        price: parseFloat(formData.price?.toString() || '0.00')
       });
       onUpdate();
       onClose();

@@ -12,7 +12,7 @@ type FilterTab = 'all' | 'selling' | 'sold';
 interface ListingFormData {
   title: string;
   description: string;
-  price: number;
+  price?: number;
   category: string;
   images?: string[];
   condition: string;
