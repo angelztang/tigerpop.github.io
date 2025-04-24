@@ -205,8 +205,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-2">Details</h3>
-              <div className="space-y-4">
+              <h3 className="text-lg font-semibold mb-2">Price</h3>
+              <div className="mb-4">
                 {listing.pricing_mode === 'auction' ? (
                   <div>
                     <p className="text-orange-500 text-xl font-bold">
@@ -218,44 +218,44 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 ) : (
                   <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
                 )}
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Condition</h4>
-                  <p className="text-gray-600">{listing.condition}</p>
-                </div>
-
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700">Status</h4>
-                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
-                    {listing.status}
-                  </span>
-                </div>
-
-                {listing.status === 'available' && (
-                  <button
-                    onClick={handleNotifySeller}
-                    disabled={isSubmitting}
-                    className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Sending...' : 'Request to Buy'}
-                  </button>
-                )}
               </div>
 
-              {listing.pricing_mode === 'auction' && !isSeller && (
-                <div className="mt-6">
-                  <BiddingInterface
-                    listingId={listing.id}
-                    currentUserId={currentUserId}
-                    startingPrice={listing.price}
-                    currentBid={listing.current_bid}
-                    isSeller={isSeller}
-                    onPlaceBid={onPlaceBid}
-                  />
-                </div>
+              <h3 className="text-lg font-semibold mb-2">Condition</h3>
+              <div className="mb-4">
+                <p className="text-gray-600">{listing.condition}</p>
+              </div>
+
+              <h3 className="text-lg font-semibold mb-2">Status</h3>
+              <div className="mb-4">
+                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
+                  {listing.status}
+                </span>
+              </div>
+
+              {listing.status === 'available' && (
+                <button
+                  onClick={handleNotifySeller}
+                  disabled={isSubmitting}
+                  className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Sending...' : 'Request to Buy'}
+                </button>
               )}
             </div>
           </div>
+
+          {listing.pricing_mode === 'auction' && !isSeller && (
+            <div className="mt-6">
+              <BiddingInterface
+                listingId={listing.id}
+                currentUserId={currentUserId}
+                startingPrice={listing.price}
+                currentBid={listing.current_bid}
+                isSeller={isSeller}
+                onPlaceBid={onPlaceBid}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

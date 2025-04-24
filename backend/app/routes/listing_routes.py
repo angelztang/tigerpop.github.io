@@ -202,7 +202,6 @@ def get_listings():
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
             'images': [image.filename for image in listing.images],
             'condition': listing.condition,
-            'starting_price': listing.starting_price,
             'pricing_mode': listing.pricing_mode,
             'current_bid': listing.get_current_bid()
         } for listing in listings])
@@ -289,9 +288,7 @@ def create_listing():
                 'condition': new_listing.condition,
                 'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
                 'images': [image.filename for image in new_listing.images],
-                'starting_price': new_listing.starting_price,
-                'pricing_mode': new_listing.pricing_mode,
-                'current_bid': new_listing.get_current_bid()
+                'pricing_mode': new_listing.pricing_mode
             }
 
             return jsonify(listing_data), 201

@@ -176,7 +176,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 </h2>
                 {listing.pricing_mode === 'auction' && (
                   <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded">
-                    Auction Item
+                    🏷️ Auction Item
                   </span>
                 )}
               </div>
