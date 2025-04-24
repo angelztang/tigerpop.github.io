@@ -14,7 +14,7 @@ interface ListingDetailModalProps {
   onHeart: () => void;
   onUnheart: () => void;
   onRequestToBuy: () => void;
-  onPlaceBid?: (amount: number) => Promise<void>;
+  onPlaceBid: (amount: number) => Promise<void>;
   currentBid?: number;
   currentUserId: number;
 }
@@ -252,6 +252,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 startingPrice={listing.price}
                 currentBid={listing.current_bid}
                 isSeller={isSeller}
+                onCloseBidding={() => {}}
                 onPlaceBid={onPlaceBid}
               />
             </div>

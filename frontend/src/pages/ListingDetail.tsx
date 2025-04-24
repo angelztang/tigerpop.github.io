@@ -73,8 +73,14 @@ const ListingDetail: React.FC = () => {
           onHeart={handleHeartClick}
           onUnheart={handleHeartClick}
           onRequestToBuy={() => {
-            // Implement request to buy functionality
             console.log('Request to buy:', listing.id);
+          }}
+          onPlaceBid={async (amount) => {
+            try {
+              console.log('Placing bid:', amount);
+            } catch (error) {
+              console.error('Error placing bid:', error);
+            }
           }}
           currentBid={listing.current_bid}
           currentUserId={currentUserId}

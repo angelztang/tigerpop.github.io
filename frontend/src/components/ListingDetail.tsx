@@ -80,6 +80,14 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
               startingPrice={listing.price}
               currentBid={listing.current_bid}
               isSeller={isSeller}
+              onCloseBidding={() => {}}
+              onPlaceBid={async (amount) => {
+                try {
+                  console.log('Placing bid:', amount);
+                } catch (error) {
+                  console.error('Error placing bid:', error);
+                }
+              }}
             />
           )}
         </div>
