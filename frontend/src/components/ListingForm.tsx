@@ -135,6 +135,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         images: formData.images,
         pricing_mode: formData.pricing_mode,
         netid: netid,
+        user_id: parseInt(userId),
         price: formData.pricing_mode === 'auction' ? formData.starting_price : formData.price,
         starting_price: formData.pricing_mode === 'auction' ? formData.starting_price : undefined
       };
@@ -153,6 +154,11 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       if (createListingData.pricing_mode === 'auction' && !createListingData.starting_price) {
         setError('Please enter a starting price for auction listings');
         return;
+      }
+
+      // Ensure both price and starting_price are set for auction listings
+      if (createListingData.pricing_mode === 'auction') {
+        createListingData.price = createListingData.starting_price;
       }
 
       // Handle image uploads if there are any

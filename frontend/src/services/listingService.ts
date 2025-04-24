@@ -59,6 +59,7 @@ export interface CreateListingData {
   images?: string[];
   pricing_mode: 'fixed' | 'auction';
   starting_price?: number;
+  user_id: number;
 }
 
 export interface ListingFilters {
@@ -133,7 +134,6 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
       headers: getHeaders(),
       body: JSON.stringify({
         ...listingData,
-        user_id: userInfo.user_id,
         pricing_mode: listingData.pricing_mode || 'fixed'
       }),
       credentials: 'include',
