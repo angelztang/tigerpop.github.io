@@ -222,7 +222,6 @@ def get_listings():
 
 @bp.route('', methods=['POST'])
 @bp.route('/', methods=['POST'])
-@jwt_required()
 def create_listing():
     try:
         # Handle both JSON and form data
@@ -243,17 +242,17 @@ def create_listing():
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
         pricing_mode = data.get('pricing_mode', 'fixed')
+        user_id = data.get('user_id')  # Get user_id from request data instead of JWT
         
-        # Get user_id from JWT token
-        user_id = get_jwt_identity()
         current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
         # Validate required fields
-        if not all([title, description, category]):
+        if not all([title, description, category, user_id]):
             missing_fields = []
             if not title: missing_fields.append('title')
             if not description: missing_fields.append('description')
             if not category: missing_fields.append('category')
+            if not user_id: missing_fields.append('user_id')
             current_app.logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
 

@@ -117,17 +117,6 @@ export const getListing = async (id: number): Promise<Listing> => {
 
 export const createListing = async (listingData: CreateListingData): Promise<Listing> => {
   try {
-    const netid = getNetid();
-    if (!netid) {
-      throw new Error('User not authenticated');
-    }
-
-    // Get user info from auth service
-    const userInfo = await getUserInfo();
-    if (!userInfo || !userInfo.user_id) {
-      throw new Error('Failed to get user information');
-    }
-
     const response = await fetch(`${API_URL}/api/listing`, {
       method: 'POST',
       headers: getHeaders(),
