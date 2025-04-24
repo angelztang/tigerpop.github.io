@@ -31,7 +31,7 @@ def get_listings():
         'description': listing.description,
         'price': listing.price,
         'status': listing.status,
-        'seller_id': listing.seller_id,
+        'user_id': listing.user_id,
         'buyer_id': listing.buyer_id,
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
@@ -48,7 +48,7 @@ def create_listing():
         title=data['title'],
         description=data['description'],
         price=data['price'],
-        seller_id=get_jwt_identity(),
+        user_id=get_jwt_identity(),
         images=data.get('images', []),
         condition=data.get('condition', 'good'),
         pricing_mode=data.get('pricing_mode', 'fixed')
@@ -61,7 +61,7 @@ def create_listing():
         'description': listing.description,
         'price': listing.price,
         'status': listing.status,
-        'seller_id': listing.seller_id,
+        'user_id': listing.user_id,
         'buyer_id': listing.buyer_id,
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
@@ -76,7 +76,7 @@ def update_listing(listing_id):
     listing = Listing.query.get_or_404(listing_id)
     
     # Check if the current user is the seller
-    if listing.seller_id != get_jwt_identity():
+    if listing.user_id != get_jwt_identity():
         return jsonify({'error': 'Unauthorized'}), 403
     
     data = request.get_json()
@@ -95,7 +95,7 @@ def update_listing(listing_id):
         'description': listing.description,
         'price': listing.price,
         'status': listing.status,
-        'seller_id': listing.seller_id,
+        'user_id': listing.user_id,
         'buyer_id': listing.buyer_id,
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
@@ -113,7 +113,7 @@ def get_listing(listing_id):
         'description': listing.description,
         'price': listing.price,
         'status': listing.status,
-        'seller_id': listing.seller_id,
+        'user_id': listing.user_id,
         'buyer_id': listing.buyer_id,
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
