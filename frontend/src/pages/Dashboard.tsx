@@ -1,14 +1,17 @@
 // Main dashboard with Buyer/Seller mode toggle
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getNetid, initializeUser } from '../services/authService';
 import { Listing } from '../services/listingService';
 import SellerDashboard from "./SellerDashboard";
 import BuyerDashboard from "./BuyerDashboard";
 
 const Dashboard: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"buyer" | "seller">("buyer");
+  const [mode, setMode] = useState<'buyer' | 'seller'>(
+    searchParams.get('mode') === 'seller' ? 'seller' : 'buyer'
+  );
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,6 +38,15 @@ const Dashboard: React.FC = () => {
 
     init();
   }, [netid, navigate]);
+
+  useEffect(() => {
+    // Update URL when mode changes
+    setSearchParams({ mode });
+  }, [mode, setSearchParams]);
+
+  const toggleMode = () => {
+    setMode(mode === 'buyer' ? 'seller' : 'buyer');
+  };
 
   if (loading) {
     return (
@@ -69,14 +81,14 @@ const Dashboard: React.FC = () => {
           <p className="text-gray-600">Welcome, {netid}!</p>
         </div>
         <button
-          onClick={() => setMode(mode === "buyer" ? "seller" : "buyer")}
-          className="px-4 py-2 rounded-md bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+          onClick={toggleMode}
+          className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
         >
-          Switch to {mode === "buyer" ? "Seller" : "Buyer"} Mode
+          Switch to {mode === 'buyer' ? 'Seller' : 'Buyer'} Mode
         </button>
       </div>
 
-      {mode === "buyer" ? (
+      {mode === 'buyer' ? (
         <BuyerDashboard />
       ) : (
         <SellerDashboard />

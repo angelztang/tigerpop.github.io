@@ -450,6 +450,48 @@ def place_bid(id):
         current_app.logger.error(f"Error placing bid: {str(e)}")
         return jsonify({'error': 'Failed to place bid'}), 500
 
+@bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
+@bp.route('/<int:id>/heart/', methods=['POST', 'OPTIONS'])
+def heart_listing(id):
+    """Heart a listing."""
+    # Handle OPTIONS request
+    if request.method == 'OPTIONS':
+        response = current_app.make_default_options_response()
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        return response
+
+    try:
+        data = request.get_json()
+        netid = data.get('netid')
+        
+        if not netid:
+            return jsonify({'error': 'NetID is required'}), 400
+
+        # Get the user from the database
+        user = User.query.filter_by(netid=netid).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+
+        # Check if already hearted
+        existing_heart = HeartedListing.query.filter_by(
+            user_id=user.id,
+            listing_id=id
+        ).first()
+
+        if existing_heart:
+            return jsonify({'message': 'Listing already hearted'}), 200
+
+        # Create new heart
+        new_heart = HeartedListing(user_id=user.id, listing_id=id)
+        db.session.add(new_heart)
+        db.session.commit()
+
+        return jsonify({'message': 'Listing hearted successfully'}), 201
+    except Exception as e:
+        current_app.logger.error(f"Error hearting listing: {str(e)}")
+        current_app.logger.exception("Full traceback:")
+        return jsonify({'error': 'Failed to heart listing'}), 500
+
 @bp.route('/<int:id>/heart', methods=['DELETE', 'OPTIONS'])
 @bp.route('/<int:id>/heart/', methods=['DELETE', 'OPTIONS'])
 def unheart_listing(id):

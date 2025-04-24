@@ -11,6 +11,8 @@ import ListingDetail from './pages/ListingDetail';
 import TermsAndConditions from './components/TermsAndConditions';
 import './index.css';
 import { API_URL, FRONTEND_URL } from './config';
+import BuyerDashboard from './pages/BuyerDashboard';
+import SellerDashboard from './pages/SellerDashboard';
 
 interface AuthResponse {
   netid: string;
@@ -99,6 +101,14 @@ const App: React.FC = () => {
         <Route
           path="/dashboard"
           element={authenticated ? <Dashboard /> : <Navigate to="/login" />}
+        />
+        <Route
+          path="/dashboard/buyer"
+          element={<Navigate to="/dashboard?mode=buyer" replace />}
+        />
+        <Route
+          path="/dashboard/seller"
+          element={<Navigate to="/dashboard?mode=seller" replace />}
         />
         <Route path="/listing/:id" element={<ListingDetail />} />
       </Routes>
