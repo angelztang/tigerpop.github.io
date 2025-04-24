@@ -91,14 +91,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-2xl font-bold">{listing.title}</h2>
-              {listing.pricing_mode === 'auction' && (
-                <span className="inline-block bg-orange-100 text-orange-800 text-sm font-semibold px-2 py-1 rounded mt-1">
-                  Auction
-                </span>
-              )}
-            </div>
+            <h2 className="text-2xl font-bold">{listing.title}</h2>
             <div className="flex space-x-2">
               <span className="text-gray-500 text-sm">
                 Posted: {new Date(listing.created_at).toLocaleDateString()}
@@ -218,19 +211,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                         ? `Current Bid: $${listing.current_bid.toFixed(2)}`
                         : `Starting Price: $${listing.price.toFixed(2)}`}
                     </p>
-                    {isSeller ? (
-                      <p className="text-gray-600 mt-2">
-                        {listing.current_bid 
-                          ? "You have received bids on this item. The highest bid is shown above."
-                          : "No bids have been placed yet. The starting price is shown above."}
-                      </p>
-                    ) : (
-                      <p className="text-gray-600 mt-2">
-                        {listing.current_bid 
-                          ? "This item has received bids. Place a higher bid to be the highest bidder."
-                          : "Be the first to bid on this item! Place a bid at or above the starting price."}
-                      </p>
-                    )}
+                    <p className="text-gray-600 mt-2">
+                      This is an auction item. Place your bid to participate. The highest bidder wins when the auction ends.
+                    </p>
                     {listing.pricing_mode === 'auction' && currentUserId && (
                       <BiddingInterface
                         listingId={listing.id}
@@ -245,23 +228,6 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                   <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
                 )}
               </div>
-
-              {isSeller && (
-                <div className="space-y-2">
-                  <button
-                    onClick={() => onUpdate?.(listing)}
-                    className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-                  >
-                    Edit Listing
-                  </button>
-                  <button
-                    onClick={() => onUpdate?.({ ...listing, status: 'sold' })}
-                    className="w-full bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-                  >
-                    Mark as Sold
-                  </button>
-                </div>
-              )}
 
               {listing.pricing_mode === 'fixed' && !isSeller && (
                 <button

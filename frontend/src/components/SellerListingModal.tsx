@@ -268,54 +268,21 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 )}
               </div>
 
-              <div>
+              <div className="mb-4">
                 <h3 className="text-lg font-semibold mb-2">Price</h3>
                 {listing.pricing_mode === 'auction' ? (
                   <div>
-                    <p className="text-orange-500 font-bold">
+                    <p className="text-orange-500 text-xl font-bold">
                       {listing.current_bid 
                         ? `Current Bid: $${listing.current_bid.toFixed(2)}`
                         : `Starting Price: $${listing.price.toFixed(2)}`}
                     </p>
-                    {bids.length > 0 && (
-                      <div className="mt-2">
-                        <h4 className="text-sm font-medium text-gray-700">Bid History</h4>
-                        <div className="mt-1 space-y-1">
-                          {bids.map((bid) => (
-                            <div key={bid.id} className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600">${bid.amount.toFixed(2)}</span>
-                              <span className="text-gray-500">
-                                {new Date(bid.timestamp).toLocaleString()}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {listing.status === 'available' && (
-                      <button
-                        onClick={handleCloseBidding}
-                        disabled={isSubmitting}
-                        className="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:opacity-50"
-                      >
-                        {isSubmitting ? 'Closing...' : 'Close Bidding'}
-                      </button>
-                    )}
+                    <p className="text-gray-600 mt-2">
+                      This is an auction item. You cannot edit the listing once bids are placed. The highest bidder will win when the auction ends.
+                    </p>
                   </div>
                 ) : (
-                  isEditing ? (
-                    <input
-                      type="number"
-                      name="price"
-                      value={editedListing.price}
-                      onChange={handleInputChange}
-                      className="border rounded px-2 py-1 w-full"
-                      min="0"
-                      step="0.01"
-                    />
-                  ) : (
-                    <p className="text-orange-500 font-bold">${listing.price.toFixed(2)}</p>
-                  )
+                  <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
                 )}
               </div>
 
@@ -359,50 +326,24 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-6 flex justify-end space-x-4">
-              {!isEditing && listing.status === 'available' && (
-                <button
-                  onClick={() => setShowSoldModal(true)}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                >
-                  Mark as Sold
-                </button>
-              )}
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  disabled={listing.pricing_mode === 'auction'}
-                  className={`px-4 py-2 rounded ${
-                    listing.pricing_mode === 'auction'
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-orange-500 text-white hover:bg-orange-600'
-                  }`}
-                >
-                  {listing.pricing_mode === 'auction' ? 'Cannot Edit Auction Item' : 'Edit Listing'}
-                </button>
-              )}
-              {isEditing && (
-                <>
-                  <button
-                    onClick={() => setIsEditing(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                    className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </>
-              )}
+            <div className="mt-6 flex space-x-4">
               <button
-                onClick={() => setShowDeleteModal(true)}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                onClick={() => setIsEditing(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
-                Delete Listing
+                Edit Listing
+              </button>
+              <button
+                onClick={() => setShowSoldModal(true)}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                Mark as Sold
+              </button>
+              <button
+                onClick={onClose}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Close
               </button>
             </div>
 

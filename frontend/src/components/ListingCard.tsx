@@ -48,32 +48,39 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
       onClick={handleCardClick}
     >
-      <div className="relative aspect-w-16 aspect-h-9">
-        {listing.images?.[0] && (
-          <img
-            src={listing.images[0]}
-            alt={listing.title}
-            className="w-full h-full object-cover"
-          />
+      <div className="relative">
+        {listing.pricing_mode === 'auction' && (
+          <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-sm font-medium">
+            Auction
+          </div>
         )}
-        <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
-          {listing.pricing_mode === 'auction' && (
-            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              🏷️ Auction
-            </span>
+        <div className="relative aspect-w-16 aspect-h-9">
+          {listing.images?.[0] && (
+            <img
+              src={listing.images[0]}
+              alt={listing.title}
+              className="w-full h-full object-cover"
+            />
           )}
-          {isHot && (
-            <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-              🔥 Hot Item
+          <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
+            {listing.pricing_mode === 'auction' && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                🏷️ Auction
+              </span>
+            )}
+            {isHot && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                🔥 Hot Item
+              </span>
+            )}
+            <span
+              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
+                listing.status
+              )}`}
+            >
+              {listing.status}
             </span>
-          )}
-          <span
-            className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-              listing.status
-            )}`}
-          >
-            {listing.status}
-          </span>
+          </div>
         </div>
       </div>
 
