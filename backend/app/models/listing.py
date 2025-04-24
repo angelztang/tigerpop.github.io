@@ -10,31 +10,32 @@ class Listing(db.Model):
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50), nullable=False)
+    condition = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(20), default='available')
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    condition = db.Column(db.String(20), default='good')
     pricing_mode = db.Column(db.String(20), default='fixed')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     bidding_end_date = db.Column(db.DateTime, nullable=True)
     current_bid = db.Column(db.Float, nullable=True)
     current_bidder_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     current_bidder = db.relationship('User', foreign_keys=[current_bidder_id])
-    seller = db.relationship('User', backref='listings', foreign_keys=[user_id])
+    seller = db.relationship('User', foreign_keys=[user_id], backref='listings')
+    buyer = db.relationship('User', foreign_keys=[buyer_id], backref='purchases')
     images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
     bids = db.relationship('Bid', backref='listing', lazy=True, cascade='all, delete-orphan')
     hearts = db.relationship('Heart', backref='listing', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, title, description, price, category, status, user_id, condition='good', created_at=None, pricing_mode=None, bidding_end_date=None):
+    def __init__(self, title, description, price, user_id, category=None, condition=None, status='available', pricing_mode='fixed'):
         self.title = title
         self.description = description
         self.price = price
-        self.category = category
-        self.status = status
         self.user_id = user_id
+        self.category = category or 'Other'
         self.condition = condition
-        self.created_at = created_at or datetime.utcnow()
+        self.status = status
         self.pricing_mode = pricing_mode
-        self.bidding_end_date = bidding_end_date
     
     def to_dict(self):
         return {
@@ -43,12 +44,14 @@ class Listing(db.Model):
             'description': self.description,
             'price': self.price,
             'category': self.category,
-            'status': self.status,
-            'user_id': self.user_id,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'images': [image.filename for image in self.images],
             'condition': self.condition,
+            'status': self.status,
             'pricing_mode': self.pricing_mode,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'user_id': self.user_id,
+            'buyer_id': self.buyer_id,
+            'images': [image.filename for image in self.images],
             'current_bid': self.get_current_bid()
         }
     
@@ -58,7 +61,7 @@ class Listing(db.Model):
         return None
     
     def __repr__(self):
-        return f'<Listing {self.title}>'
+        return f'<Listing {self.id}: {self.title}>'
 
 class ListingImage(db.Model):
     __tablename__ = 'listing_images'
