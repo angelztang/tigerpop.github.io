@@ -43,7 +43,7 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
         </div>
         
         <div>
-          {listing.pricing_mode === 'auction' ? (
+          {listing.pricing_mode.toLowerCase() === 'auction' ? (
             <div className="mb-4">
               <h3 className="text-lg font-semibold mb-2">Auction Details</h3>
               {listing.current_bid ? (
@@ -73,7 +73,7 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
             <p className="text-gray-700">{listing.condition}</p>
           </div>
           
-          {listing.pricing_mode === 'auction' && currentUserId && (
+          {listing.pricing_mode?.toLowerCase() === 'auction' && currentUserId && (
             <BiddingInterface
               listingId={listing.id}
               currentUserId={parseInt(currentUserId)}

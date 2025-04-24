@@ -52,7 +52,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
   const [bids, setBids] = useState<Bid[]>([]);
 
   useEffect(() => {
-    if (listing.pricing_mode === 'auction') {
+    if (listing.pricing_mode?.toLowerCase() === 'auction') {
       fetchBids();
     }
   }, [listing.id]);
@@ -379,14 +379,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  disabled={listing.pricing_mode === 'auction'}
+                  disabled={listing.pricing_mode?.toLowerCase() === 'auction'}
                   className={`px-4 py-2 rounded ${
-                    listing.pricing_mode === 'auction'
+                    listing.pricing_mode?.toLowerCase() === 'auction'
                       ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       : 'bg-orange-500 text-white hover:bg-orange-600'
                   }`}
                 >
-                  {listing.pricing_mode === 'auction' ? 'Cannot Edit Auction Item' : 'Edit Listing'}
+                  {listing.pricing_mode?.toLowerCase() === 'auction' ? 'Cannot Edit Auction Item' : 'Edit Listing'}
                 </button>
               )}
               {!isEditing && listing.status === 'available' && (

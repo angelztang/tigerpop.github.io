@@ -94,7 +94,7 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
 
         <div className="mb-4">
           <h3 className="text-lg font-semibold">Price</h3>
-          {listing.pricing_mode === 'auction' ? (
+          {listing.pricing_mode?.toLowerCase() === 'auction' ? (
             <div>
               <p className="text-2xl font-bold">
                 Starting Price: ${listing.starting_price?.toFixed(2) || '0.00'}

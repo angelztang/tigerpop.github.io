@@ -242,7 +242,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
           </div>
 
-          {listing.pricing_mode === 'auction' && !isSeller && (
+          {listing.pricing_mode?.toLowerCase() === 'auction' && !isSeller && (
             <div className="mt-6">
               <BiddingInterface
                 listingId={listing.id}

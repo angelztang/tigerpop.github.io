@@ -43,8 +43,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
     }
   };
 
-  console.log('Listing pricing_mode:', listing.pricing_mode);
-
   return (
     <div
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
