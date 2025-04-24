@@ -102,7 +102,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{localListing.title}</h2>
               {localListing.pricing_mode?.toLowerCase() === 'auction' && (
-                <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                <span className="px-2 py-1 rounded-full text-lg font-medium bg-blue-100 text-blue-800">
                   🏷️ Auction Item
                 </span>
               )}
@@ -224,8 +224,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 <div>
                   <p className="text-orange-500 text-xl font-bold">
                     {localListing.current_bid 
-                      ? `Current Bid: $${localListing.current_bid.toFixed(2)}`
-                      : `Starting Price: $${localListing.price.toFixed(2)}`}
+                      ? `$${localListing.current_bid.toFixed(2)}`
+                      : `$${localListing.price.toFixed(2)}`}
                   </p>
                 </div>
               ) : (

@@ -119,7 +119,7 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         )}
       </div>
 
-      {!isSeller && (
+      {(
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Place a Bid</h3>
           <form onSubmit={handleBidSubmit} className="space-y-4">
