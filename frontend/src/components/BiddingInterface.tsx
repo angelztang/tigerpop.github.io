@@ -149,13 +149,13 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
             </div>
 
             {error && (
-              <div className="text-red-600 text-sm">
+              <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="text-green-600 text-sm">
+              <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
                 {success}
               </div>
             )}

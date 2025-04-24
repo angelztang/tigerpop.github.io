@@ -438,6 +438,11 @@ def place_bid(id):
         # Place the new bid
         new_bid = Bid(listing_id=listing.id, bidder_id=bidder_id, amount=amount)
         db.session.add(new_bid)
+        
+        # Update listing's current bid
+        listing.current_bid = amount
+        listing.current_bidder_id = bidder_id
+        
         db.session.commit()
         
         # Notify seller
@@ -527,9 +532,16 @@ def close_bidding(id):
         if listing.pricing_mode != 'auction':
             return jsonify({'error': 'Only auction listings can be closed'}), 400
         
-        listing.status = 'sold'
+        listing.status = 'pending'
         db.session.commit()
-        return jsonify({'message': 'Bidding closed successfully'})
+        
+        # Get highest bid
+        highest_bid = Bid.query.filter_by(listing_id=id).order_by(Bid.amount.desc()).first()
+        if highest_bid:
+            # Send notification to highest bidder
+            notify_winner(highest_bid, listing)
+            
+        return jsonify({'message': 'Bidding closed successfully'}), 200
     except Exception as e:
         current_app.logger.error(f"Error closing bidding: {str(e)}")
         return jsonify({'error': 'Failed to close bidding'}), 500

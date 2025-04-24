@@ -49,6 +49,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
   const [newImages, setNewImages] = useState<File[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSoldModal, setShowSoldModal] = useState(false);
+  const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
   const [bids, setBids] = useState<Bid[]>([]);
 
   useEffect(() => {
@@ -403,6 +404,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   Mark as Sold
                 </button>
               )}
+              {!isEditing && listing.status === 'available' && listing.pricing_mode?.toLowerCase() === 'auction' && (
+                <button
+                  onClick={() => setShowCloseBiddingModal(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Close Bidding
+                </button>
+              )}
               {isEditing && (
                 <>
                   <button
@@ -485,6 +494,32 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
               >
                 {isSubmitting ? 'Processing...' : 'Mark as Sold'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCloseBiddingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Close Bidding</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to close bidding for this auction? This will notify the highest bidder and mark the listing as pending.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowCloseBiddingModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCloseBidding}
+                disabled={isSubmitting}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Processing...' : 'Close Bidding'}
               </button>
             </div>
           </div>

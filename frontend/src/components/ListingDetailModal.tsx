@@ -38,8 +38,34 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const [notificationSent, setNotificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [localListing, setLocalListing] = useState(listing);
+  const [bids, setBids] = useState<Bid[]>([]);
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
+
+  useEffect(() => {
+    if (localListing.pricing_mode?.toLowerCase() === 'auction') {
+      fetchBids();
+    }
+  }, [localListing.id]);
+
+  const fetchBids = async () => {
+    try {
+      const fetchedBids = await getBids(localListing.id);
+      setBids(fetchedBids);
+      // Update the current bid if there are any bids
+      if (fetchedBids.length > 0) {
+        const highestBid = fetchedBids.reduce((prev, current) => 
+          (prev.amount > current.amount) ? prev : current
+        );
+        setLocalListing(prev => ({
+          ...prev,
+          current_bid: highestBid.amount
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+    }
+  };
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => 
@@ -74,11 +100,25 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     }
   };
 
-  const handleBidPlaced = (newBid: number) => {
-    setLocalListing(prev => ({
-      ...prev,
-      current_bid: newBid
-    }));
+  const handleBidPlaced = async (newBid: number) => {
+    try {
+      // Update local state immediately
+      setLocalListing(prev => ({
+        ...prev,
+        current_bid: newBid
+      }));
+      
+      // Fetch updated bids
+      await fetchBids();
+      
+      // Notify parent component of the update
+      onUpdate?.({
+        ...localListing,
+        current_bid: newBid
+      });
+    } catch (error) {
+      console.error('Error updating bid:', error);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -102,7 +142,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{localListing.title}</h2>
               {localListing.pricing_mode?.toLowerCase() === 'auction' && (
-                <span className="px-2 py-1 rounded-full text-lg font-medium bg-blue-100 text-blue-800">
+                <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                   🏷️ Auction Item
                 </span>
               )}
