@@ -233,22 +233,37 @@ def create_listing():
         starting_price = data.get('starting_price')
 
         # Validate required fields
-        if not all([title, description, price, user_id, category]):
+        if not all([title, description, user_id, category]):
             missing_fields = []
             if not title: missing_fields.append('title')
             if not description: missing_fields.append('description')
-            if not price: missing_fields.append('price')
             if not user_id: missing_fields.append('user_id')
             if not category: missing_fields.append('category')
             current_app.logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
 
-        try:
-            # Validate price
-            price = float(price)
-            if price <= 0:
-                return jsonify({'error': 'Price must be greater than 0'}), 400
+        # Validate price based on pricing mode
+        if pricing_mode == 'fixed':
+            if not price:
+                return jsonify({'error': 'Price is required for fixed price listings'}), 400
+            try:
+                price = float(price)
+                if price <= 0:
+                    return jsonify({'error': 'Price must be greater than 0'}), 400
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid price format'}), 400
+        elif pricing_mode == 'auction':
+            if not starting_price:
+                return jsonify({'error': 'Starting price is required for auction listings'}), 400
+            try:
+                starting_price = float(starting_price)
+                if starting_price <= 0:
+                    return jsonify({'error': 'Starting price must be greater than 0'}), 400
+                price = starting_price  # Set price to starting_price for auction listings
+            except (ValueError, TypeError):
+                return jsonify({'error': 'Invalid starting price format'}), 400
 
+        try:
             # Create new listing
             new_listing = Listing(
                 title=title,
