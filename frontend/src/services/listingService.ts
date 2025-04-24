@@ -132,7 +132,8 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
       headers: getHeaders(),
       body: JSON.stringify({
         ...listingData,
-        user_id: userInfo.user_id
+        user_id: userInfo.user_id,
+        pricing_mode: listingData.pricing_mode || 'fixed'
       }),
       credentials: 'include',
       mode: 'cors'
