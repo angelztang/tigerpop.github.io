@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings, updateListing } from '../services/listingService';
-import { getNetid } from '../services/authService';
+import { getNetid, getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
 import SellerListingModal from '../components/SellerListingModal';
@@ -62,9 +62,16 @@ const SellerDashboard: React.FC = () => {
         return;
       }
 
+      const userId = getUserId();
+      if (!userId) {
+        setError('User not authenticated');
+        return;
+      }
+
       const listingData: CreateListingData = {
         ...formData,
         netid: netid,
+        user_id: parseInt(userId),
         pricing_mode: formData.pricing_mode || 'fixed',
         price: formData.pricing_mode === 'fixed' ? formData.price : undefined,
         starting_price: formData.pricing_mode === 'auction' ? formData.price : undefined
