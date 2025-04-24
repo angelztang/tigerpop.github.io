@@ -87,11 +87,20 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: name === 'price' ? parseFloat(value) : value
-    }));
+    const { name, value, type } = e.target;
+    if (type === 'checkbox') {
+      const isAuction = (e.target as HTMLInputElement).checked;
+      setFormData(prev => ({
+        ...prev,
+        is_auction: isAuction,
+        pricing_mode: isAuction ? 'auction' : 'fixed'
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: name === 'price' ? parseFloat(value) : value
+      }));
+    }
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -245,24 +254,17 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 type="checkbox"
                 id="is_auction"
                 checked={formData.is_auction}
-                onChange={(e) => {
-                  const isAuction = e.target.checked;
-                  setFormData(prev => ({
-                    ...prev,
-                    is_auction: isAuction,
-                    pricing_mode: isAuction ? 'auction' : 'fixed'
-                  }));
-                }}
-                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                onChange={handleInputChange}
+                className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
               />
-              <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-900">
+              <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-700">
                 Accept bids for this item
               </label>
             </div>
 
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                {formData.is_auction ? 'Starting Price ($)' : 'Price ($)'}
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                {formData.is_auction ? 'Starting Price' : 'Price'}:
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -272,20 +274,20 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   type="number"
                   id="price"
                   name="price"
-                  value={formData.price || ''}
-                  onChange={(e) => {
-                    const value = parseFloat(e.target.value);
-                    setFormData(prev => ({
-                      ...prev,
-                      price: isNaN(value) ? 0 : value
-                    }));
-                  }}
-                  step="0.01"
-                  min="0.01"
+                  value={formData.price}
+                  onChange={handleInputChange}
                   required
-                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                  min="0"
+                  step="0.01"
+                  className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
+                  placeholder="0.00"
                 />
               </div>
+              {formData.is_auction && (
+                <p className="mt-1 text-sm text-gray-500">
+                  This will be the minimum bid amount for your auction
+                </p>
+              )}
             </div>
           </div>
 

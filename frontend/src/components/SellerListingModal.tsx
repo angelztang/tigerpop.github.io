@@ -1,6 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { Listing, updateListing, updateListingStatus, deleteListing, uploadImages, closeBidding, getBids, Bid } from '../services/listingService';
 
+const categories = [
+  'Tops',
+  'Bottoms',
+  'Dresses',
+  'Shoes',
+  'Furniture',
+  'Appliances',
+  'Books',
+  'Other'
+];
+
+const conditions = [
+  'New',
+  'Like New',
+  'Good',
+  'Fair',
+  'Poor'
+];
+
 interface SellerListingModalProps {
   listing: Listing;
   onClose: () => void;
@@ -248,181 +267,148 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   <p className="text-gray-600">{listing.description}</p>
                 )}
               </div>
-              <div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Price</h3>
-                  {listing.pricing_mode === 'auction' ? (
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          🏷️ Auction Item
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          (Auction details cannot be modified)
-                        </span>
-                      </div>
-                      <p className="text-2xl font-bold text-orange-500">
-                        Current Bid: ${listing.current_bid?.toFixed(2) || listing.starting_price?.toFixed(2) || '0.00'}
-                      </p>
-                      {listing.starting_price && (
-                        <p className="text-sm text-gray-600">
-                          Starting Price: ${listing.starting_price.toFixed(2)}
-                        </p>
-                      )}
-                      {bids.length > 0 && (
-                        <div className="mt-4">
-                          <h4 className="text-sm font-semibold mb-2">Bid History</h4>
-                          <div className="space-y-2">
-                            {bids.map((bid) => (
-                              <div key={bid.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                                <span className="text-gray-600">
-                                  ${bid.amount.toFixed(2)}
-                                </span>
-                                <span className="text-sm text-gray-500">
-                                  {new Date(bid.timestamp).toLocaleString()}
-                                </span>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div>
-                      {isEditing ? (
-                        <input
-                          type="number"
-                          name="price"
-                          value={editedListing.price}
-                          onChange={handleInputChange}
-                          className="border rounded px-2 py-1 w-full"
-                          step="0.01"
-                          min="0"
-                        />
-                      ) : (
-                        <p className="text-2xl font-bold text-orange-500">${listing.price.toFixed(2)}</p>
-                      )}
-                    </div>
-                  )}
-                </div>
 
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Category</h3>
-                  {isEditing ? (
-                    <select
-                      name="category"
-                      value={editedListing.category}
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Price</h3>
+                {listing.pricing_mode === 'auction' ? (
+                  <div>
+                    <p className="text-orange-500 font-bold">
+                      {listing.current_bid 
+                        ? `Current Bid: $${listing.current_bid.toFixed(2)}`
+                        : `Starting Price: $${listing.price.toFixed(2)}`}
+                    </p>
+                    {bids.length > 0 && (
+                      <div className="mt-2">
+                        <h4 className="text-sm font-medium text-gray-700">Bid History</h4>
+                        <div className="mt-1 space-y-1">
+                          {bids.map((bid) => (
+                            <div key={bid.id} className="flex justify-between items-center text-sm">
+                              <span className="text-gray-600">${bid.amount.toFixed(2)}</span>
+                              <span className="text-gray-500">
+                                {new Date(bid.timestamp).toLocaleString()}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {listing.status === 'available' && (
+                      <button
+                        onClick={handleCloseBidding}
+                        disabled={isSubmitting}
+                        className="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:opacity-50"
+                      >
+                        {isSubmitting ? 'Closing...' : 'Close Bidding'}
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  isEditing ? (
+                    <input
+                      type="number"
+                      name="price"
+                      value={editedListing.price}
                       onChange={handleInputChange}
                       className="border rounded px-2 py-1 w-full"
-                    >
-                      <option value="tops">Tops</option>
-                      <option value="bottoms">Bottoms</option>
-                      <option value="dresses">Dresses</option>
-                      <option value="shoes">Shoes</option>
-                      <option value="furniture">Furniture</option>
-                      <option value="appliances">Appliances</option>
-                      <option value="books">Books</option>
-                      <option value="other">Other</option>
-                    </select>
+                      min="0"
+                      step="0.01"
+                    />
                   ) : (
-                    <p className="text-gray-600">{listing.category}</p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Condition</h3>
-                  {isEditing ? (
-                    <select
-                      name="condition"
-                      value={editedListing.condition}
-                      onChange={handleInputChange}
-                      className="border rounded px-2 py-1 w-full"
-                    >
-                      <option value="New">New</option>
-                      <option value="Like New">Like New</option>
-                      <option value="Good">Good</option>
-                      <option value="Fair">Fair</option>
-                      <option value="Poor">Poor</option>
-                    </select>
-                  ) : (
-                    <p className="text-gray-600">{listing.condition}</p>
-                  )}
-                </div>
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold">Status</h3>
-                  <span className={`px-2 py-1 rounded-full text-sm font-medium ${
-                    listing.status === 'available' ? 'bg-green-100 text-green-800' :
-                    listing.status === 'sold' ? 'bg-red-100 text-red-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {listing.status}
-                  </span>
-                </div>
+                    <p className="text-orange-500 font-bold">${listing.price.toFixed(2)}</p>
+                  )
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Category</h3>
+                {isEditing ? (
+                  <select
+                    name="category"
+                    value={editedListing.category}
+                    onChange={handleInputChange}
+                    className="border rounded px-2 py-1 w-full"
+                  >
+                    <option value="">Select a category</option>
+                    {categories.map(category => (
+                      <option key={category} value={category}>{category}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-gray-600">{listing.category}</p>
+                )}
+              </div>
+
+              <div>
+                <h3 className="text-lg font-semibold mb-2">Condition</h3>
+                {isEditing ? (
+                  <select
+                    name="condition"
+                    value={editedListing.condition}
+                    onChange={handleInputChange}
+                    className="border rounded px-2 py-1 w-full"
+                  >
+                    <option value="">Select condition</option>
+                    {conditions.map(condition => (
+                      <option key={condition} value={condition}>{condition}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-gray-600">{listing.condition}</p>
+                )}
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="mt-6 flex flex-col space-y-4">
-              {!isEditing ? (
+            <div className="mt-6 flex justify-end space-x-4">
+              {!isEditing && listing.status === 'available' && (
+                <button
+                  onClick={() => setShowSoldModal(true)}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                >
+                  Mark as Sold
+                </button>
+              )}
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  disabled={listing.pricing_mode === 'auction'}
+                  className={`px-4 py-2 rounded ${
+                    listing.pricing_mode === 'auction'
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-orange-500 text-white hover:bg-orange-600'
+                  }`}
+                >
+                  {listing.pricing_mode === 'auction' ? 'Cannot Edit Auction Item' : 'Edit Listing'}
+                </button>
+              )}
+              {isEditing && (
                 <>
                   <button
-                    onClick={() => setIsEditing(true)}
-                    className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors"
-                  >
-                    Edit Listing
-                  </button>
-                  {listing.status === 'available' && listing.pricing_mode === 'auction' && (
-                    <button
-                      onClick={handleCloseBidding}
-                      disabled={isSubmitting}
-                      className="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors disabled:opacity-50"
-                    >
-                      Close Bidding
-                    </button>
-                  )}
-                  {listing.status !== 'sold' && (
-                    <button
-                      onClick={() => setShowSoldModal(true)}
-                      disabled={isSubmitting}
-                      className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
-                    >
-                      Mark as Sold
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowDeleteModal(true)}
-                    disabled={isSubmitting}
-                    className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors disabled:opacity-50"
-                  >
-                    Delete Listing
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    onClick={handleSave}
-                    disabled={isSubmitting}
-                    className="w-full bg-green-500 text-white py-2 px-4 rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Saving...' : 'Save Changes'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditedListing(listing);
-                      setNewImages([]);
-                    }}
-                    className="w-full bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-600 transition-colors"
+                    onClick={() => setIsEditing(false)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
                   >
                     Cancel
                   </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={isSubmitting}
+                    className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Saving...' : 'Save Changes'}
+                  </button>
                 </>
               )}
+              <button
+                onClick={() => setShowDeleteModal(true)}
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+              >
+                Delete Listing
+              </button>
             </div>
 
             {error && (
-              <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-md">
-                <p className="font-semibold">Error</p>
-                <p className="text-sm mt-1">{error}</p>
+              <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
+                {error}
               </div>
             )}
           </div>
@@ -431,23 +417,23 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
 
       {/* Delete Confirmation Modal */}
       {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4">Delete Listing</h3>
-            <p className="text-gray-600 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Confirm Delete</h3>
+            <p className="text-gray-600 mb-4">
               Are you sure you want to delete this listing? This action cannot be undone.
             </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
                 onClick={handleDelete}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50"
+                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
               >
                 {isSubmitting ? 'Deleting...' : 'Delete'}
               </button>
@@ -458,25 +444,25 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
 
       {/* Mark as Sold Confirmation Modal */}
       {showSoldModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60]">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h3 className="text-xl font-semibold mb-4">Mark as Sold</h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to mark this listing as sold? This will update the listing status and notify interested buyers.
+            <h3 className="text-lg font-semibold mb-4">Mark as Sold</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to mark this listing as sold?
             </p>
             <div className="flex justify-end space-x-4">
               <button
                 onClick={() => setShowSoldModal(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
               >
                 Cancel
               </button>
               <button
                 onClick={handleMarkAsSold}
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
               >
-                {isSubmitting ? 'Updating...' : 'Mark as Sold'}
+                {isSubmitting ? 'Processing...' : 'Mark as Sold'}
               </button>
             </div>
           </div>
