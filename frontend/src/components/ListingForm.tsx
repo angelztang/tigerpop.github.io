@@ -16,8 +16,7 @@ interface ListingFormProps {
 interface ListingFormData {
   title: string;
   description: string;
-  price?: number;
-  starting_price?: number;
+  price: number;
   category: string;
   condition: string;
   user_id: number;
@@ -62,7 +61,6 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     title: '',
     description: '',
     price: 0,
-    starting_price: 0,
     category: '',
     condition: 'good',
     user_id: 0,
@@ -92,7 +90,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'price' || name === 'starting_price' ? parseFloat(value) : value
+      [name]: name === 'price' ? parseFloat(value) : value
     }));
   };
 
@@ -136,8 +134,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         pricing_mode: formData.pricing_mode,
         netid: netid,
         user_id: parseInt(userId),
-        price: formData.pricing_mode === 'auction' ? formData.starting_price : formData.price,
-        starting_price: formData.pricing_mode === 'auction' ? formData.starting_price : undefined
+        price: formData.price
       };
 
       // Validate required fields
@@ -146,19 +143,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         return;
       }
 
-      if (createListingData.pricing_mode === 'fixed' && !createListingData.price) {
-        setError('Please enter a price for fixed price listings');
+      if (!createListingData.price) {
+        setError('Please enter a price');
         return;
-      }
-
-      if (createListingData.pricing_mode === 'auction' && !createListingData.starting_price) {
-        setError('Please enter a starting price for auction listings');
-        return;
-      }
-
-      // Ensure both price and starting_price are set for auction listings
-      if (createListingData.pricing_mode === 'auction') {
-        createListingData.price = createListingData.starting_price;
       }
 
       // Handle image uploads if there are any
@@ -275,7 +262,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
             {formData.is_auction ? (
               <div>
-                <label htmlFor="starting_price" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
                   Starting Price ($)
                 </label>
                 <div className="mt-1 relative rounded-md shadow-sm">
@@ -284,14 +271,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   </div>
                   <input
                     type="number"
-                    id="starting_price"
-                    name="starting_price"
-                    value={formData.starting_price || ''}
+                    id="price"
+                    name="price"
+                    value={formData.price || ''}
                     onChange={(e) => {
                       const value = parseFloat(e.target.value);
                       setFormData(prev => ({
                         ...prev,
-                        starting_price: isNaN(value) ? undefined : value
+                        price: isNaN(value) ? 0 : value
                       }));
                     }}
                     step="0.01"
@@ -314,8 +301,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                     type="number"
                     id="price"
                     name="price"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
+                    value={formData.price || ''}
+                    onChange={(e) => {
+                      const value = parseFloat(e.target.value);
+                      setFormData(prev => ({
+                        ...prev,
+                        price: isNaN(value) ? 0 : value
+                      }));
+                    }}
                     step="0.01"
                     min="0.01"
                     required
