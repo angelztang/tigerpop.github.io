@@ -14,6 +14,8 @@ interface ListingDetailModalProps {
   onHeart: () => void;
   onUnheart: () => void;
   onRequestToBuy: () => void;
+  onPlaceBid?: (amount: number) => Promise<void>;
+  currentBid?: number;
   currentUserId: number;
 }
 
@@ -27,6 +29,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   onHeart,
   onUnheart,
   onRequestToBuy,
+  onPlaceBid,
+  currentBid,
   currentUserId,
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
