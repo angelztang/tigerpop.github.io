@@ -85,10 +85,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
             <div className="text-sm">
-              {listing.current_bid ? (
-                <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
+              {listing.pricing_mode?.toLowerCase() === 'auction' ? (
+                listing.current_bid ? (
+                  <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
+                ) : (
+                  <span className="text-orange-500 font-bold">Starting Price: ${listing.price.toFixed(2)}</span>
+                )
               ) : (
-                <span className="text-orange-500 font-bold">Starting Price: ${listing.price.toFixed(2)}</span>
+                <span className="text-orange-500 font-bold">Price: ${listing.price.toFixed(2)}</span>
               )}
             </div>
             <p className="text-gray-500 text-sm mb-2">

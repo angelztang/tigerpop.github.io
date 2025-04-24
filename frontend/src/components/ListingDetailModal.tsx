@@ -91,12 +91,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold">{listing.title}</h2>
-            {listing.pricing_mode?.toLowerCase() === 'auction' && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                🏷️ Auction Item
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold">{listing.title}</h2>
+              {listing.pricing_mode?.toLowerCase() === 'auction' && (
+                <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  🏷️ Auction Item
+                </span>
+              )}
+            </div>
             <div className="flex space-x-2">
               <span className="text-gray-500 text-sm">
                 Posted: {new Date(listing.created_at).toLocaleDateString()}
