@@ -8,18 +8,21 @@ import TestMarketplace from './pages/TestMarketplace';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
 import ListingDetail from './pages/ListingDetail';
+import TermsAndConditions from './components/TermsAndConditions';
 import './index.css';
 import { API_URL, FRONTEND_URL } from './config';
 
 interface AuthResponse {
   netid: string;
   token: string;
+  isFirstLogin: boolean;
 }
 
 const App: React.FC = () => {
   const [authenticated, setAuthenticated] = useState<boolean>(false);
   const [userInfo, setUserInfoState] = useState<UserInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTerms, setShowTerms] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -38,7 +41,9 @@ const App: React.FC = () => {
                 service: serviceUrl
               }
             });
-            const { netid, token } = response.data;
+            const { netid, token, isFirstLogin } = response.data;
+            console.log('Auth response:', response.data); // Log to check isFirstLogin
+
             // Store token and netid in localStorage
             localStorage.setItem('token', token);
             localStorage.setItem('netid', netid);
@@ -47,7 +52,13 @@ const App: React.FC = () => {
             const newUserInfo: UserInfo = { netid };
             setUserInfoState(newUserInfo);
             setAuthenticated(true);
-            navigate('/dashboard', { replace: true });
+
+            // Show terms if it's first login
+            if (isFirstLogin) {
+              setShowTerms(true);
+            } else {
+              navigate('/dashboard', { replace: true });
+            }
           } catch (error) {
             console.error('Error validating ticket:', error);
             navigate('/login?error=auth_failed', { replace: true });
@@ -70,6 +81,11 @@ const App: React.FC = () => {
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
+  }
+
+  // Show terms and conditions if needed
+  if (showTerms && authenticated && userInfo?.netid) {
+    return <TermsAndConditions netid={userInfo.netid} />;
   }
 
   return (

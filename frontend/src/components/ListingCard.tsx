@@ -105,9 +105,11 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
               e.stopPropagation();
               onHeartClick?.(listing.id);
             }}
-            className={`text-2xl ${isHearted ? 'text-red-500' : 'text-gray-400'}`}
+            className={`text-2xl transition-colors duration-200 ${
+              isHearted ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-500'
+            }`}
           >
-            ♥
+            {isHearted ? '♥' : '♡'}
           </button>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
-import { Listing, getListings, heartListing, unheartListing, getHeartedListings, placeBid } from '../services/listingService';
+import { Listing, getListings, heartListing, unheartListing, getHeartedListings, placeBid, getHotItems } from '../services/listingService';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getUserId } from '../services/authService';
 
@@ -18,9 +18,11 @@ const MarketplacePage: React.FC = () => {
   const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [hotItems, setHotItems] = useState<Set<number>>(new Set());
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
+  const category = searchParams.get('category') || '';
   const currentUserId = parseInt(getUserId() || '0');
 
   // Clear search parameter from URL on mount
@@ -39,32 +41,31 @@ const MarketplacePage: React.FC = () => {
   ];
 
   useEffect(() => {
-    const fetchListings = async () => {
+    const fetchData = async () => {
       try {
         console.log('Fetching listings...');
-        const data = await getListings('?status=available');
-        console.log('Received listings:', data);
-        setListings(data);
+        // Include category in the API request if it exists
+        const categoryParam = category ? `&category=${category}` : '';
+        const [listingsData, heartedData, hotItemsData] = await Promise.all([
+          getListings(`?status=available${categoryParam}`),
+          getHeartedListings(),
+          getHotItems()
+        ]);
+        
+        console.log('Received listings:', listingsData);
+        setListings(listingsData);
+        setHeartedListings(heartedData.map(listing => listing.id));
+        setHotItems(new Set(hotItemsData.map(listing => listing.id)));
       } catch (error) {
-        console.error('Error fetching listings:', error);
+        console.error('Error fetching data:', error);
         setError('Failed to load listings');
       } finally {
         setLoading(false);
       }
     };
 
-    const fetchHeartedListings = async () => {
-      try {
-        const hearted = await getHeartedListings();
-        setHeartedListings(hearted.map(listing => listing.id));
-      } catch (error) {
-        console.error('Error fetching hearted listings:', error);
-      }
-    };
-
-    fetchListings();
-    fetchHeartedListings();
-  }, []);
+    fetchData();
+  }, [category]);
 
   const handlePriceClick = (max: number) => {
     setSelectedPrice(selectedPrice === max ? null : max);
@@ -85,18 +86,26 @@ const MarketplacePage: React.FC = () => {
         setHeartedListings(prev => [...prev, id]);
       }
       
-      // Refresh listings to update hearts count
-      const updatedListings = await getListings('?status=available');
+      // Update the listings to reflect the new heart count and hot items
+      const categoryParam = category ? `&category=${category}` : '';
+      const [updatedListings, hotItemsData] = await Promise.all([
+        getListings(`?status=available${categoryParam}`),
+        getHotItems()
+      ]);
       setListings(updatedListings);
+      setHotItems(new Set(hotItemsData.map(listing => listing.id)));
     } catch (error) {
       console.error('Error toggling heart:', error);
-      // Refresh both listings and hearted listings to ensure consistency
-      const [updatedListings, hearted] = await Promise.all([
-        getListings('?status=available'),
-        getHeartedListings()
+      // If there's an error, refresh both listings and hearted listings to ensure consistency
+      const categoryParam = category ? `&category=${category}` : '';
+      const [updatedListings, hearted, hotItemsData] = await Promise.all([
+        getListings(`?status=available${categoryParam}`),
+        getHeartedListings(),
+        getHotItems()
       ]);
       setListings(updatedListings);
       setHeartedListings(hearted.map(listing => listing.id));
+      setHotItems(new Set(hotItemsData.map(listing => listing.id)));
     }
   };
 
@@ -143,6 +152,13 @@ const MarketplacePage: React.FC = () => {
             </div>
           )}
 
+          {/* Category Header */}
+          {category && (
+            <div className="text-xl font-bold">
+              {category.charAt(0).toUpperCase() + category.slice(1)}
+            </div>
+          )}
+
           {/* Price Filters */}
           <div>
             <h2 className="text-xl font-bold mb-4">Price Range</h2>
@@ -177,6 +193,8 @@ const MarketplacePage: React.FC = () => {
                     ? `No items found matching "${searchQuery}"`
                     : selectedPrice
                     ? `No items found under $${selectedPrice}`
+                    : category
+                    ? `No ${category} available in the marketplace yet`
                     : 'No items available in the marketplace yet'}
                 </p>
               </div>
@@ -189,6 +207,7 @@ const MarketplacePage: React.FC = () => {
                     isHearted={heartedListings.includes(listing.id)}
                     onHeartClick={() => handleHeartClick(listing.id)}
                     onClick={() => handleListingClick(listing)}
+                    isHot={hotItems.has(listing.id)}
                   />
                 ))}
               </div>
@@ -204,8 +223,14 @@ const MarketplacePage: React.FC = () => {
           isHearted={heartedListings.includes(selectedListing.id)}
           onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
-          onUpdate={() => {
-            getListings('?status=available').then(setListings);
+          onUpdate={async () => {
+            const categoryParam = category ? `&category=${category}` : '';
+            const [updatedListings, hotItemsData] = await Promise.all([
+              getListings(`?status=available${categoryParam}`),
+              getHotItems()
+            ]);
+            setListings(updatedListings);
+            setHotItems(new Set(hotItemsData.map(listing => listing.id)));
           }}
           onHeart={() => handleHeartClick(selectedListing.id)}
           onUnheart={() => handleHeartClick(selectedListing.id)}
@@ -219,8 +244,13 @@ const MarketplacePage: React.FC = () => {
                 bidder_id: currentUserId,
                 amount
               });
-              const updatedListings = await getListings('?status=available');
+              const categoryParam = category ? `&category=${category}` : '';
+              const [updatedListings, hotItemsData] = await Promise.all([
+                getListings(`?status=available${categoryParam}`),
+                getHotItems()
+              ]);
               setListings(updatedListings);
+              setHotItems(new Set(hotItemsData.map(listing => listing.id)));
             } catch (error) {
               console.error('Error placing bid:', error);
             }

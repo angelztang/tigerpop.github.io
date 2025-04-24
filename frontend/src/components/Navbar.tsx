@@ -78,11 +78,18 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, userInfo }) => {
                   {showProfileMenu && (
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 z-50">
                       <Link
-                        to="/dashboard"
+                        to="/dashboard/buyer"
                         className="block px-4 py-2 text-gray-700 hover:bg-orange-50"
                         onClick={() => setShowProfileMenu(false)}
                       >
-                        My Dashboard
+                        Buyer Dashboard
+                      </Link>
+                      <Link
+                        to="/dashboard/seller"
+                        className="block px-4 py-2 text-gray-700 hover:bg-orange-50"
+                        onClick={() => setShowProfileMenu(false)}
+                      >
+                        Seller Dashboard
                       </Link>
                       <button
                         onClick={handleLogout}

@@ -237,14 +237,18 @@ def validate_ticket_route():
                 
                 # Create or update user
                 user = User.query.filter_by(netid=netid).first()
+                is_first_login = False
                 if not user:
                     current_app.logger.info(f"Creating new user with netid: {netid}")
                     user = User(netid=netid)
                     db.session.add(user)
-                    db.session.commit()
-                    current_app.logger.info(f"Created new user with id: {user.id}")
-                else:
-                    current_app.logger.info(f"Found existing user with id: {user.id}")
+                    is_first_login = True
+                elif user.first_login:
+                    is_first_login = True
+                    user.first_login = False
+                
+                db.session.commit()
+                current_app.logger.info(f"User status - ID: {user.id}, First Login: {is_first_login}")
                 
                 # Generate JWT token
                 access_token = create_access_token(
@@ -260,7 +264,8 @@ def validate_ticket_route():
                 current_app.logger.info(f"Stored netid in session: {netid}")
                 return jsonify({
                     'netid': netid,
-                    'access_token': access_token
+                    'token': access_token,
+                    'isFirstLogin': is_first_login
                 }), 200
         
         current_app.logger.error("Invalid ticket - no success element found in CAS response")

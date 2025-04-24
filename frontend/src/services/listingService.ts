@@ -399,7 +399,7 @@ export const getHeartedListings = async (): Promise<Listing[]> => {
 
 export const getHotItems = async (): Promise<Listing[]> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/hot/`, {
+    const response = await fetch(`${API_URL}/api/listing/hot`, {
       headers: getHeaders(),
       credentials: 'include',
       mode: 'cors'

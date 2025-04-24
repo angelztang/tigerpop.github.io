@@ -4,8 +4,8 @@ import os
 from ..extensions import db, mail
 from ..models import Listing, ListingImage, User, HeartedListing
 from ..models.bid import Bid
-from datetime import datetime
-from sqlalchemy import and_, or_
+from datetime import datetime, timedelta
+from sqlalchemy import and_, or_, func
 from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
@@ -622,3 +622,39 @@ def delete_listing(listing_id):
     except Exception as e:
         current_app.logger.error(f"Error deleting listing: {str(e)}")
         return jsonify({'error': 'Failed to delete listing'}), 500
+
+@bp.route('/hot', methods=['GET'])
+def get_hot_items():
+    """Get the 4 most hearted items from the last 3 days."""
+    try:
+        # Calculate the date 3 days ago
+        three_days_ago = datetime.utcnow() - timedelta(days=3)
+        
+        # Query to get listings with their heart counts from the last 3 days
+        hot_listings = db.session.query(
+            Listing,
+            func.count(HeartedListing.id).label('heart_count')
+        ).join(
+            HeartedListing,
+            Listing.id == HeartedListing.listing_id
+        ).filter(
+            HeartedListing.created_at >= three_days_ago,
+            Listing.status == 'available'  # Only show available listings
+        ).group_by(
+            Listing.id
+        ).order_by(
+            func.count(HeartedListing.id).desc()  # Order by heart count
+        ).limit(4).all()  # Get top 4
+        
+        # Convert to list of dictionaries
+        result = []
+        for listing, heart_count in hot_listings:
+            listing_dict = listing.to_dict()
+            listing_dict['heart_count'] = heart_count
+            result.append(listing_dict)
+        
+        return jsonify(result), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error getting hot items: {str(e)}")
+        return jsonify({'error': 'Failed to get hot items'}), 500
