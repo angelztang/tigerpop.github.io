@@ -50,7 +50,8 @@ def create_listing():
         price=data['price'],
         seller_id=get_jwt_identity(),
         images=data.get('images', []),
-        condition=data.get('condition', 'good')
+        condition=data.get('condition', 'good'),
+        pricing_mode=data.get('pricing_mode', 'fixed')
     )
     db.session.add(listing)
     db.session.commit()
@@ -65,7 +66,8 @@ def create_listing():
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
         'images': listing.images,
-        'condition': listing.condition
+        'condition': listing.condition,
+        'pricing_mode': listing.pricing_mode
     }), 201
 
 @bp.route('/listings/<int:listing_id>', methods=['PUT'])
@@ -87,6 +89,24 @@ def update_listing(listing_id):
     
     db.session.commit()
     
+    return jsonify({
+        'id': listing.id,
+        'title': listing.title,
+        'description': listing.description,
+        'price': listing.price,
+        'status': listing.status,
+        'seller_id': listing.seller_id,
+        'buyer_id': listing.buyer_id,
+        'created_at': listing.created_at.isoformat(),
+        'updated_at': listing.updated_at.isoformat(),
+        'images': listing.images,
+        'condition': listing.condition,
+        'pricing_mode': listing.pricing_mode
+    })
+
+@bp.route('/listings/<int:listing_id>', methods=['GET'])
+def get_listing(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
     return jsonify({
         'id': listing.id,
         'title': listing.title,
