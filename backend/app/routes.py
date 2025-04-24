@@ -36,7 +36,8 @@ def get_listings():
         'created_at': listing.created_at.isoformat(),
         'updated_at': listing.updated_at.isoformat(),
         'images': listing.images,
-        'condition': listing.condition
+        'condition': listing.condition,
+        'pricing_mode': listing.pricing_mode
     } for listing in listings])
 
 @bp.route('/listings', methods=['POST'])
