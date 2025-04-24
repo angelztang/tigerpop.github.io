@@ -154,6 +154,11 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   listing.title
                 )}
               </h2>
+              {listing.pricing_mode === 'auction' && (
+                <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  🏷️ Auction Item
+                </span>
+              )}
               <button
                 onClick={onClose}
                 className="text-gray-500 hover:text-gray-700"
