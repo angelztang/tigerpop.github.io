@@ -20,6 +20,19 @@ const conditions = [
   'Poor'
 ];
 
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'available':
+      return 'bg-green-100 text-green-800';
+    case 'sold':
+      return 'bg-red-100 text-red-800';
+    case 'pending':
+      return 'bg-white text-gray-800 border border-gray-300';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+};
+
 interface SellerListingModalProps {
   listing: Listing;
   onClose: () => void;
@@ -174,9 +187,9 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                     listing.title
                   )}
                 </h2>
-                {listing.pricing_mode === 'auction' && (
-                  <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded">
-                    🏷️ Auction Item
+                {listing.pricing_mode?.toLowerCase() === 'auction' && (
+                  <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    🏷️ Auction
                   </span>
                 )}
               </div>
@@ -268,19 +281,25 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 ) : (
                   <p className="text-gray-600">{listing.description}</p>
                 )}
+
+                {listing.pricing_mode?.toLowerCase() === 'auction' && (
+                  <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
+                    <p className="text-gray-700">
+                      This item is being sold through an auction. You cannot edit the listing once bids are placed. The highest bidder will win when the auction ends.
+                    </p>
+                  </div>
+                )}
               </div>
 
-              <div className="mb-4">
+              <div>
                 <h3 className="text-lg font-semibold mb-2">Price</h3>
-                {listing.pricing_mode === 'auction' ? (
+                {listing.pricing_mode?.toLowerCase() === 'auction' ? (
                   <div>
                     <p className="text-orange-500 text-xl font-bold">
                       {listing.current_bid 
                         ? `Current Bid: $${listing.current_bid.toFixed(2)}`
                         : `Starting Price: $${listing.price.toFixed(2)}`}
-                    </p>
-                    <p className="text-gray-600 mt-2">
-                      This is an auction item. You cannot edit the listing once bids are placed. The highest bidder will win when the auction ends.
                     </p>
                     {bids.length > 0 && (
                       <div className="mt-2">
@@ -296,15 +315,6 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                           ))}
                         </div>
                       </div>
-                    )}
-                    {listing.status === 'available' && (
-                      <button
-                        onClick={handleCloseBidding}
-                        disabled={isSubmitting}
-                        className="mt-4 w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 disabled:opacity-50"
-                      >
-                        {isSubmitting ? 'Closing...' : 'Close Bidding'}
-                      </button>
                     )}
                   </div>
                 ) : (
@@ -322,10 +332,8 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                     <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
                   )
                 )}
-              </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Category</h3>
+                <h3 className="text-lg font-semibold mb-2 mt-4">Category</h3>
                 {isEditing ? (
                   <select
                     name="category"
@@ -341,10 +349,8 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 ) : (
                   <p className="text-gray-600">{listing.category}</p>
                 )}
-              </div>
 
-              <div>
-                <h3 className="text-lg font-semibold mb-2">Condition</h3>
+                <h3 className="text-lg font-semibold mb-2 mt-4">Condition</h3>
                 {isEditing ? (
                   <select
                     name="condition"
@@ -360,6 +366,11 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 ) : (
                   <p className="text-gray-600">{listing.condition}</p>
                 )}
+
+                <h3 className="text-lg font-semibold mb-2 mt-4">Status</h3>
+                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
+                  {listing.status}
+                </span>
               </div>
             </div>
 

@@ -24,9 +24,9 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
     <div className="max-w-4xl mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-3xl font-bold">{listing.title}</h1>
-        {listing.pricing_mode === 'auction' && (
-          <span className="px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-            🏷️ Auction Item
+        {listing.pricing_mode?.toLowerCase() === 'auction' && (
+          <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+            🏷️ Auction
           </span>
         )}
       </div>

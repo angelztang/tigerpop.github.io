@@ -92,9 +92,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold">{listing.title}</h2>
-            {listing.pricing_mode === 'auction' && (
-              <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded">
-                Auction Item
+            {listing.pricing_mode?.toLowerCase() === 'auction' && (
+              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                🏷️ Auction Item
               </span>
             )}
             <div className="flex space-x-2">
@@ -194,9 +194,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
               <h3 className="text-lg font-semibold mb-2">Description</h3>
               <p className="text-gray-700 mb-6">{listing.description}</p>
               
-              {listing.pricing_mode === 'auction' && (
-                <div className="bg-orange-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-2 text-orange-800">Auction Item</h3>
+              {listing.pricing_mode?.toLowerCase() === 'auction' && (
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
                   <p className="text-gray-700">
                     This item is being sold through an auction. You can place bids on this item, and the highest bidder will win when the auction ends. The current bid is shown below, and you can place a new bid that must be higher than the current bid.
                   </p>
@@ -206,19 +206,17 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
 
             <div>
               <h3 className="text-lg font-semibold mb-2">Price</h3>
-              <div className="mb-4">
-                {listing.pricing_mode === 'auction' ? (
-                  <div>
-                    <p className="text-orange-500 text-xl font-bold">
-                      {listing.current_bid 
-                        ? `Current Bid: $${listing.current_bid.toFixed(2)}`
-                        : `Starting Price: $${listing.price.toFixed(2)}`}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
-                )}
-              </div>
+              {listing.pricing_mode?.toLowerCase() === 'auction' ? (
+                <div>
+                  <p className="text-orange-500 text-xl font-bold">
+                    {listing.current_bid 
+                      ? `Current Bid: $${listing.current_bid.toFixed(2)}`
+                      : `Starting Price: $${listing.price.toFixed(2)}`}
+                  </p>
+                </div>
+              ) : (
+                <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
+              )}
 
               <h3 className="text-lg font-semibold mb-2">Condition</h3>
               <div className="mb-4">
