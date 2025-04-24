@@ -344,7 +344,9 @@ def get_user_listings():
             'status': listing.status,
             'user_id': listing.user_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images]
+            'images': [image.filename for image in listing.images],
+            'condition': listing.condition,
+            'pricing_mode': listing.pricing_mode
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching user listings: {str(e)}")

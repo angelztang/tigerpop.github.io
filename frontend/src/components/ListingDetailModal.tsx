@@ -205,7 +205,11 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-2">Price</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                {listing.pricing_mode?.toLowerCase() === 'auction' 
+                  ? (listing.current_bid ? 'Current Bid' : 'Starting Price')
+                  : 'Price'}
+              </h3>
               {listing.pricing_mode?.toLowerCase() === 'auction' ? (
                 <div>
                   <p className="text-orange-500 text-xl font-bold">
