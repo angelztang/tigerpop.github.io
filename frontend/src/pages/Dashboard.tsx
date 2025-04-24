@@ -17,6 +17,7 @@ const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const netid = getNetid();
 
+  // Initialize user data
   useEffect(() => {
     const init = async () => {
       try {
@@ -39,8 +40,8 @@ const Dashboard: React.FC = () => {
     init();
   }, [netid, navigate]);
 
+  // Sync URL with mode state
   useEffect(() => {
-    // Update URL when mode changes
     setSearchParams({ mode });
   }, [mode, setSearchParams]);
 
