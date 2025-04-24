@@ -236,7 +236,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 </span>
               </div>
 
-              {listing.status === 'available' && (
+              {listing.status === 'available' && listing.pricing_mode?.toLowerCase() !== 'auction' && (
                 <button
                   onClick={handleNotifySeller}
                   disabled={isSubmitting}
@@ -248,7 +248,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
           </div>
 
-          {listing.pricing_mode?.toLowerCase() === 'auction' && !isSeller && (
+          {listing.pricing_mode?.toLowerCase() === 'auction' && listing.status === 'available' && (
             <div className="mt-6">
               <BiddingInterface
                 listingId={listing.id}
