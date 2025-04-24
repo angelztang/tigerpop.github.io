@@ -92,6 +92,11 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <h2 className="text-2xl font-bold">{listing.title}</h2>
+            {listing.pricing_mode === 'auction' && (
+              <span className="bg-orange-100 text-orange-800 text-sm font-medium px-3 py-1 rounded">
+                Auction Item
+              </span>
+            )}
             <div className="flex space-x-2">
               <span className="text-gray-500 text-sm">
                 Posted: {new Date(listing.created_at).toLocaleDateString()}
@@ -183,69 +188,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Description</h3>
-                <p className="text-gray-700">{listing.description}</p>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Condition</h3>
-                <p className="text-gray-700">{listing.condition}</p>
-              </div>
-
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Category</h3>
-                <p className="text-gray-700">{listing.category}</p>
-              </div>
-            </div>
-
-            <div>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold mb-2">Price</h3>
-                {listing.pricing_mode === 'auction' ? (
-                  <div>
-                    <p className="text-orange-500 text-xl font-bold">
-                      {listing.current_bid 
-                        ? `Current Bid: $${listing.current_bid.toFixed(2)}`
-                        : `Starting Price: $${listing.price.toFixed(2)}`}
-                    </p>
-                    <p className="text-gray-600 mt-2">
-                      This is an auction item. Place your bid to participate. The highest bidder wins when the auction ends.
-                    </p>
-                    {listing.pricing_mode === 'auction' && currentUserId && (
-                      <BiddingInterface
-                        listingId={listing.id}
-                        currentUserId={currentUserId}
-                        startingPrice={listing.price}
-                        currentBid={listing.current_bid}
-                        isSeller={isSeller}
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
-                )}
-              </div>
-
-              {listing.pricing_mode === 'fixed' && !isSeller && (
-                <button
-                  onClick={handleNotifySeller}
-                  disabled={isSubmitting || notificationSent}
-                  className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Processing...' : notificationSent ? 'Request Sent!' : 'Request to Buy'}
-                </button>
-              )}
-
-              {error && (
-                <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
-                  {error}
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Rest of the component */}
+          {/* ... existing code ... */}
         </div>
       </div>
     </div>

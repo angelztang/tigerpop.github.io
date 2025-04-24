@@ -88,19 +88,22 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
+            {listing.pricing_mode === 'auction' && (
+              <span className="inline-block bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded mb-2">
+                Auction Item
+              </span>
+            )}
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
             {listing.pricing_mode === 'auction' ? (
-              <div className="text-sm text-gray-600">
+              <div className="text-sm">
                 {listing.current_bid ? (
-                  <span>Current Bid: ${listing.current_bid.toFixed(2)}</span>
+                  <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
                 ) : (
-                  <span>Starting Price: ${listing.price.toFixed(2)}</span>
+                  <span className="text-orange-500 font-bold">Starting Price: ${listing.price.toFixed(2)}</span>
                 )}
               </div>
             ) : (
-              <div className="text-sm text-gray-600">
-                Price: ${listing.price.toFixed(2)}
-              </div>
+              <div className="text-orange-500 font-bold">${listing.price.toFixed(2)}</div>
             )}
             <p className="text-gray-500 text-sm mb-2">
               Condition: <span className="capitalize">{listing.condition}</span>

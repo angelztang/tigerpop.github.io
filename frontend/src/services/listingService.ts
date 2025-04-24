@@ -131,10 +131,7 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
     const response = await fetch(`${API_URL}/api/listing`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({
-        ...listingData,
-        pricing_mode: listingData.pricing_mode || 'fixed'
-      }),
+      body: JSON.stringify(listingData),
       credentials: 'include',
       mode: 'cors'
     });
