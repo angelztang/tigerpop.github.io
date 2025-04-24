@@ -64,7 +64,7 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
           )}
           
           <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Description</h3>
+            <h3 className="text-lg font-semibold mb-2">Description (Please include the size of the item if applicaple)</h3>
             <p className="text-gray-700">{listing.description}</p>
           </div>
           
