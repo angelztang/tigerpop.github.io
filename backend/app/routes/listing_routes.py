@@ -277,19 +277,7 @@ def create_listing():
             current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
 
             # Get the listing with its images
-            listing_data = {
-                'id': new_listing.id,
-                'title': new_listing.title,
-                'description': new_listing.description,
-                'price': new_listing.price,
-                'category': new_listing.category,
-                'status': new_listing.status,
-                'user_id': new_listing.user_id,
-                'condition': new_listing.condition,
-                'created_at': new_listing.created_at.isoformat() if new_listing.created_at else None,
-                'images': [image.filename for image in new_listing.images],
-                'pricing_mode': new_listing.pricing_mode
-            }
+            listing_data = new_listing.to_dict()
 
             return jsonify(listing_data), 201
 
