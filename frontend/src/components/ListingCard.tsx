@@ -49,9 +49,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       onClick={handleCardClick}
     >
       <div className="relative">
-        <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-sm font-medium">
-          Auction
-        </div>
         <div className="relative aspect-w-16 aspect-h-9">
           {listing.images?.[0] && (
             <img
@@ -84,9 +81,6 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
-            <span className="inline-block bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded mb-2">
-              Auction Item
-            </span>
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
             <div className="text-sm">
               {listing.current_bid ? (

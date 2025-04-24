@@ -192,7 +192,16 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-700">{listing.description}</p>
+              <p className="text-gray-700 mb-6">{listing.description}</p>
+              
+              {listing.pricing_mode === 'auction' && (
+                <div className="bg-orange-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-2 text-orange-800">Auction Item</h3>
+                  <p className="text-gray-700">
+                    This item is being sold through an auction. You can place bids on this item, and the highest bidder will win when the auction ends. The current bid is shown below, and you can place a new bid that must be higher than the current bid.
+                  </p>
+                </div>
+              )}
             </div>
 
             <div>
@@ -221,6 +230,16 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                     {listing.status}
                   </span>
                 </div>
+
+                {listing.status === 'available' && (
+                  <button
+                    onClick={handleNotifySeller}
+                    disabled={isSubmitting}
+                    className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Sending...' : 'Request to Buy'}
+                  </button>
+                )}
               </div>
 
               {listing.pricing_mode === 'auction' && !isSeller && (
@@ -234,16 +253,6 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                     onPlaceBid={onPlaceBid}
                   />
                 </div>
-              )}
-
-              {!isSeller && listing.status === 'available' && (
-                <button
-                  onClick={handleNotifySeller}
-                  disabled={isSubmitting}
-                  className="mt-6 w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Sending...' : 'Request to Buy'}
-                </button>
               )}
             </div>
           </div>
