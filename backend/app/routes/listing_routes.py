@@ -524,48 +524,12 @@ def get_hearted_listings():
 def close_bidding(id):
     try:
         listing = Listing.query.get_or_404(id)
-        
-        # Check if listing is an auction
         if listing.pricing_mode != 'auction':
             return jsonify({'error': 'Only auction listings can be closed'}), 400
-            
-        # Check if listing is available
-        if listing.status != 'available':
-            return jsonify({'error': 'Listing is not available'}), 400
-            
-        # Get the highest bid
-        highest_bid = Bid.query.filter_by(listing_id=listing.id).order_by(Bid.amount.desc()).first()
         
-        if highest_bid:
-            # Update listing status to pending and set buyer_id
-            listing.status = 'pending'
-            listing.buyer_id = highest_bid.bidder_id
-            db.session.commit()
-            
-            # Notify the winner
-            notify_winner(highest_bid, listing)
-            
-            return jsonify({
-                'message': 'Bidding closed successfully',
-                'listing': {
-                    'id': listing.id,
-                    'status': listing.status,
-                    'buyer_id': listing.buyer_id
-                }
-            }), 200
-        else:
-            # If no bids, just mark as sold
-            listing.status = 'sold'
-            db.session.commit()
-            
-            return jsonify({
-                'message': 'Bidding closed with no bids',
-                'listing': {
-                    'id': listing.id,
-                    'status': listing.status
-                }
-            }), 200
-            
+        listing.status = 'sold'
+        db.session.commit()
+        return jsonify({'message': 'Bidding closed successfully'})
     except Exception as e:
         current_app.logger.error(f"Error closing bidding: {str(e)}")
         return jsonify({'error': 'Failed to close bidding'}), 500
@@ -625,3 +589,13 @@ def delete_listing(listing_id):
     except Exception as e:
         current_app.logger.error(f"Error deleting listing: {str(e)}")
         return jsonify({'error': 'Failed to delete listing'}), 500
+
+@bp.route('/<int:id>/bids', methods=['GET'])
+def get_bids(id):
+    try:
+        listing = Listing.query.get_or_404(id)
+        bids = Bid.query.filter_by(listing_id=id).order_by(Bid.amount.desc()).all()
+        return jsonify([bid.to_dict() for bid in bids])
+    except Exception as e:
+        current_app.logger.error(f"Error fetching bids: {str(e)}")
+        return jsonify({'error': 'Failed to fetch bids'}), 500

@@ -465,8 +465,11 @@ export const getBids = async (listingId: number): Promise<Bid[]> => {
 };
 
 export const closeBidding = async (listingId: number): Promise<void> => {
-  const response = await fetch(`${API_URL}/listings/${listingId}/close-bidding`, {
+  const response = await fetch(`${API_URL}/api/listing/${listingId}/close-bidding`, {
     method: 'POST',
+    headers: getHeaders(),
+    credentials: 'include',
+    mode: 'cors'
   });
 
   if (!response.ok) {
