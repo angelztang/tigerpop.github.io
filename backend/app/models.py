@@ -17,6 +17,7 @@ class Listing(db.Model):
     category = db.Column(db.String(50), nullable=False)
     condition = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(20), default='available')
+    pricing_mode = db.Column(db.String(20), default='fixed')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     buyer_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)

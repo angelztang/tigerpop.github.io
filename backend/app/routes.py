@@ -65,4 +65,38 @@ def create_listing():
         'updated_at': listing.updated_at.isoformat(),
         'images': listing.images,
         'condition': listing.condition
-    }), 201 
+    }), 201
+
+@bp.route('/listings/<int:listing_id>', methods=['PUT'])
+@jwt_required()
+def update_listing(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
+    
+    # Check if the current user is the seller
+    if listing.seller_id != get_jwt_identity():
+        return jsonify({'error': 'Unauthorized'}), 403
+    
+    data = request.get_json()
+    
+    # Update allowed fields
+    allowed_fields = ['title', 'description', 'price', 'category', 'condition', 'status', 'pricing_mode']
+    for field in allowed_fields:
+        if field in data:
+            setattr(listing, field, data[field])
+    
+    db.session.commit()
+    
+    return jsonify({
+        'id': listing.id,
+        'title': listing.title,
+        'description': listing.description,
+        'price': listing.price,
+        'status': listing.status,
+        'seller_id': listing.seller_id,
+        'buyer_id': listing.buyer_id,
+        'created_at': listing.created_at.isoformat(),
+        'updated_at': listing.updated_at.isoformat(),
+        'images': listing.images,
+        'condition': listing.condition,
+        'pricing_mode': listing.pricing_mode
+    }) 
