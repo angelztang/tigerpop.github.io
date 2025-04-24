@@ -134,7 +134,7 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/listings/${id}`, {
+    const response = await fetch(`${API_URL}/api/listing/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -150,7 +150,7 @@ export const updateListing = async (id: number, data: Partial<Listing>): Promise
 
 export const updateListingStatus = async (id: number, status: 'available' | 'sold'): Promise<Listing> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/${id}/status/`, {
+    const response = await fetch(`${API_URL}/api/listing/${id}/status`, {
       method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify({ status }),
@@ -175,7 +175,7 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
 
 export const deleteListing = async (id: number): Promise<void> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+    const response = await fetch(`${API_URL}/api/listing/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
       credentials: 'include',
