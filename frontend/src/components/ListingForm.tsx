@@ -134,16 +134,10 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         condition: formData.condition,
         images: formData.images,
         pricing_mode: formData.pricing_mode,
-        netid: netid
+        netid: netid,
+        price: formData.pricing_mode === 'auction' ? formData.starting_price : formData.price,
+        starting_price: formData.pricing_mode === 'auction' ? formData.starting_price : undefined
       };
-
-      // Set price or starting_price based on pricing_mode
-      if (formData.pricing_mode === 'fixed') {
-        createListingData.price = formData.price;
-      } else if (formData.pricing_mode === 'auction') {
-        createListingData.starting_price = formData.starting_price;
-        createListingData.price = formData.starting_price; // Set price to starting_price for auction listings
-      }
 
       // Validate required fields
       if (!createListingData.title || !createListingData.description || !createListingData.category) {
