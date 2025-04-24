@@ -269,12 +269,11 @@ def create_listing():
                 title=title,
                 description=description,
                 price=price,
-                category=category,
-                status='available',
                 user_id=user_id,
+                category=category,
                 condition=condition,
-                pricing_mode=pricing_mode,
-                created_at=datetime.utcnow()
+                status='available',
+                pricing_mode=pricing_mode
             )
             current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
             current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
