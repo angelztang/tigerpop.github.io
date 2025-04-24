@@ -82,7 +82,20 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
           <div>
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
-            <p className="text-orange-500 font-bold mb-2">${listing.price}</p>
+            {listing.pricing_mode === 'auction' ? (
+              <div className="mb-2">
+                <p className="text-orange-500 font-bold">
+                  Current Bid: ${listing.current_bid?.toFixed(2) || listing.starting_price?.toFixed(2) || '0.00'}
+                </p>
+                {listing.starting_price && (
+                  <p className="text-sm text-gray-500">
+                    Starting Price: ${listing.starting_price.toFixed(2)}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <p className="text-orange-500 font-bold mb-2">${listing.price.toFixed(2)}</p>
+            )}
             <p className="text-gray-500 text-sm mb-2">
               Condition: <span className="capitalize">{listing.condition}</span>
             </p>

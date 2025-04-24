@@ -162,24 +162,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
-            <div>
-              <h2 className="text-2xl font-bold">{listing.title}</h2>
-              {listing.pricing_mode === 'auction' && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-blue-600 font-medium">
-                    🏷️ This is an auction item
-                  </p>
-                  <p className="text-gray-600">
-                    Starting Price: ${listing.price}
-                  </p>
-                  {listing.current_bid && (
-                    <p className="text-gray-600">
-                      Current Highest Bid: ${listing.current_bid}
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
+            <h2 className="text-2xl font-bold">{listing.title}</h2>
             <div className="flex space-x-2">
               <span className="text-gray-500 text-sm">
                 Posted: {new Date(listing.created_at).toLocaleDateString()}
@@ -282,7 +265,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 <h3 className="text-lg font-semibold">Price</h3>
                 {listing.pricing_mode === 'auction' ? (
                   <div>
-                    <p className="text-2xl font-bold">
+                    <p className="text-2xl font-bold text-orange-500">
                       Current Bid: ${listing.current_bid?.toFixed(2) || listing.starting_price?.toFixed(2) || '0.00'}
                     </p>
                     {listing.starting_price && (
@@ -290,9 +273,19 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                         Starting Price: ${listing.starting_price.toFixed(2)}
                       </p>
                     )}
+                    <div className="mt-2 flex items-center">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        🏷️ Auction Item
+                      </span>
+                      {listing.user_id === currentUserId && (
+                        <span className="ml-2 text-sm text-gray-500">
+                          (Auction details cannot be modified)
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ) : (
-                  <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-orange-500">${listing.price.toFixed(2)}</p>
                 )}
               </div>
 

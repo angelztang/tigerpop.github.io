@@ -248,38 +248,58 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   <h3 className="text-lg font-semibold">Price</h3>
                   {listing.pricing_mode === 'auction' ? (
                     <div>
-                      <p className="text-2xl font-bold">
-                        Starting Price: ${listing.starting_price?.toFixed(2) || '0.00'}
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                          🏷️ Auction Item
+                        </span>
+                        <span className="text-sm text-gray-500">
+                          (Auction details cannot be modified)
+                        </span>
+                      </div>
+                      <p className="text-2xl font-bold text-orange-500">
+                        Current Bid: ${listing.current_bid?.toFixed(2) || listing.starting_price?.toFixed(2) || '0.00'}
                       </p>
-                      {listing.current_bid && (
+                      {listing.starting_price && (
                         <p className="text-sm text-gray-600">
-                          Current Bid: ${listing.current_bid.toFixed(2)}
+                          Starting Price: ${listing.starting_price.toFixed(2)}
                         </p>
+                      )}
+                      {bids.length > 0 && (
+                        <div className="mt-4">
+                          <h4 className="text-sm font-semibold mb-2">Bid History</h4>
+                          <div className="space-y-2">
+                            {bids.map((bid) => (
+                              <div key={bid.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                                <span className="text-gray-600">
+                                  ${bid.amount.toFixed(2)}
+                                </span>
+                                <span className="text-sm text-gray-500">
+                                  {new Date(bid.timestamp).toLocaleString()}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-2xl font-bold">${listing.price.toFixed(2)}</p>
+                    <div>
+                      {isEditing ? (
+                        <input
+                          type="number"
+                          name="price"
+                          value={editedListing.price}
+                          onChange={handleInputChange}
+                          className="border rounded px-2 py-1 w-full"
+                          step="0.01"
+                          min="0"
+                        />
+                      ) : (
+                        <p className="text-2xl font-bold text-orange-500">${listing.price.toFixed(2)}</p>
+                      )}
+                    </div>
                   )}
                 </div>
-
-                {/* Bid History for Auction Listings */}
-                {listing.pricing_mode === 'auction' && bids.length > 0 && (
-                  <div className="mb-4">
-                    <h3 className="text-lg font-semibold mb-2">Bid History</h3>
-                    <div className="space-y-2">
-                      {bids.map((bid) => (
-                        <div key={bid.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                          <span className="text-gray-600">
-                            ${bid.amount.toFixed(2)}
-                          </span>
-                          <span className="text-sm text-gray-500">
-                            {new Date(bid.timestamp).toLocaleString()}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
 
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold">Category</h3>
