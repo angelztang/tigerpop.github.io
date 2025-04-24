@@ -566,3 +566,59 @@ def close_bidding(id):
     except Exception as e:
         current_app.logger.error(f"Error closing bidding: {str(e)}")
         return jsonify({'error': 'Failed to close bidding'}), 500
+
+@bp.route('/<int:listing_id>', methods=['GET'])
+def get_listing(listing_id):
+    try:
+        listing = Listing.query.get_or_404(listing_id)
+        return jsonify(listing.to_dict())
+    except Exception as e:
+        current_app.logger.error(f"Error fetching listing: {str(e)}")
+        return jsonify({'error': 'Failed to fetch listing'}), 500
+
+@bp.route('/<int:listing_id>', methods=['PUT'])
+def update_listing(listing_id):
+    try:
+        listing = Listing.query.get_or_404(listing_id)
+        data = request.get_json()
+        
+        # Update allowed fields
+        allowed_fields = ['title', 'description', 'price', 'category', 'condition', 'status', 'pricing_mode']
+        for field in allowed_fields:
+            if field in data:
+                setattr(listing, field, data[field])
+        
+        db.session.commit()
+        
+        return jsonify(listing.to_dict())
+    except Exception as e:
+        current_app.logger.error(f"Error updating listing: {str(e)}")
+        return jsonify({'error': 'Failed to update listing'}), 500
+
+@bp.route('/<int:listing_id>/status', methods=['PATCH'])
+def update_listing_status(listing_id):
+    try:
+        listing = Listing.query.get_or_404(listing_id)
+        data = request.get_json()
+        
+        if 'status' not in data:
+            return jsonify({'error': 'Status is required'}), 400
+            
+        listing.status = data['status']
+        db.session.commit()
+        
+        return jsonify(listing.to_dict())
+    except Exception as e:
+        current_app.logger.error(f"Error updating listing status: {str(e)}")
+        return jsonify({'error': 'Failed to update listing status'}), 500
+
+@bp.route('/<int:listing_id>', methods=['DELETE'])
+def delete_listing(listing_id):
+    try:
+        listing = Listing.query.get_or_404(listing_id)
+        db.session.delete(listing)
+        db.session.commit()
+        return '', 204
+    except Exception as e:
+        current_app.logger.error(f"Error deleting listing: {str(e)}")
+        return jsonify({'error': 'Failed to delete listing'}), 500

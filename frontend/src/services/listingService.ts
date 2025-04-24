@@ -107,7 +107,7 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
 };
 
 export const getListing = async (id: number): Promise<Listing> => {
-  const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+  const response = await fetch(`${API_URL}/api/listing/${id}`, {
     headers: getHeaders(),
     credentials: 'include',
     mode: 'cors'
@@ -134,7 +134,7 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
 
 export const updateListing = async (id: number, data: Partial<Listing>): Promise<Listing> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/${id}/`, {
+    const response = await fetch(`${API_URL}/api/listing/listings/${id}`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
