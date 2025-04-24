@@ -130,12 +130,15 @@ def cas_login():
         current_app.logger.error("No netid found in CAS response")
         return jsonify({'error': 'No netid found'}), 401
     
-    # Check if user exists in database
+    # Check if user exists - this determines if it's their first login
     user = User.query.filter_by(netid=netid).first()
+    is_first_login = False
+    
     if not user:
         # Create new user
         user = User(netid=netid)
         db.session.add(user)
+        is_first_login = True
         db.session.commit()
         current_app.logger.info(f"Created new user: {netid}")
     
@@ -151,8 +154,8 @@ def cas_login():
     session['netid'] = netid
     session['access_token'] = access_token
     
-    # Redirect back to frontend with the netid and token
-    frontend_url = f"{current_app.config['FRONTEND_URL']}/auth/callback?netid={netid}&token={access_token}"
+    # Redirect back to frontend with the netid, token, and first login status
+    frontend_url = f"{current_app.config['FRONTEND_URL']}/auth/callback?netid={netid}&token={access_token}&isFirstLogin={str(is_first_login).lower()}"
     return redirect(frontend_url)
 
 @bp.route('/cas/logout', methods=['GET'])
@@ -235,19 +238,17 @@ def validate_ticket_route():
                 netid = user.text
                 current_app.logger.info(f"Found netid: {netid}")
                 
-                # Create or update user
+                # Check if user exists - this determines if it's their first login
                 user = User.query.filter_by(netid=netid).first()
                 is_first_login = False
+                
                 if not user:
                     current_app.logger.info(f"Creating new user with netid: {netid}")
                     user = User(netid=netid)
                     db.session.add(user)
                     is_first_login = True
-                elif user.first_login:
-                    is_first_login = True
-                    user.first_login = False
+                    db.session.commit()
                 
-                db.session.commit()
                 current_app.logger.info(f"User status - ID: {user.id}, First Login: {is_first_login}")
                 
                 # Generate JWT token
@@ -357,17 +358,13 @@ def check_user():
         db.session.rollback()
         return jsonify({'error': 'Failed to check user'}), 500
 
-@bp.route('/validate', methods=['GET'])
+@bp.route('/session/validate', methods=['GET'])
 def validate_session():
     if 'netid' in session:
         netid = session['netid']
         user = User.query.filter_by(netid=netid).first()
         if user:
-            return jsonify({
-                'netid': user.netid,
-                'name': user.name,
-                'email': user.email
-            })
+            return jsonify(user.to_dict())
     return jsonify({'error': 'Not authenticated'}), 401
 
 @bp.route('/users/<int:user_id>', methods=['DELETE'])

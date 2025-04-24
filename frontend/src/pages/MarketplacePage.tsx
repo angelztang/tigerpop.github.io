@@ -46,15 +46,28 @@ const MarketplacePage: React.FC = () => {
         console.log('Fetching listings...');
         // Include category in the API request if it exists
         const categoryParam = category ? `&category=${category}` : '';
-        const [listingsData, heartedData, hotItemsData] = await Promise.all([
+        
+        // Always fetch listings and hot items
+        const [listingsData, hotItemsData] = await Promise.all([
           getListings(`?status=available${categoryParam}`),
-          getHeartedListings(),
           getHotItems()
         ]);
         
+        // Only fetch hearted listings if user is logged in
+        if (currentUserId) {
+          try {
+            const heartedData = await getHeartedListings();
+            setHeartedListings(heartedData.map(listing => listing.id));
+          } catch (error) {
+            console.error('Error fetching hearted listings:', error);
+            setHeartedListings([]);
+          }
+        } else {
+          setHeartedListings([]);
+        }
+        
         console.log('Received listings:', listingsData);
         setListings(listingsData);
-        setHeartedListings(heartedData.map(listing => listing.id));
         setHotItems(new Set(hotItemsData.map(listing => listing.id)));
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -65,7 +78,7 @@ const MarketplacePage: React.FC = () => {
     };
 
     fetchData();
-  }, [category]);
+  }, [category, currentUserId]);
 
   const handlePriceClick = (max: number) => {
     setSelectedPrice(selectedPrice === max ? null : max);
@@ -76,6 +89,12 @@ const MarketplacePage: React.FC = () => {
   };
 
   const handleHeartClick = async (id: number) => {
+    if (!currentUserId) {
+      // Optionally show a message or redirect to login
+      console.log('Please log in to heart listings');
+      return;
+    }
+    
     try {
       const isHearted = heartedListings.includes(id);
       if (isHearted) {

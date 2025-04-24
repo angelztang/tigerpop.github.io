@@ -4,6 +4,7 @@ import { Listing } from '../services/listingService';
 import { useNavigate } from 'react-router-dom';
 import { HeartIcon } from '@heroicons/react/24/outline';
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid';
+import { getUserId } from '../services/authService';
 
 interface ListingCardProps {
   listing: Listing;
@@ -16,6 +17,7 @@ interface ListingCardProps {
 
 const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, isHearted = false, onHeartClick, isHot = false }) => {
   const navigate = useNavigate();
+  const currentUserId = getUserId();
 
   const handleCardClick = () => {
     if (onClick) {
@@ -47,38 +49,29 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
 
   return (
     <div
-      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg transition-shadow duration-300"
       onClick={handleCardClick}
+      className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition hover:scale-[1.02] relative"
     >
-      <div className="relative">
-        <div className="relative aspect-w-16 aspect-h-9">
-          {listing.images?.[0] && (
-            <img
-              src={listing.images[0]}
-              alt={listing.title}
-              className="w-full h-full object-cover"
-            />
-          )}
-          <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
-            {listing.pricing_mode?.toLowerCase() === 'auction' && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                🏷️ Auction
-              </span>
-            )}
-            {isHot && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                🔥 Hot Item
-              </span>
-            )}
-            <span
-              className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(
-                listing.status
-              )}`}
-            >
-              {listing.status}
-            </span>
-          </div>
+      {/* Hot Item Badge */}
+      {isHot && (
+        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
+          🔥 Hot Item
         </div>
+      )}
+
+      {/* Image Section */}
+      <div className="relative h-48 bg-gray-200">
+        {listing.images && listing.images.length > 0 ? (
+          <img
+            src={listing.images[0]}
+            alt={listing.title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-gray-400">
+            No Image
+          </div>
+        )}
       </div>
 
       <div className="p-4">
@@ -100,17 +93,19 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
               Posted: {new Date(listing.created_at).toLocaleDateString()}
             </p>
           </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onHeartClick?.(listing.id);
-            }}
-            className={`text-2xl transition-colors duration-200 ${
-              isHearted ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-500'
-            }`}
-          >
-            {isHearted ? '♥' : '♡'}
-          </button>
+          {currentUserId && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onHeartClick?.(listing.id);
+              }}
+              className={`text-2xl transition-colors duration-200 ${
+                isHearted ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-500'
+              }`}
+            >
+              {isHearted ? '♥' : '♡'}
+            </button>
+          )}
         </div>
       </div>
     </div>
