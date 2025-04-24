@@ -240,7 +240,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 type="checkbox"
                 id="is_auction"
                 checked={formData.is_auction}
-                onChange={(e) => setFormData({ ...formData, is_auction: e.target.checked })}
+                onChange={(e) => {
+                  const isAuction = e.target.checked;
+                  setFormData(prev => ({
+                    ...prev,
+                    is_auction: isAuction,
+                    pricing_mode: isAuction ? 'auction' : 'fixed'
+                  }));
+                }}
                 className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
               />
               <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-900">
