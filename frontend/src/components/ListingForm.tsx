@@ -35,6 +35,7 @@ interface FormCreateListingData {
   condition: string;
   images: string[];
   pricing_mode: 'fixed' | 'auction';
+  starting_price?: number;
 }
 
 const categories = [
@@ -129,11 +130,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       const createListingData: ApiCreateListingData = {
         title: formData.title,
         description: formData.description,
-        price: formData.is_auction ? (formData.starting_price || 0) : formData.price,
+        price: formData.is_auction ? undefined : formData.price,
         category: formData.category,
         condition: formData.condition,
         images: formData.images,
         pricing_mode: formData.is_auction ? 'auction' : 'fixed',
+        starting_price: formData.is_auction ? formData.starting_price : undefined,
         netid: netid
       };
 

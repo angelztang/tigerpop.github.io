@@ -52,12 +52,13 @@ export interface Listing {
 export interface CreateListingData {
   title: string;
   description: string;
-  price: number;
+  price?: number;
   category: string;
   netid: string;
   condition: string;
   images?: string[];
   pricing_mode: 'fixed' | 'auction';
+  starting_price?: number;
 }
 
 export interface ListingFilters {
