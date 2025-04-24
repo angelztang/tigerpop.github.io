@@ -24,7 +24,7 @@ class Listing(db.Model):
     bids = db.relationship('Bid', backref='listing', lazy=True, cascade='all, delete-orphan')
     hearts = db.relationship('Heart', backref='listing', lazy=True, cascade='all, delete-orphan')
     
-    def __init__(self, title, description, price, category, status, user_id, condition='good', created_at=None, pricing_mode='fixed', bidding_end_date=None):
+    def __init__(self, title, description, price, category, status, user_id, condition='good', created_at=None, pricing_mode=None, bidding_end_date=None):
         self.title = title
         self.description = description
         self.price = price

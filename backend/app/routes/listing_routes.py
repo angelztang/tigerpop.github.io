@@ -230,7 +230,7 @@ def create_listing():
         user_id = data.get('user_id')
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
-        pricing_mode = data.get('pricing_mode', 'fixed')
+        pricing_mode = data.get('pricing_mode')
         current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
         # Validate required fields
@@ -263,7 +263,8 @@ def create_listing():
                 status='available',
                 user_id=user_id,
                 condition=condition,
-                pricing_mode=pricing_mode
+                pricing_mode=pricing_mode,
+                created_at=datetime.utcnow()
             )
             current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
             current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
