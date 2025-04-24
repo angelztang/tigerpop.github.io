@@ -7,8 +7,8 @@ interface BiddingInterfaceProps {
   startingPrice: number;
   currentBid?: number;
   isSeller: boolean;
-  onCloseBidding?: () => void;
-  onPlaceBid?: (amount: number) => Promise<void>;
+  onCloseBidding: () => void;
+  onPlaceBid: (amount: number) => Promise<void>;
 }
 
 const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
