@@ -230,7 +230,6 @@ def create_listing():
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
         pricing_mode = data.get('pricing_mode', 'fixed')
-        starting_price = data.get('starting_price')
 
         # Validate required fields
         if not all([title, description, user_id, category]):
@@ -243,25 +242,14 @@ def create_listing():
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
 
         # Validate price based on pricing mode
-        if pricing_mode == 'fixed':
-            if not price:
-                return jsonify({'error': 'Price is required for fixed price listings'}), 400
-            try:
-                price = float(price)
-                if price <= 0:
-                    return jsonify({'error': 'Price must be greater than 0'}), 400
-            except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid price format'}), 400
-        elif pricing_mode == 'auction':
-            if not starting_price:
-                return jsonify({'error': 'Starting price is required for auction listings'}), 400
-            try:
-                starting_price = float(starting_price)
-                if starting_price <= 0:
-                    return jsonify({'error': 'Starting price must be greater than 0'}), 400
-                price = starting_price  # Set price to starting_price for auction listings
-            except (ValueError, TypeError):
-                return jsonify({'error': 'Invalid starting price format'}), 400
+        if not price:
+            return jsonify({'error': 'Price is required'}), 400
+        try:
+            price = float(price)
+            if price <= 0:
+                return jsonify({'error': 'Price must be greater than 0'}), 400
+        except (ValueError, TypeError):
+            return jsonify({'error': 'Invalid price format'}), 400
 
         try:
             # Create new listing
@@ -273,8 +261,7 @@ def create_listing():
                 status='available',
                 user_id=user_id,
                 condition=condition,
-                pricing_mode=pricing_mode,
-                starting_price=starting_price
+                pricing_mode=pricing_mode
             )
 
             # Add listing to database first to get the ID

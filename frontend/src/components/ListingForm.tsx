@@ -260,63 +260,33 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               </label>
             </div>
 
-            {formData.is_auction ? (
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                  Starting Price ($)
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">$</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={formData.price || ''}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      setFormData(prev => ({
-                        ...prev,
-                        price: isNaN(value) ? 0 : value
-                      }));
-                    }}
-                    step="0.01"
-                    min="0.01"
-                    required
-                    className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  />
+            <div>
+              <label htmlFor="price" className="block text-sm font-medium text-gray-700">
+                {formData.is_auction ? 'Starting Price ($)' : 'Price ($)'}
+              </label>
+              <div className="mt-1 relative rounded-md shadow-sm">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <span className="text-gray-500 sm:text-sm">$</span>
                 </div>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  value={formData.price || ''}
+                  onChange={(e) => {
+                    const value = parseFloat(e.target.value);
+                    setFormData(prev => ({
+                      ...prev,
+                      price: isNaN(value) ? 0 : value
+                    }));
+                  }}
+                  step="0.01"
+                  min="0.01"
+                  required
+                  className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                />
               </div>
-            ) : (
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700">
-                  Price ($)
-                </label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span className="text-gray-500 sm:text-sm">$</span>
-                  </div>
-                  <input
-                    type="number"
-                    id="price"
-                    name="price"
-                    value={formData.price || ''}
-                    onChange={(e) => {
-                      const value = parseFloat(e.target.value);
-                      setFormData(prev => ({
-                        ...prev,
-                        price: isNaN(value) ? 0 : value
-                      }));
-                    }}
-                    step="0.01"
-                    min="0.01"
-                    required
-                    className="pl-7 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                  />
-                </div>
-              </div>
-            )}
+            </div>
           </div>
 
           <div>
