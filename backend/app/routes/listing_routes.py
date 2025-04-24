@@ -276,10 +276,8 @@ def create_listing():
 
             current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
 
-            # Get the listing with its images
-            listing_data = new_listing.to_dict()
-
-            return jsonify(listing_data), 201
+            # Return the listing with all its fields
+            return jsonify(new_listing.to_dict()), 201
 
         except Exception as db_error:
             db.session.rollback()
