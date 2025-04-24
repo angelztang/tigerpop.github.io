@@ -8,6 +8,7 @@ from datetime import datetime
 from sqlalchemy import and_, or_
 from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 # --- Email Notification Helpers ---
 def get_user_email(user_id):
@@ -220,6 +221,8 @@ def get_listings():
         return jsonify({'error': 'Failed to fetch listings'}), 500
 
 @bp.route('', methods=['POST'])
+@bp.route('/', methods=['POST'])
+@jwt_required()
 def create_listing():
     try:
         # Handle both JSON and form data
@@ -237,18 +240,19 @@ def create_listing():
         description = data.get('description')
         price = data.get('price')
         category = data.get('category', 'other')
-        user_id = data.get('user_id')
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
-        pricing_mode = data.get('pricing_mode')
+        pricing_mode = data.get('pricing_mode', 'fixed')
+        
+        # Get user_id from JWT token
+        user_id = get_jwt_identity()
         current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
         # Validate required fields
-        if not all([title, description, user_id, category]):
+        if not all([title, description, category]):
             missing_fields = []
             if not title: missing_fields.append('title')
             if not description: missing_fields.append('description')
-            if not user_id: missing_fields.append('user_id')
             if not category: missing_fields.append('category')
             current_app.logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
