@@ -8,6 +8,7 @@ interface BiddingInterfaceProps {
   currentBid?: number;
   isSeller: boolean;
   onCloseBidding?: () => void;
+  onPlaceBid?: (amount: number) => Promise<void>;
 }
 
 const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
@@ -16,7 +17,8 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
   startingPrice,
   currentBid,
   isSeller,
-  onCloseBidding
+  onCloseBidding,
+  onPlaceBid
 }) => {
   const [bidAmount, setBidAmount] = useState('');
   const [bids, setBids] = useState<Bid[]>([]);
@@ -55,11 +57,15 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         throw new Error('Bid amount must be at least the starting price');
       }
 
-      await placeBid({
-        listing_id: listingId,
-        bidder_id: currentUserId,
-        amount
-      });
+      if (onPlaceBid) {
+        await onPlaceBid(amount);
+      } else {
+        await placeBid({
+          listing_id: listingId,
+          bidder_id: currentUserId,
+          amount
+        });
+      }
 
       setBidAmount('');
       await fetchBids();

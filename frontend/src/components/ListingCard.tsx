@@ -49,11 +49,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       onClick={handleCardClick}
     >
       <div className="relative">
-        {listing.pricing_mode === 'auction' && (
-          <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-sm font-medium">
-            Auction
-          </div>
-        )}
+        <div className="absolute top-2 left-2 bg-orange-500 text-white px-2 py-1 rounded text-sm font-medium">
+          Auction
+        </div>
         <div className="relative aspect-w-16 aspect-h-9">
           {listing.images?.[0] && (
             <img
@@ -63,11 +61,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             />
           )}
           <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
-            {listing.pricing_mode === 'auction' && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                🏷️ Auction
-              </span>
-            )}
+            <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              🏷️ Auction
+            </span>
             {isHot && (
               <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
                 🔥 Hot Item
@@ -88,23 +84,17 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
-            {listing.pricing_mode === 'auction' && (
-              <span className="inline-block bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded mb-2">
-                Auction Item
-              </span>
-            )}
+            <span className="inline-block bg-orange-100 text-orange-800 text-xs font-medium px-2.5 py-0.5 rounded mb-2">
+              Auction Item
+            </span>
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
-            {listing.pricing_mode === 'auction' ? (
-              <div className="text-sm">
-                {listing.current_bid ? (
-                  <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
-                ) : (
-                  <span className="text-orange-500 font-bold">Starting Price: ${listing.price.toFixed(2)}</span>
-                )}
-              </div>
-            ) : (
-              <div className="text-orange-500 font-bold">${listing.price.toFixed(2)}</div>
-            )}
+            <div className="text-sm">
+              {listing.current_bid ? (
+                <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
+              ) : (
+                <span className="text-orange-500 font-bold">Starting Price: ${listing.price.toFixed(2)}</span>
+              )}
+            </div>
             <p className="text-gray-500 text-sm mb-2">
               Condition: <span className="capitalize">{listing.condition}</span>
             </p>
