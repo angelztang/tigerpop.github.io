@@ -64,7 +64,10 @@ const SellerDashboard: React.FC = () => {
 
       const listingData: CreateListingData = {
         ...formData,
-        netid: netid
+        netid: netid,
+        pricing_mode: formData.pricing_mode || 'fixed',
+        price: formData.pricing_mode === 'fixed' ? formData.price : undefined,
+        starting_price: formData.pricing_mode === 'auction' ? formData.price : undefined
       };
 
       const response = await createListing(listingData);
