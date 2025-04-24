@@ -219,6 +219,8 @@ def create_listing():
             data = request.form.to_dict()
 
         current_app.logger.info(f"Received listing creation request with data: {data}")
+        current_app.logger.info(f"Pricing mode from request: {data.get('pricing_mode')}")
+        current_app.logger.info(f"Full request data: {data}")
 
         # Get required fields
         title = data.get('title')
@@ -229,6 +231,7 @@ def create_listing():
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
         pricing_mode = data.get('pricing_mode', 'fixed')
+        current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
         # Validate required fields
         if not all([title, description, user_id, category]):
@@ -262,10 +265,14 @@ def create_listing():
                 condition=condition,
                 pricing_mode=pricing_mode
             )
+            current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
+            current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
 
             # Add listing to database first to get the ID
             db.session.add(new_listing)
             db.session.commit()
+            current_app.logger.info(f"Committed listing with pricing_mode: {new_listing.pricing_mode}")
+            current_app.logger.info(f"Listing object after commit: {new_listing.__dict__}")
 
             # Create image records if there are any
             if image_urls:
@@ -275,6 +282,7 @@ def create_listing():
                 db.session.commit()
 
             current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
+            current_app.logger.info(f"Listing pricing mode: {new_listing.pricing_mode}")
 
             # Return the listing with all its fields
             return jsonify(new_listing.to_dict()), 201
