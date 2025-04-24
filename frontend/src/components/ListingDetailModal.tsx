@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Listing, placeBid, getBids, Bid, closeBidding } from '../services/listingService';
+import { Listing, getBids, Bid } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import BiddingInterface from './BiddingInterface';
@@ -14,9 +14,7 @@ interface ListingDetailModalProps {
   onHeart: () => void;
   onUnheart: () => void;
   onRequestToBuy: () => void;
-  currentBid?: number;
   currentUserId: number;
-  onPlaceBid?: (amount: number) => Promise<void>;
 }
 
 const ListingDetailModal: React.FC<ListingDetailModalProps> = ({ 
@@ -29,70 +27,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   onHeart,
   onUnheart,
   onRequestToBuy,
-  currentBid,
   currentUserId,
-  onPlaceBid
 }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bids, setBids] = useState<Bid[]>([]);
-  const [bidAmount, setBidAmount] = useState<string>('');
-  const [bidError, setBidError] = useState<string | null>(null);
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
-
-  useEffect(() => {
-    if (listing.pricing_mode === 'auction') {
-      fetchBids();
-    }
-  }, [listing.id]);
-
-  const fetchBids = async () => {
-    try {
-      const fetchedBids = await getBids(listing.id);
-      setBids(fetchedBids);
-    } catch (error) {
-      console.error('Error fetching bids:', error);
-    }
-  };
-
-  const handlePlaceBid = async () => {
-    if (!bidAmount) {
-      setBidError('Please enter a bid amount');
-      return;
-    }
-
-    const amount = parseFloat(bidAmount);
-    if (isNaN(amount) || amount <= 0) {
-      setBidError('Please enter a valid bid amount');
-      return;
-    }
-
-    if (bids.length > 0 && amount <= bids[0].amount) {
-      setBidError('Bid must be higher than current highest bid');
-      return;
-    }
-
-    setIsSubmitting(true);
-    setBidError(null);
-
-    try {
-      await placeBid({
-        listing_id: listing.id,
-        bidder_id: currentUserId,
-        amount
-      });
-      await fetchBids();
-      setBidAmount('');
-      onUpdate?.({ ...listing, current_bid: amount });
-    } catch (error: any) {
-      setBidError(error.message || 'Failed to place bid');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => 
@@ -137,23 +79,6 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         return 'bg-white text-gray-800 border border-gray-300';
       default:
         return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const handleCloseBidding = async () => {
-    setIsSubmitting(true);
-    setError(null);
-
-    try {
-      await closeBidding(listing.id);
-      onUpdate?.({ ...listing, status: 'pending' });
-      onClose();
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to close bidding';
-      setError(errorMessage);
-      console.error('Error closing bidding:', err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -254,117 +179,66 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
           </div>
 
-          {/* Listing Details */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-600">{listing.description}</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div>
               <div className="mb-4">
-                <h3 className="text-lg font-semibold">Price</h3>
+                <h3 className="text-lg font-semibold mb-2">Description</h3>
+                <p className="text-gray-700">{listing.description}</p>
+              </div>
+
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Condition</h3>
+                <p className="text-gray-700">{listing.condition}</p>
+              </div>
+
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Category</h3>
+                <p className="text-gray-700">{listing.category}</p>
+              </div>
+            </div>
+
+            <div>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Price</h3>
                 {listing.pricing_mode === 'auction' ? (
                   <div>
-                    <p className="text-2xl font-bold text-orange-500">
-                      Current Bid: ${listing.current_bid?.toFixed(2) || listing.starting_price?.toFixed(2) || '0.00'}
+                    <p className="text-orange-500 font-bold">
+                      {listing.current_bid 
+                        ? `Current Bid: $${listing.current_bid.toFixed(2)}`
+                        : `Starting Price: $${listing.price.toFixed(2)}`}
                     </p>
-                    {listing.starting_price && (
-                      <p className="text-sm text-gray-600">
-                        Starting Price: ${listing.starting_price.toFixed(2)}
-                      </p>
+                    {listing.pricing_mode === 'auction' && currentUserId && (
+                      <BiddingInterface
+                        listingId={listing.id}
+                        currentUserId={currentUserId}
+                        startingPrice={listing.price}
+                        currentBid={listing.current_bid}
+                        isSeller={isSeller}
+                      />
                     )}
-                    <div className="mt-2 flex items-center">
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        🏷️ Auction Item
-                      </span>
-                      {listing.user_id === currentUserId && (
-                        <span className="ml-2 text-sm text-gray-500">
-                          (Auction details cannot be modified)
-                        </span>
-                      )}
-                    </div>
                   </div>
                 ) : (
-                  <p className="text-2xl font-bold text-orange-500">${listing.price.toFixed(2)}</p>
+                  <p className="text-orange-500 font-bold">${listing.price.toFixed(2)}</p>
                 )}
               </div>
 
-              {/* Bid History */}
-              {listing.pricing_mode === 'auction' && bids.length > 0 && (
-                <div className="mb-4">
-                  <h3 className="text-lg font-semibold mb-2">Bid History</h3>
-                  <div className="space-y-2">
-                    {bids.map((bid) => (
-                      <div key={bid.id} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                        <span className="text-gray-600">
-                          ${bid.amount.toFixed(2)}
-                        </span>
-                        <span className="text-sm text-gray-500">
-                          {new Date(bid.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+              {listing.pricing_mode === 'fixed' && !isSeller && (
+                <button
+                  onClick={handleNotifySeller}
+                  disabled={isSubmitting || notificationSent}
+                  className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Processing...' : notificationSent ? 'Request Sent!' : 'Request to Buy'}
+                </button>
               )}
 
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Category</h3>
-                <p className="text-gray-600">{listing.category}</p>
-              </div>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Condition</h3>
-                <p className="text-gray-600">{listing.condition}</p>
-              </div>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold">Status</h3>
-                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
-                  {listing.status}
-                </span>
-              </div>
+              {error && (
+                <div className="mt-4 p-4 bg-red-100 text-red-700 rounded">
+                  {error}
+                </div>
+              )}
             </div>
           </div>
-
-          {/* Notification Button */}
-          {!notificationSent && (
-            <div className="mt-6">
-              <button
-                onClick={handleNotifySeller}
-                disabled={isSubmitting}
-                className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
-              >
-                {isSubmitting ? 'Sending...' : 'Notify Seller to Buy'}
-              </button>
-            </div>
-          )}
-
-          {notificationSent && (
-            <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-md">
-              <p className="font-semibold">Notification sent successfully!</p>
-              <p className="text-sm mt-1">The seller will be notified via email.</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-md">
-              <p className="font-semibold">Failed to send notification</p>
-              <p className="text-sm mt-1">{error}</p>
-            </div>
-          )}
-
-          {/* Bidding Interface */}
-          {listing.pricing_mode === 'auction' && listing.status === 'available' && (
-            <div className="mt-6">
-              <BiddingInterface
-                listingId={listing.id}
-                currentUserId={currentUserId}
-                startingPrice={listing.starting_price || 0}
-                currentBid={listing.current_bid}
-                isSeller={listing.user_id === currentUserId}
-                onCloseBidding={handleCloseBidding}
-              />
-            </div>
-          )}
         </div>
       </div>
     </div>
