@@ -72,7 +72,7 @@ export interface ListingFilters {
 
 export const getListings = async (filters?: string): Promise<Listing[]> => {
   try {
-    const baseUrl = `${API_URL}/api/listing`;
+    const baseUrl = `${API_URL}/api/listing/`;
     // Always include status=available
     const baseFilters = '?status=available';
     const url = filters ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}` : `${baseUrl}${baseFilters}`;

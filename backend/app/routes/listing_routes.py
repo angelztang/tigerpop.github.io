@@ -191,20 +191,30 @@ def get_listings():
         listings = query.order_by(Listing.created_at.desc()).all()
         
         # Convert to dictionary format
-        return jsonify([{
-            'id': listing.id,
-            'title': listing.title,
-            'description': listing.description,
-            'price': listing.price,
-            'category': listing.category,
-            'status': listing.status,
-            'user_id': listing.user_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],
-            'condition': listing.condition,
-            'pricing_mode': listing.pricing_mode,
-            'current_bid': listing.get_current_bid()
-        } for listing in listings])
+        result = []
+        for listing in listings:
+            try:
+                current_bid = listing.get_current_bid()
+            except Exception as e:
+                current_app.logger.error(f"Error getting current bid for listing {listing.id}: {str(e)}")
+                current_bid = None
+                
+            result.append({
+                'id': listing.id,
+                'title': listing.title,
+                'description': listing.description,
+                'price': listing.price,
+                'category': listing.category,
+                'status': listing.status,
+                'user_id': listing.user_id,
+                'created_at': listing.created_at.isoformat() if listing.created_at else None,
+                'images': [image.filename for image in listing.images],
+                'condition': listing.condition,
+                'pricing_mode': listing.pricing_mode,
+                'current_bid': current_bid
+            })
+        
+        return jsonify(result)
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch listings'}), 500
