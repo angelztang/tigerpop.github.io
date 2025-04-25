@@ -64,21 +64,21 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition hover:scale-[1.02] relative"
     >
       {/* Status Tag - Top Right */}
-      <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold z-10 ${getStatusColor(listing.status)}`}>
-        {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+      <div className="absolute top-2 right-2 flex flex-col items-end gap-2">
+        <div className={`px-2 py-1 rounded-full text-xs font-semibold z-10 ${getStatusColor(listing.status)}`}>
+          {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+        </div>
+        {isHot && (
+          <div className="bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
+            🔥 Hot Item
+          </div>
+        )}
       </div>
 
       {/* Auction Tag - Top Left */}
       {showAuctionTag && (
         <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold z-10">
           🏷️ Auction Item
-        </div>
-      )}
-
-      {/* Hot Item Badge - Below Auction Tag */}
-      {isHot && (
-        <div className="absolute top-10 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
-          🔥 Hot Item
         </div>
       )}
 
@@ -99,9 +99,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
 
       <div className="p-4">
         <div className="flex justify-between items-start">
-          <div>
-            <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
-            <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
+          <div className="flex-1 min-w-0 pr-2">
+            <h3 className="text-lg font-semibold mb-1 truncate">{listing.title}</h3>
+            <p className="text-gray-600 text-sm mb-2 line-clamp-2 break-words">{listing.description}</p>
             <div className="text-sm">
               {showAuctionTag ? (
                 listing.current_bid ? (
@@ -126,7 +126,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
                 e.stopPropagation();
                 onHeartClick?.(listing.id);
               }}
-              className={`text-2xl transition-colors duration-200 ${
+              className={`flex-shrink-0 text-2xl transition-colors duration-200 ${
                 isHearted ? 'text-red-500 hover:text-red-600' : 'text-gray-400 hover:text-gray-500'
               }`}
             >

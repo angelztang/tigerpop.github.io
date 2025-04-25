@@ -50,6 +50,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newImages, setNewImages] = useState<File[]>([]);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSoldModal, setShowSoldModal] = useState(false);
   const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
@@ -60,6 +61,13 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
       fetchBids();
     }
   }, [listing.id]);
+
+  // Cleanup preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      newImagePreviews.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const fetchBids = async () => {
     try {
@@ -95,7 +103,27 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
     if (e.target.files) {
       const files = Array.from(e.target.files);
       setNewImages(prev => [...prev, ...files]);
+      
+      // Create preview URLs for new files
+      const newUrls = files.map(file => URL.createObjectURL(file));
+      setNewImagePreviews(prev => [...prev, ...newUrls]);
     }
+  };
+
+  const removeNewImage = (index: number) => {
+    setNewImages(prev => prev.filter((_, i) => i !== index));
+    setNewImagePreviews(prev => {
+      // Revoke the URL to prevent memory leaks
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const removeExistingImage = (index: number) => {
+    setEditedListing(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
   };
 
   const handleSave = async () => {
@@ -261,20 +289,74 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
               {isEditing && (
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Images
+                  </label>
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    {editedListing.images.map((url, index) => (
+                      <div key={index} className="relative group">
+                        <img
+                          src={url}
+                          alt={`Image ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-md"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeExistingImage(index)}
+                          className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Add More Images
                   </label>
-                  <input
-                    type="file"
-                    multiple
-                    accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                    onChange={handleImageUpload}
-                    className="block w-full text-sm text-gray-500
-                      file:mr-4 file:py-2 file:px-4
-                      file:rounded-full file:border-0
-                      file:text-sm file:font-semibold
-                      file:bg-orange-50 file:text-orange-700
-                      hover:file:bg-orange-100"
-                  />
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/jpeg,image/png"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                      id="additional-images"
+                    />
+                    <label
+                      htmlFor="additional-images"
+                      className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 cursor-pointer"
+                    >
+                      Add Images
+                    </label>
+                    <span className="text-sm text-gray-500">
+                      {newImages.length > 0 ? `${newImages.length} new file(s) selected` : 'No new files chosen'}
+                    </span>
+                  </div>
+
+                  {newImagePreviews.length > 0 && (
+                    <div className="mt-4 grid grid-cols-3 gap-4">
+                      {newImagePreviews.map((url, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={url}
+                            alt={`New Preview ${index + 1}`}
+                            className="w-full h-32 object-cover rounded-md"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeNewImage(index)}
+                            className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
                 </div>
               )}
@@ -437,12 +519,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   </button>
                 </>
               )}
-              <button
-                onClick={() => setShowDeleteModal(true)}
-                className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-              >
-                Delete Listing
-              </button>
+              {listing.status !== 'sold' && (
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Delete Listing
+                </button>
+              )}
             </div>
 
             {error && (

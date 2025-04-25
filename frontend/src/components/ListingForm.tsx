@@ -53,7 +53,7 @@ const conditions = [
   'Like New',
   'Good',
   'Fair',
-  'Poor'
+  'Used'
 ];
 
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
@@ -106,13 +106,29 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      setSelectedFiles(files);
+      setSelectedFiles(prev => [...prev, ...files]);
       
-      // Create preview URLs
-      const urls = files.map(file => URL.createObjectURL(file));
-      setPreviewUrls(urls);
+      // Create preview URLs for new files
+      const newUrls = files.map(file => URL.createObjectURL(file));
+      setPreviewUrls(prev => [...prev, ...newUrls]);
     }
   };
+
+  const removeImage = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => {
+      // Revoke the URL to prevent memory leaks
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  // Cleanup preview URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      previewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,8 +190,17 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     }
   };
 
+  const handleClickOutside = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose?.();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50">
+    <div 
+      className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50"
+      onClick={handleClickOutside}
+    >
       <div className="relative bg-white rounded-lg p-8 m-4 max-w-xl w-full z-50 shadow-xl">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Create New Listing</h2>
@@ -190,10 +215,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
           </button>
         </div>
 
+        <p className="text-sm text-gray-500 mb-4">Fields marked with an asterisk (*) are mandatory</p>
+
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title:
+              Title <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -208,7 +235,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
           <div>
             <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category:
+              Category <span className="text-red-500">*</span>
             </label>
             <select
               id="category"
@@ -229,7 +256,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
           <div>
             <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-1">
-              Condition:
+              Condition <span className="text-red-500">*</span>
             </label>
             <select
               id="condition"
@@ -273,7 +300,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                {formData.is_auction ? 'Starting Price' : 'Price'}:
+                {formData.is_auction ? 'Starting Price' : 'Price'} <span className="text-red-500">*</span>
               </label>
               <div className="mt-1 relative rounded-md shadow-sm">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -302,7 +329,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
           <div>
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Please include the size of the item if applicable):
+              Description (Please include the size of the item if applicable) <span className="text-red-500">*</span>
             </label>
             <textarea
               id="description"
@@ -332,21 +359,30 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 htmlFor="file-upload"
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 cursor-pointer"
               >
-                Choose Files
+                Add Images
               </label>
               <span className="ml-3 text-sm text-gray-500">
-                {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No file chosen'}
+                {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No files chosen'}
               </span>
             </div>
             {previewUrls.length > 0 && (
               <div className="mt-4 grid grid-cols-3 gap-4">
                 {previewUrls.map((url, index) => (
-                  <div key={index} className="relative">
+                  <div key={index} className="relative group">
                     <img
                       src={url}
                       alt={`Preview ${index + 1}`}
                       className="w-full h-32 object-cover rounded-md"
                     />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 ))}
               </div>

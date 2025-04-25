@@ -10,12 +10,30 @@ interface PriceRange {
   max: number;
 }
 
+const conditions = [
+  'New',
+  'Like New',
+  'Good',
+  'Fair',
+  'Used'
+];
+
+const priceRanges: PriceRange[] = [
+  { label: 'Any Price', max: 0 },
+  { label: 'Under $10', max: 10 },
+  { label: 'Under $15', max: 15 },
+  { label: 'Under $20', max: 20 },
+  { label: 'Under $50', max: 50 },
+  { label: 'Under $100', max: 100 }
+];
+
 const MarketplacePage: React.FC = () => {
   console.log('MarketplacePage component mounted');
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedPrice, setSelectedPrice] = useState<number | null>(null);
+  const [selectedPrice, setSelectedPrice] = useState<number>(0);
+  const [selectedCondition, setSelectedCondition] = useState<string>('');
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [hotItems, setHotItems] = useState<Set<number>>(new Set());
@@ -33,13 +51,6 @@ const MarketplacePage: React.FC = () => {
       setSearchParams(searchParams);
     }
   }, []);
-
-  const priceRanges: PriceRange[] = [
-    { label: 'Under $10', max: 10 },
-    { label: 'Under $15', max: 15 },
-    { label: 'Under $20', max: 20 },
-    { label: 'Under $50', max: 50 },
-  ];
 
   useEffect(() => {
     const fetchData = async () => {
@@ -81,14 +92,20 @@ const MarketplacePage: React.FC = () => {
     fetchData();
   }, [category, currentUserId]);
 
-  const handlePriceClick = (max: number) => {
-    setSelectedPrice(selectedPrice === max ? null : max);
+  const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedPrice(Number(e.target.value));
+    setShowHotOnly(false);
+  };
+
+  const handleConditionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedCondition(e.target.value);
     setShowHotOnly(false);
   };
 
   const handleHotItemsClick = () => {
     setShowHotOnly(!showHotOnly);
-    setSelectedPrice(null);
+    setSelectedPrice(0);
+    setSelectedCondition('');
   };
 
   const handleListingClick = (listing: Listing) => {
@@ -140,7 +157,10 @@ const MarketplacePage: React.FC = () => {
     if (showHotOnly) return hotItems.has(listing.id);
     
     // Apply price filter
-    if (selectedPrice && listing.price > selectedPrice) return false;
+    if (selectedPrice > 0 && listing.price > selectedPrice) return false;
+    
+    // Apply condition filter
+    if (selectedCondition && listing.condition !== selectedCondition) return false;
     
     // Apply search filter
     if (searchQuery) {
@@ -188,7 +208,7 @@ const MarketplacePage: React.FC = () => {
             </div>
           )}
 
-          {/* Price Filters and Hot Items */}
+          {/* Filters */}
           <div>
             <h2 className="text-xl font-bold mb-4">Filters</h2>
             <div className="flex flex-wrap gap-4">
@@ -204,20 +224,32 @@ const MarketplacePage: React.FC = () => {
                 <span>🔥 Hot Items</span>
               </button>
 
-              {/* Price Range Filters */}
-              {priceRanges.map((range) => (
-                <button
-                  key={range.max}
-                  onClick={() => handlePriceClick(range.max)}
-                  className={`px-4 py-2 rounded-lg ${
-                    selectedPrice === range.max
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-white text-gray-700 hover:bg-gray-50'
-                  }`}
-                >
-                  {range.label}
-                </button>
-              ))}
+              {/* Price Range Filter */}
+              <select
+                value={selectedPrice}
+                onChange={handlePriceChange}
+                className="px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                {priceRanges.map((range) => (
+                  <option key={range.max} value={range.max}>
+                    {range.label}
+                  </option>
+                ))}
+              </select>
+
+              {/* Condition Filter */}
+              <select
+                value={selectedCondition}
+                onChange={handleConditionChange}
+                className="px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
+              >
+                <option value="">Any Condition</option>
+                {conditions.map((condition) => (
+                  <option key={condition} value={condition}>
+                    {condition}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -226,8 +258,8 @@ const MarketplacePage: React.FC = () => {
             <h2 className="text-xl font-bold mb-6">
               {showHotOnly
                 ? "Hot Items"
-                : selectedPrice 
-                ? `Items under $${selectedPrice}`
+                : selectedPrice > 0 || selectedCondition
+                ? `Filtered Items${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition ? ` in ${selectedCondition} condition` : ''}`
                 : 'All Items'}
             </h2>
             {filteredListings.length === 0 ? (
@@ -237,8 +269,8 @@ const MarketplacePage: React.FC = () => {
                     ? `No items found matching "${searchQuery}"`
                     : showHotOnly
                     ? "No hot items available at the moment"
-                    : selectedPrice
-                    ? `No items found under $${selectedPrice}`
+                    : selectedPrice > 0 || selectedCondition
+                    ? `No items found${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition ? ` in ${selectedCondition} condition` : ''}`
                     : category
                     ? `No ${category} available in the marketplace yet`
                     : 'No items available in the marketplace yet'}

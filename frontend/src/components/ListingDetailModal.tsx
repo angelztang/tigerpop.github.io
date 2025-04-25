@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Listing, getBids, Bid } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
 import { getUserId } from '../services/authService';
@@ -41,6 +41,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const [bids, setBids] = useState<Bid[]>([]);
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
+  const modalRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (listing.pricing_mode?.toLowerCase() === 'auction') {
@@ -141,9 +142,15 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     }
   };
 
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleOverlayClick}>
+      <div ref={modalRef} className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
@@ -249,9 +256,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
 
           {/* Content Section */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
+            <div className="overflow-hidden">
               <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-700 mb-6">{localListing.description}</p>
+              <p className="text-gray-700 mb-6 break-words whitespace-pre-wrap">{localListing.description}</p>
               
               {localListing.pricing_mode?.toLowerCase() === 'auction' && (
                 <div className="bg-blue-50 p-4 rounded-lg">
