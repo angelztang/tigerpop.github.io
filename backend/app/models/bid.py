@@ -5,13 +5,13 @@ class Bid(db.Model):
     __tablename__ = 'bids'
 
     id = db.Column(db.Integer, primary_key=True)
-    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id'), nullable=False)
-    bidder_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    listing_id = db.Column(db.Integer, db.ForeignKey('listings.id', ondelete='CASCADE'), nullable=False)
+    bidder_id = db.Column(db.Integer, db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    listing = db.relationship('Listing', backref=db.backref('bids', lazy=True))
+    listing = db.relationship('Listing', backref=db.backref('bids', lazy=True, cascade='all, delete-orphan'))
     bidder = db.relationship('User', backref=db.backref('bids', lazy=True))
 
     def __init__(self, listing_id, bidder_id, amount, timestamp=None):

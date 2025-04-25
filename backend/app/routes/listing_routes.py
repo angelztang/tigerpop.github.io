@@ -406,68 +406,43 @@ def get_buyer_listings():
 
 @bp.route('/<int:id>/bids', methods=['POST'])
 def place_bid(id):
-    try:
-        listing = Listing.query.get_or_404(id)
-        data = request.get_json()
+    listing = Listing.query.get_or_404(id)
+    data = request.get_json()
+    
+    if not data or 'amount' not in data or 'bidder_id' not in data:
+        return jsonify({'error': 'Missing required fields'}), 400
         
-        # Check if listing is an auction
-        if listing.pricing_mode != 'auction':
-            return jsonify({'error': 'Bids can only be placed on auction listings'}), 400
-            
-        # Convert bidder_id to integer if it's not already
-        bidder_id = data.get('bidder_id')
-        try:
-            bidder_id = int(bidder_id)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid bidder ID format'}), 400
-            
-        # Check if bidder is the seller
-        if bidder_id == listing.user_id:
-            return jsonify({'error': 'Seller cannot bid on their own listing'}), 400
-            
-        # Convert amount to float if it's not already
-        amount = data.get('amount')
-        try:
-            amount = float(amount)
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid amount format'}), 400
-            
-        # Check if listing is available
-        if listing.status != 'available':
-            return jsonify({'error': 'Listing is not available'}), 400
-            
-        # Find previous highest bid (if any)
-        prev_highest_bid = Bid.query.filter_by(listing_id=listing.id).order_by(Bid.amount.desc()).first()
+    if listing.status != 'available':
+        return jsonify({'error': 'This listing is not available for bidding'}), 400
         
-        # Validate bid amount
-        if prev_highest_bid and amount <= prev_highest_bid.amount:
-            return jsonify({'error': 'Bid must be higher than current highest bid'}), 400
-        elif amount <= listing.price:
-            return jsonify({'error': 'Bid must be higher than starting price'}), 400
-            
-        # Place the new bid
-        new_bid = Bid(listing_id=listing.id, bidder_id=bidder_id, amount=amount)
-        db.session.add(new_bid)
+    if listing.pricing_mode != 'auction':
+        return jsonify({'error': 'This listing is not an auction'}), 400
         
-        # Update listing's current bid and bidder
-        listing.current_bid = amount
-        listing.current_bidder_id = bidder_id
+    if data['amount'] <= listing.current_bid:
+        return jsonify({'error': 'Bid amount must be higher than current bid'}), 400
         
-        # Commit both the new bid and listing update
-        db.session.commit()
-        
-        # Notify seller
-        notify_seller_new_bid(listing, new_bid)
-        
-        # Notify previous highest bidder if outbid and not the same as new bidder
-        if prev_highest_bid and prev_highest_bid.bidder_id != bidder_id:
-            notify_outbid(prev_highest_bid, listing)
-            
-        # Return success with the new bid
-        return jsonify({'message': 'Bid placed successfully', 'bid': new_bid.to_dict()}), 201
-    except Exception as e:
-        current_app.logger.error(f"Error placing bid: {str(e)}")
-        return jsonify({'error': 'Failed to place bid'}), 500
+    # Create new bid
+    new_bid = Bid(
+        listing_id=listing.id,
+        bidder_id=data['bidder_id'],
+        amount=data['amount']
+    )
+    
+    # Update listing's current bid and bidder
+    listing.current_bid = data['amount']
+    listing.current_bidder_id = data['bidder_id']
+    
+    # Add bid to database
+    db.session.add(new_bid)
+    db.session.commit()
+    
+    # Send notifications
+    notify_seller_new_bid(listing, new_bid)
+    
+    return jsonify({
+        'message': 'Bid placed successfully',
+        'bid': new_bid.to_dict()
+    }), 201
 
 @bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
 @bp.route('/<int:id>/heart/', methods=['POST', 'OPTIONS'])
