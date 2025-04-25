@@ -651,20 +651,23 @@ def get_hot_items():
         # Calculate the date 3 days ago
         three_days_ago = datetime.utcnow() - timedelta(days=3)
         
-        # Query to get listings with their heart counts from the last 3 days
+        # Query to get listings with their heart counts, including listings with no hearts
         hot_listings = db.session.query(
             Listing,
             func.count(HeartedListing.id).label('heart_count')
-        ).join(
+        ).outerjoin(  # Use outer join to include listings with no hearts
             HeartedListing,
-            Listing.id == HeartedListing.listing_id
+            and_(
+                Listing.id == HeartedListing.listing_id,
+                HeartedListing.created_at >= three_days_ago
+            )
         ).filter(
-            HeartedListing.created_at >= three_days_ago,
             Listing.status == 'available'  # Only show available listings
         ).group_by(
             Listing.id
         ).order_by(
-            func.count(HeartedListing.id).desc()  # Order by heart count
+            func.count(HeartedListing.id).desc(),  # Order by heart count
+            Listing.created_at.desc()  # Secondary sort by creation date for ties
         ).limit(4).all()  # Get top 4
         
         # Convert to list of dictionaries
@@ -673,6 +676,11 @@ def get_hot_items():
             listing_dict = listing.to_dict()
             listing_dict['heart_count'] = heart_count
             result.append(listing_dict)
+        
+        # Log the results for debugging
+        current_app.logger.info(f"Found {len(result)} hot items")
+        for item in result:
+            current_app.logger.info(f"Hot item: {item['title']} with {item['heart_count']} hearts")
         
         return jsonify(result), 200
         
