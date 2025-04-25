@@ -116,6 +116,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         ...localListing,
         current_bid: newBid
       });
+
+      // Update the listing prop to ensure parent state is updated
+      listing.current_bid = newBid;
     } catch (error) {
       console.error('Error updating bid:', error);
     }

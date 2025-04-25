@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Listing, getListing, heartListing, unheartListing } from '../services/listingService';
+import { Listing, getListing, heartListing, unheartListing, placeBid } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import ListingDetailModal from '../components/ListingDetailModal';
 
@@ -77,7 +77,18 @@ const ListingDetail: React.FC = () => {
           }}
           onPlaceBid={async (amount) => {
             try {
-              console.log('Placing bid:', amount);
+              const response = await placeBid({
+                listing_id: listing.id,
+                bidder_id: currentUserId,
+                amount
+              });
+              // Update the listing with the new bid
+              if (listing) {
+                setListing({
+                  ...listing,
+                  current_bid: amount
+                });
+              }
             } catch (error) {
               console.error('Error placing bid:', error);
             }

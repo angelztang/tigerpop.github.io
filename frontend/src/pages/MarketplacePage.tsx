@@ -227,6 +227,7 @@ const MarketplacePage: React.FC = () => {
                     onHeartClick={() => handleHeartClick(listing.id)}
                     onClick={() => handleListingClick(listing)}
                     isHot={hotItems.has(listing.id)}
+                    isAuction={listing.pricing_mode?.toLowerCase() === 'auction'}
                   />
                 ))}
               </div>

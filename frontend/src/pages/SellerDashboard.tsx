@@ -213,6 +213,7 @@ const SellerDashboard: React.FC = () => {
                 listing={listing}
                 onClick={() => setSelectedListing(listing)}
                 isHot={hotItems.has(listing.id)}
+                isAuction={listing.pricing_mode?.toLowerCase() === 'auction'}
               />
             ))
           ) : (

@@ -443,7 +443,8 @@ def place_bid(id):
     
     return jsonify({
         'message': 'Bid placed successfully',
-        'bid': new_bid.to_dict()
+        'bid': new_bid.to_dict(),
+        'listing': listing.to_dict()
     }), 201
 
 @bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])

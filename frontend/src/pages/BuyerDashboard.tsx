@@ -157,6 +157,7 @@ const BuyerDashboard: React.FC = () => {
               isHearted={heartedListings.some(l => l.id === listing.id)}
               onHeartClick={handleHeartClick}
               onClick={() => setSelectedListing(listing)}
+              isAuction={listing.pricing_mode?.toLowerCase() === 'auction'}
             />
           ))}
         </div>

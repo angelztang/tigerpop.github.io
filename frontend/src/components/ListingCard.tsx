@@ -13,9 +13,10 @@ interface ListingCardProps {
   isHearted?: boolean;
   onHeartClick?: (id: number) => void;
   isHot?: boolean;
+  isAuction?: boolean;
 }
 
-const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, isHearted = false, onHeartClick, isHot = false }) => {
+const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, isHearted = false, onHeartClick, isHot = false, isAuction = false }) => {
   const navigate = useNavigate();
   const currentUserId = getUserId();
 
@@ -56,7 +57,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       </div>
 
       {/* Auction Tag - Top Left */}
-      {listing.pricing_mode?.toLowerCase() === 'auction' && (
+      {isAuction && (
         <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold z-10">
           🏷️ Auction Item
         </div>
@@ -90,7 +91,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
             <div className="text-sm">
-              {listing.pricing_mode?.toLowerCase() === 'auction' ? (
+              {isAuction ? (
                 listing.current_bid ? (
                   <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
                 ) : (

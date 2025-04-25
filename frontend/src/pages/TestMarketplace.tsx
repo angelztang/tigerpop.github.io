@@ -120,6 +120,7 @@ const TestMarketplace: React.FC = () => {
                     isHearted={heartedListings.includes(listing.id)}
                     onHeartClick={() => handleHeartClick(listing.id)}
                     onClick={() => {}}
+                    isAuction={listing.pricing_mode?.toLowerCase() === 'auction'}
                   />
                 ))}
               </div>
