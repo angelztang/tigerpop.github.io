@@ -43,14 +43,18 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
 
   useEffect(() => {
-    if (localListing.pricing_mode?.toLowerCase() === 'auction') {
+    if (listing.pricing_mode?.toLowerCase() === 'auction') {
       fetchBids();
     }
-  }, [localListing.id]);
+  }, [listing.id]);
+
+  useEffect(() => {
+    setLocalListing(listing);
+  }, [listing]);
 
   const fetchBids = async () => {
     try {
-      const fetchedBids = await getBids(localListing.id);
+      const fetchedBids = await getBids(listing.id);
       setBids(fetchedBids);
       // Update the current bid if there are any bids
       if (fetchedBids.length > 0) {

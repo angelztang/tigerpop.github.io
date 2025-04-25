@@ -70,25 +70,14 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
           amount
         });
       }
-
-      // Create a temporary bid object to show immediately
-      const newBid: Bid = {
-        id: Date.now(), // Temporary ID
-        listing_id: listingId,
-        bidder_id: currentUserId,
-        amount,
-        timestamp: new Date().toISOString()
-      };
-
-      // Update the bids array with the new bid at the top
-      setBids(prevBids => [newBid, ...prevBids]);
       
       setBidAmount('');
       setSuccess('Bid placed successfully! The seller has been notified.');
       onBidPlaced?.(amount);
       
-      // Refresh the bids to get the actual data from the server
-      await fetchBids();
+      // Fetch the updated bids from the server
+      const updatedBids = await getBids(listingId);
+      setBids(updatedBids);
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to place bid';
       setError(errorMessage);
@@ -115,7 +104,9 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
             ))}
           </div>
         ) : (
-          <p className="text-gray-500">No bids yet</p>
+          <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+            No bids yet
+          </div>
         )}
       </div>
 
@@ -143,19 +134,19 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
                   min={currentBid ? currentBid + 0.01 : startingPrice}
                 />
               </div>
-              <p className="mt-1 text-sm text-gray-500">
+              <div className="mt-1 p-2 bg-gray-50 text-gray-600 rounded-md text-sm">
                 Minimum bid: ${(currentBid ? currentBid + 0.01 : startingPrice).toFixed(2)}
-              </p>
+              </div>
             </div>
 
             {error && (
-              <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
+              <div className="p-3 bg-red-50 text-red-700 rounded-md text-sm border border-red-200">
                 {error}
               </div>
             )}
 
             {success && (
-              <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
+              <div className="p-3 bg-green-50 text-green-700 rounded-md text-sm border border-green-200">
                 {success}
               </div>
             )}
