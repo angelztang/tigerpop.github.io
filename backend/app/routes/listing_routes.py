@@ -449,10 +449,11 @@ def place_bid(id):
         new_bid = Bid(listing_id=listing.id, bidder_id=bidder_id, amount=amount)
         db.session.add(new_bid)
         
-        # Update listing's current bid
+        # Update listing's current bid and bidder
         listing.current_bid = amount
         listing.current_bidder_id = bidder_id
         
+        # Commit both the new bid and listing update
         db.session.commit()
         
         # Notify seller
@@ -462,7 +463,7 @@ def place_bid(id):
         if prev_highest_bid and prev_highest_bid.bidder_id != bidder_id:
             notify_outbid(prev_highest_bid, listing)
             
-        # Return success
+        # Return success with the new bid
         return jsonify({'message': 'Bid placed successfully', 'bid': new_bid.to_dict()}), 201
     except Exception as e:
         current_app.logger.error(f"Error placing bid: {str(e)}")

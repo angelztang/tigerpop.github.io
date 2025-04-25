@@ -78,7 +78,8 @@ const SellerDashboard: React.FC = () => {
         netid: netid,
         user_id: parseInt(userId),
         pricing_mode: formData.pricing_mode,
-        price: formData.price || 0
+        price: formData.price || 0,
+        condition: formData.condition || 'good'
       };
 
       const response = await createListing(listingData);
