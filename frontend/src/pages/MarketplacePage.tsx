@@ -34,6 +34,7 @@ const MarketplacePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number>(0);
   const [selectedCondition, setSelectedCondition] = useState<string>('');
+  const [selectedAuctionFilter, setSelectedAuctionFilter] = useState<string>('all'); // 'all', 'auction', 'fixed'
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [hotItems, setHotItems] = useState<Set<number>>(new Set());
@@ -102,6 +103,11 @@ const MarketplacePage: React.FC = () => {
     setShowHotOnly(false);
   };
 
+  const handleAuctionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedAuctionFilter(e.target.value);
+    setShowHotOnly(false);
+  };
+
   const handleHotItemsClick = () => {
     setShowHotOnly(!showHotOnly);
     setSelectedPrice(0);
@@ -162,6 +168,13 @@ const MarketplacePage: React.FC = () => {
     // Apply condition filter
     if (selectedCondition && listing.condition !== selectedCondition) return false;
     
+    // Apply auction filter
+    if (selectedAuctionFilter !== 'all') {
+      const isAuction = listing.pricing_mode?.toLowerCase() === 'auction';
+      if (selectedAuctionFilter === 'auction' && !isAuction) return false;
+      if (selectedAuctionFilter === 'fixed' && isAuction) return false;
+    }
+    
     // Apply search filter
     if (searchQuery) {
       const matchesSearch = 
@@ -209,48 +222,56 @@ const MarketplacePage: React.FC = () => {
           )}
 
           {/* Filters */}
-          <div>
-            <h2 className="text-xl font-bold mb-4">Filters</h2>
-            <div className="flex flex-wrap gap-4">
-              {/* Hot Items Filter */}
-              <button
-                onClick={handleHotItemsClick}
-                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
-                  showHotOnly
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                <span>🔥 Hot Items</span>
-              </button>
+          <div className="flex flex-wrap gap-4 items-center">
+            {/* Price Range Filter */}
+            <select
+              value={selectedPrice}
+              onChange={handlePriceChange}
+              className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              {priceRanges.map((range) => (
+                <option key={range.max} value={range.max}>
+                  {range.label}
+                </option>
+              ))}
+            </select>
 
-              {/* Price Range Filter */}
-              <select
-                value={selectedPrice}
-                onChange={handlePriceChange}
-                className="px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                {priceRanges.map((range) => (
-                  <option key={range.max} value={range.max}>
-                    {range.label}
-                  </option>
-                ))}
-              </select>
+            {/* Condition Filter */}
+            <select
+              value={selectedCondition}
+              onChange={handleConditionChange}
+              className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Any Condition</option>
+              {conditions.map((condition) => (
+                <option key={condition} value={condition}>
+                  {condition}
+                </option>
+              ))}
+            </select>
 
-              {/* Condition Filter */}
-              <select
-                value={selectedCondition}
-                onChange={handleConditionChange}
-                className="px-4 py-2 rounded-lg bg-white text-gray-700 border border-gray-300 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500"
-              >
-                <option value="">Any Condition</option>
-                {conditions.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {condition}
-                  </option>
-                ))}
-              </select>
-            </div>
+            {/* Auction Filter */}
+            <select
+              value={selectedAuctionFilter}
+              onChange={handleAuctionFilterChange}
+              className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Items</option>
+              <option value="auction">Auction Only</option>
+              <option value="fixed">Fixed Price Only</option>
+            </select>
+
+            {/* Hot Items Toggle */}
+            <button
+              onClick={handleHotItemsClick}
+              className={`px-4 py-2 rounded-md ${
+                showHotOnly
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-white text-gray-700 border border-gray-300'
+              }`}
+            >
+              🔥 Hot Items
+            </button>
           </div>
 
           {/* Listings Grid */}
