@@ -37,8 +37,35 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [notificationSent, setNotificationSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [localListing, setLocalListing] = useState(listing);
+  const [bids, setBids] = useState<Bid[]>([]);
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
+
+  useEffect(() => {
+    if (localListing.pricing_mode?.toLowerCase() === 'auction') {
+      fetchBids();
+    }
+  }, [localListing.id]);
+
+  const fetchBids = async () => {
+    try {
+      const fetchedBids = await getBids(localListing.id);
+      setBids(fetchedBids);
+      // Update the current bid if there are any bids
+      if (fetchedBids.length > 0) {
+        const highestBid = fetchedBids.reduce((prev, current) => 
+          (prev.amount > current.amount) ? prev : current
+        );
+        setLocalListing(prev => ({
+          ...prev,
+          current_bid: highestBid.amount
+        }));
+      }
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+    }
+  };
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) => 
@@ -73,6 +100,27 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     }
   };
 
+  const handleBidPlaced = async (newBid: number) => {
+    try {
+      // Update local state immediately
+      setLocalListing(prev => ({
+        ...prev,
+        current_bid: newBid
+      }));
+      
+      // Fetch updated bids
+      await fetchBids();
+      
+      // Notify parent component of the update
+      onUpdate?.({
+        ...localListing,
+        current_bid: newBid
+      });
+    } catch (error) {
+      console.error('Error updating bid:', error);
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'available':
@@ -91,15 +139,17 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
           <div className="flex justify-between items-start mb-4">
-            <h2 className="text-2xl font-bold">{listing.title}</h2>
-            {listing.pricing_mode?.toLowerCase() === 'auction' && (
-              <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                🏷️ Auction Item
-              </span>
-            )}
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-bold">{localListing.title}</h2>
+              {localListing.pricing_mode?.toLowerCase() === 'auction' && (
+                <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                  🏷️ Auction Item
+                </span>
+              )}
+            </div>
             <div className="flex space-x-2">
               <span className="text-gray-500 text-sm">
-                Posted: {new Date(listing.created_at).toLocaleDateString()}
+                Posted: {new Date(localListing.created_at).toLocaleDateString()}
               </span>
               {currentUserId && (
                 <button
@@ -149,15 +199,15 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           {/* Image Carousel */}
           <div className="relative mb-6">
             <div className="h-96 w-full">
-              {listing.images?.[currentImageIndex] && (
+              {localListing.images?.[currentImageIndex] && (
                 <img
-                  src={listing.images[currentImageIndex]}
-                  alt={listing.title}
+                  src={localListing.images[currentImageIndex]}
+                  alt={localListing.title}
                   className="w-full h-full object-contain rounded-lg bg-gray-100"
                 />
               )}
             </div>
-            {listing.images.length > 1 && (
+            {localListing.images.length > 1 && (
               <>
                 <button
                   onClick={handlePrevImage}
@@ -178,7 +228,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
               </>
             )}
             <div className="flex justify-center mt-2 space-x-2">
-              {listing.images.map((_, index) => (
+              {localListing.images.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentImageIndex(index)}
@@ -194,9 +244,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-700 mb-6">{listing.description}</p>
+              <p className="text-gray-700 mb-6">{localListing.description}</p>
               
-              {listing.pricing_mode?.toLowerCase() === 'auction' && (
+              {localListing.pricing_mode?.toLowerCase() === 'auction' && (
                 <div className="bg-blue-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
                   <p className="text-gray-700">
@@ -207,53 +257,58 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             </div>
 
             <div>
-              <h3 className="text-lg font-semibold mb-2">Price</h3>
-              {listing.pricing_mode?.toLowerCase() === 'auction' ? (
+              <h3 className="text-lg font-semibold mb-2">
+                {localListing.pricing_mode?.toLowerCase() === 'auction' 
+                  ? (localListing.current_bid ? 'Current Bid' : 'Starting Price')
+                  : 'Price'}
+              </h3>
+              {localListing.pricing_mode?.toLowerCase() === 'auction' ? (
                 <div>
                   <p className="text-orange-500 text-xl font-bold">
-                    {listing.current_bid 
-                      ? `Current Bid: $${listing.current_bid.toFixed(2)}`
-                      : `Starting Price: $${listing.price.toFixed(2)}`}
+                    {localListing.current_bid 
+                      ? `$${localListing.current_bid.toFixed(2)}`
+                      : `$${localListing.price.toFixed(2)}`}
                   </p>
                 </div>
               ) : (
-                <p className="text-orange-500 text-xl font-bold">${listing.price.toFixed(2)}</p>
+                <p className="text-orange-500 text-xl font-bold">${localListing.price.toFixed(2)}</p>
               )}
 
               <h3 className="text-lg font-semibold mb-2">Condition</h3>
               <div className="mb-4">
-                <p className="text-gray-600">{listing.condition}</p>
+                <p className="text-gray-600">{localListing.condition}</p>
               </div>
 
               <h3 className="text-lg font-semibold mb-2">Status</h3>
               <div className="mb-4">
-                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
-                  {listing.status}
+                <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(localListing.status)}`}>
+                  {localListing.status}
                 </span>
               </div>
 
-              {listing.status === 'available' && (
+              {localListing.status === 'available' && localListing.pricing_mode?.toLowerCase() !== 'auction' && (
                 <button
                   onClick={handleNotifySeller}
                   disabled={isSubmitting}
                   className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
                 >
-                  {isSubmitting ? 'Sending...' : 'Request to Buy'}
+                  {isSubmitting ? 'Sending...' : 'Notify Seller to Buy'}
                 </button>
               )}
             </div>
           </div>
 
-          {listing.pricing_mode === 'auction' && !isSeller && (
+          {localListing.pricing_mode?.toLowerCase() === 'auction' && localListing.status === 'available' && (
             <div className="mt-6">
               <BiddingInterface
-                listingId={listing.id}
+                listingId={localListing.id}
                 currentUserId={currentUserId}
-                startingPrice={listing.price}
-                currentBid={listing.current_bid}
+                startingPrice={localListing.price}
+                currentBid={localListing.current_bid}
                 isSeller={isSeller}
                 onCloseBidding={() => {}}
                 onPlaceBid={onPlaceBid}
+                onBidPlaced={handleBidPlaced}
               />
             </div>
           )}

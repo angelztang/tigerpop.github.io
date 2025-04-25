@@ -49,10 +49,11 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
   const [newImages, setNewImages] = useState<File[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [showSoldModal, setShowSoldModal] = useState(false);
+  const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
   const [bids, setBids] = useState<Bid[]>([]);
 
   useEffect(() => {
-    if (listing.pricing_mode === 'auction') {
+    if (listing.pricing_mode?.toLowerCase() === 'auction') {
       fetchBids();
     }
   }, [listing.id]);
@@ -105,11 +106,15 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
         updatedImages = [...listing.images, ...uploadedUrls];
       }
 
-      // Update the listing
-      const updatedListing = await updateListing(listing.id, {
+      // For auction items, keep the original price
+      const updateData = {
         ...editedListing,
-        images: updatedImages
-      });
+        images: updatedImages,
+        price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price
+      };
+
+      // Update the listing
+      const updatedListing = await updateListing(listing.id, updateData);
 
       onUpdate(updatedListing);
       setIsEditing(false);
@@ -293,7 +298,11 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
               </div>
 
               <div>
-                <h3 className="text-lg font-semibold mb-2">Price</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  {listing.pricing_mode?.toLowerCase() === 'auction' 
+                    ? (listing.current_bid ? 'Current Bid' : 'Starting Price')
+                    : 'Price'}
+                </h3>
                 {listing.pricing_mode?.toLowerCase() === 'auction' ? (
                   <div>
                     <p className="text-orange-500 text-xl font-bold">
@@ -316,6 +325,9 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                         </div>
                       </div>
                     )}
+                    <p className="text-sm text-gray-500 mt-2">
+                      Note: Price cannot be changed for auction items
+                    </p>
                   </div>
                 ) : (
                   isEditing ? (
@@ -379,14 +391,9 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
               {!isEditing && (
                 <button
                   onClick={() => setIsEditing(true)}
-                  disabled={listing.pricing_mode === 'auction'}
-                  className={`px-4 py-2 rounded ${
-                    listing.pricing_mode === 'auction'
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-orange-500 text-white hover:bg-orange-600'
-                  }`}
+                  className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
                 >
-                  {listing.pricing_mode === 'auction' ? 'Cannot Edit Auction Item' : 'Edit Listing'}
+                  Edit Listing
                 </button>
               )}
               {!isEditing && listing.status === 'available' && (
@@ -395,6 +402,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
                 >
                   Mark as Sold
+                </button>
+              )}
+              {!isEditing && listing.status === 'available' && listing.pricing_mode?.toLowerCase() === 'auction' && (
+                <button
+                  onClick={() => setShowCloseBiddingModal(true)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Close Bidding
                 </button>
               )}
               {isEditing && (
@@ -479,6 +494,32 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
               >
                 {isSubmitting ? 'Processing...' : 'Mark as Sold'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showCloseBiddingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-4">Close Bidding</h3>
+            <p className="text-gray-600 mb-4">
+              Are you sure you want to close bidding for this auction? This will notify the highest bidder and mark the listing as pending.
+            </p>
+            <div className="flex justify-end space-x-4">
+              <button
+                onClick={() => setShowCloseBiddingModal(false)}
+                className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCloseBidding}
+                disabled={isSubmitting}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+              >
+                {isSubmitting ? 'Processing...' : 'Close Bidding'}
               </button>
             </div>
           </div>

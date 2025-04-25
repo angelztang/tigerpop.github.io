@@ -72,7 +72,7 @@ const SellerDashboard: React.FC = () => {
         ...formData,
         netid: netid,
         user_id: parseInt(userId),
-        pricing_mode: formData.pricing_mode || 'fixed',
+        pricing_mode: formData.pricing_mode,
         price: formData.price || 0
       };
 

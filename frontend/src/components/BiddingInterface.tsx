@@ -9,6 +9,7 @@ interface BiddingInterfaceProps {
   isSeller: boolean;
   onCloseBidding: () => void;
   onPlaceBid: (amount: number) => Promise<void>;
+  onBidPlaced?: (newBid: number) => void;
 }
 
 const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
@@ -18,11 +19,13 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
   currentBid,
   isSeller,
   onCloseBidding,
-  onPlaceBid
+  onPlaceBid,
+  onBidPlaced
 }) => {
   const [bidAmount, setBidAmount] = useState('');
   const [bids, setBids] = useState<Bid[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -41,6 +44,7 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    setSuccess(null);
     setIsLoading(true);
 
     try {
@@ -67,7 +71,23 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         });
       }
 
+      // Create a temporary bid object to show immediately
+      const newBid: Bid = {
+        id: Date.now(), // Temporary ID
+        listing_id: listingId,
+        bidder_id: currentUserId,
+        amount,
+        timestamp: new Date().toISOString()
+      };
+
+      // Update the bids array with the new bid at the top
+      setBids(prevBids => [newBid, ...prevBids]);
+      
       setBidAmount('');
+      setSuccess('Bid placed successfully! The seller has been notified.');
+      onBidPlaced?.(amount);
+      
+      // Refresh the bids to get the actual data from the server
       await fetchBids();
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to place bid';
@@ -99,7 +119,7 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         )}
       </div>
 
-      {!isSeller && (
+      {(
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Place a Bid</h3>
           <form onSubmit={handleBidSubmit} className="space-y-4">
@@ -129,8 +149,14 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
             </div>
 
             {error && (
-              <div className="text-red-600 text-sm">
+              <div className="p-3 bg-red-100 text-red-700 rounded-md text-sm">
                 {error}
+              </div>
+            )}
+
+            {success && (
+              <div className="p-3 bg-green-100 text-green-700 rounded-md text-sm">
+                {success}
               </div>
             )}
 
