@@ -25,7 +25,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ netid }) => {
           <h2 className="text-3xl font-bold mb-6">Hi {netid}!</h2>
           <p className="text-gray-600 mb-8">just two more steps before getting started...</p>
 
-          <h3 className="text-2xl font-semibold text-orange-500 mb-6">1. Terms & Conditions</h3>
+          <h3 className="text-2xl font-semibold text-orange-500 mb-6">Terms & Conditions</h3>
 
           <div className="space-y-4 mb-8">
             <div>
