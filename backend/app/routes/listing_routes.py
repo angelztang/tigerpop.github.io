@@ -211,7 +211,7 @@ def get_listings():
                 'created_at': listing.created_at.isoformat() if listing.created_at else None,
                 'images': [image.filename for image in listing.images],
                 'condition': listing.condition,
-                'pricing_mode': listing.pricing_mode,
+                'pricing_mode': listing.pricing_mode.toLowerCase(),
                 'current_bid': current_bid
             })
         
@@ -276,7 +276,7 @@ def create_listing():
                 category=category,
                 condition=condition,
                 status='available',
-                pricing_mode=pricing_mode
+                pricing_mode=pricing_mode.toLowerCase()
             )
             current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
             current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")

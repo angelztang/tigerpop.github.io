@@ -57,6 +57,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
         </div>
       )}
 
+      {/* Auction Tag */}
+      {listing.pricing_mode?.toLowerCase() === 'auction' && (
+        <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold z-10">
+          🏷️ Auction
+        </div>
+      )}
+
       {/* Image Section */}
       <div className="relative h-48 bg-gray-200">
         {listing.images && listing.images.length > 0 ? (
