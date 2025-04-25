@@ -252,6 +252,7 @@ def create_listing():
             if not title: missing_fields.append('title')
             if not description: missing_fields.append('description')
             if not category: missing_fields.append('category')
+            if not condition: missing_fields.append('condition')
             if not user_id: missing_fields.append('user_id')
             current_app.logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
@@ -398,7 +399,8 @@ def get_buyer_listings():
             'buyer_id': listing.buyer_id,
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
             'images': [image.filename for image in listing.images],
-            'condition': listing.condition
+            'condition': listing.condition,
+            'pricing_mode': listing.pricing_mode
         } for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching buyer listings: {str(e)}")

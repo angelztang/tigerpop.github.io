@@ -15,7 +15,7 @@ class Listing(db.Model):
     description = db.Column(db.Text, nullable=False)
     price = db.Column(db.Float, nullable=False)
     category = db.Column(db.String(50), nullable=False)
-    condition = db.Column(db.String(50), nullable=True)
+    condition = db.Column(db.String(50), nullable=False)
     status = db.Column(db.String(20), default='available')
     pricing_mode = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
