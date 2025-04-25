@@ -43,7 +43,10 @@ interface SellerListingModalProps {
 const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClose, onUpdate, onDelete }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedListing, setEditedListing] = useState(listing);
+  const [editedListing, setEditedListing] = useState({
+    ...listing,
+    condition: listing.condition || 'good' // Ensure condition is initialized
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newImages, setNewImages] = useState<File[]>([]);
@@ -83,7 +86,8 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
     const { name, value } = e.target;
     setEditedListing(prev => ({
       ...prev,
-      [name]: name === 'price' ? parseFloat(value) : value
+      [name]: name === 'price' ? parseFloat(value) : value,
+      condition: name === 'condition' ? value : prev.condition // Ensure condition is properly updated
     }));
   };
 
@@ -110,7 +114,8 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
       const updateData = {
         ...editedListing,
         images: updatedImages,
-        price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price
+        price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price,
+        condition: editedListing.condition
       };
 
       // Update the listing
