@@ -293,7 +293,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               <div className="mt-4 bg-blue-50 p-4 rounded-lg">
                 <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
                 <p className="text-gray-700">
-                  This item will be sold through an auction. You cannot edit the price once bids are placed. The highest bidder will win when the auction ends.
+                  This item will be sold through an auction. You cannot edit the price once bids are placed. The highest bidder will win when the auction ends (which will be indicated by the seller). When the seller closes the auction, the highest bidder will recieve an email indicating so, and other bidders will recieve an email notifying them they did not recieve the item.
                 </p>
               </div>
             )}
