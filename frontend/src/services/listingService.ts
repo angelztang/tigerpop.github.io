@@ -440,20 +440,35 @@ export interface CreateBidData {
 }
 
 export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
-  const response = await fetch(`${API_URL}/api/listing/${bidData.listing_id}/bids`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(bidData),
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/bids/listings/${bidData.listing_id}/bids`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(bidData),
+    });
 
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to place bid');
+    if (!response.ok) {
+      let errorMessage = 'Failed to place bid';
+      try {
+        const errorData = await response.json();
+        errorMessage = errorData.error || errorMessage;
+      } catch (e) {
+        // If response is not JSON, use the status text
+        errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to place bid');
   }
-
-  return response.json();
 };
 
 export const getBids = async (listingId: number): Promise<Bid[]> => {

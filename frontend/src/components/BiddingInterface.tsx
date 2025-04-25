@@ -61,26 +61,36 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         throw new Error('Bid amount must be at least the starting price');
       }
 
+      let response;
       if (onPlaceBid) {
-        await onPlaceBid(amount);
+        response = await onPlaceBid(amount);
       } else {
-        await placeBid({
+        response = await placeBid({
           listing_id: listingId,
           bidder_id: currentUserId,
           amount
         });
       }
-      
-      setBidAmount('');
-      setSuccess('Bid placed successfully! The seller has been notified.');
-      onBidPlaced?.(amount);
-      
-      // Fetch the updated bids from the server
-      const updatedBids = await getBids(listingId);
-      setBids(updatedBids);
+
+      // Only proceed if we got a valid response
+      if (response) {
+        setBidAmount('');
+        setSuccess('Bid placed successfully! The seller has been notified.');
+        onBidPlaced?.(amount);
+        
+        // Fetch the updated bids from the server
+        const updatedBids = await getBids(listingId);
+        setBids(updatedBids);
+      }
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to place bid';
+      let errorMessage = 'Failed to place bid';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
+      }
       setError(errorMessage);
+      setSuccess(null); // Ensure success message is cleared on error
     } finally {
       setIsLoading(false);
     }
