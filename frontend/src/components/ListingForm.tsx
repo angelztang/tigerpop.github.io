@@ -92,6 +92,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       const isAuction = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
         ...prev,
+        is_auction: isAuction,
         pricing_mode: isAuction ? 'auction' : 'fixed'
       }));
     } else {
