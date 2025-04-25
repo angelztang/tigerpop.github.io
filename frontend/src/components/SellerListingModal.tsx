@@ -388,7 +388,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
 
             {/* Action Buttons */}
             <div className="mt-6 flex justify-end space-x-4">
-              {!isEditing && (
+              {!isEditing && listing.status !== 'sold' && (
                 <button
                   onClick={() => setIsEditing(true)}
                   className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
@@ -396,7 +396,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
                   Edit Listing
                 </button>
               )}
-              {!isEditing && listing.status === 'available' && (
+              {!isEditing && (listing.status === 'available' || listing.status === 'pending') && (
                 <button
                   onClick={() => setShowSoldModal(true)}
                   className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"

@@ -1,7 +1,7 @@
 // Shows seller's listings + create listing button
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getListings, createListing, deleteListing, Listing, CreateListingData, getUserListings, updateListing } from '../services/listingService';
+import { createListing, deleteListing, Listing, CreateListingData, getUserListings, updateListing, getHotItems } from '../services/listingService';
 import { getNetid, getUserId } from '../services/authService';
 import ListingForm from '../components/ListingForm';
 import ListingCard from '../components/ListingCard';
@@ -28,6 +28,7 @@ const SellerDashboard: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
+  const [hotItems, setHotItems] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     fetchListings();
@@ -41,12 +42,16 @@ const SellerDashboard: React.FC = () => {
         setLoading(false);
         return;
       }
-      const data = await getUserListings(netid);
-      setListings(data);
+      const [userListings, hotItemsData] = await Promise.all([
+        getUserListings(netid),
+        getHotItems()
+      ]);
+      setListings(userListings);
+      setHotItems(new Set(hotItemsData.map(listing => listing.id)));
       setError(null);
     } catch (err) {
-      setError('Failed to load listings');
-      console.error('Error fetching listings:', err);
+      setError('Failed to fetch listings');
+      console.error('Error:', err);
     } finally {
       setLoading(false);
     }
@@ -206,6 +211,7 @@ const SellerDashboard: React.FC = () => {
                 key={listing.id}
                 listing={listing}
                 onClick={() => setSelectedListing(listing)}
+                isHot={hotItems.has(listing.id)}
               />
             ))
           ) : (

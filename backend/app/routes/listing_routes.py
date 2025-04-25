@@ -211,7 +211,7 @@ def get_listings():
                 'created_at': listing.created_at.isoformat() if listing.created_at else None,
                 'images': [image.filename for image in listing.images],
                 'condition': listing.condition,
-                'pricing_mode': listing.pricing_mode.toLowerCase(),
+                'pricing_mode': listing.pricing_mode,
                 'current_bid': current_bid
             })
         
@@ -241,7 +241,7 @@ def create_listing():
         category = data.get('category', 'other')
         condition = data.get('condition', 'good')
         image_urls = data.get('images', [])
-        pricing_mode = data.get('pricing_mode', 'fixed')
+        pricing_mode = data.get('pricing_mode')
         user_id = data.get('user_id')  # Get user_id from request data instead of JWT
         
         current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
@@ -276,7 +276,7 @@ def create_listing():
                 category=category,
                 condition=condition,
                 status='available',
-                pricing_mode=pricing_mode.toLowerCase()
+                pricing_mode=pricing_mode
             )
             current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
             current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
@@ -335,20 +335,30 @@ def get_user_listings():
                    .all())
         
         # Convert to dictionary format
-        return jsonify([{
-            'id': listing.id,
-            'title': listing.title,
-            'description': listing.description,
-            'price': listing.price,
-            'category': listing.category,
-            'status': listing.status,
-            'user_id': listing.user_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],
-            'condition': listing.condition,
-            'pricing_mode': listing.pricing_mode.toLowerCase(),
-            'current_bid': listing.get_current_bid()
-        } for listing in listings])
+        result = []
+        for listing in listings:
+            try:
+                current_bid = listing.get_current_bid()
+            except Exception as e:
+                current_app.logger.error(f"Error getting current bid for listing {listing.id}: {str(e)}")
+                current_bid = None
+                
+            result.append({
+                'id': listing.id,
+                'title': listing.title,
+                'description': listing.description,
+                'price': listing.price,
+                'category': listing.category,
+                'status': listing.status,
+                'user_id': listing.user_id,
+                'created_at': listing.created_at.isoformat() if listing.created_at else None,
+                'images': [image.filename for image in listing.images],
+                'condition': listing.condition,
+                'pricing_mode': listing.pricing_mode,
+                'current_bid': current_bid
+            })
+        
+        return jsonify(result)
     except Exception as e:
         current_app.logger.error(f"Error fetching user listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch user listings'}), 500
