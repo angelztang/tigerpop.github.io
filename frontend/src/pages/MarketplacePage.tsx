@@ -19,6 +19,7 @@ const MarketplacePage: React.FC = () => {
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
   const [hotItems, setHotItems] = useState<Set<number>>(new Set());
+  const [showHotOnly, setShowHotOnly] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
@@ -82,6 +83,12 @@ const MarketplacePage: React.FC = () => {
 
   const handlePriceClick = (max: number) => {
     setSelectedPrice(selectedPrice === max ? null : max);
+    setShowHotOnly(false);
+  };
+
+  const handleHotItemsClick = () => {
+    setShowHotOnly(!showHotOnly);
+    setSelectedPrice(null);
   };
 
   const handleListingClick = (listing: Listing) => {
@@ -129,6 +136,9 @@ const MarketplacePage: React.FC = () => {
   };
 
   const filteredListings = listings.filter(listing => {
+    // Apply hot items filter
+    if (showHotOnly) return hotItems.has(listing.id);
+    
     // Apply price filter
     if (selectedPrice && listing.price > selectedPrice) return false;
     
@@ -178,10 +188,23 @@ const MarketplacePage: React.FC = () => {
             </div>
           )}
 
-          {/* Price Filters */}
+          {/* Price Filters and Hot Items */}
           <div>
-            <h2 className="text-xl font-bold mb-4">Price Range</h2>
+            <h2 className="text-xl font-bold mb-4">Filters</h2>
             <div className="flex flex-wrap gap-4">
+              {/* Hot Items Filter */}
+              <button
+                onClick={handleHotItemsClick}
+                className={`px-4 py-2 rounded-lg flex items-center gap-2 ${
+                  showHotOnly
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span>🔥 Hot Items</span>
+              </button>
+
+              {/* Price Range Filters */}
               {priceRanges.map((range) => (
                 <button
                   key={range.max}
@@ -201,7 +224,9 @@ const MarketplacePage: React.FC = () => {
           {/* Listings Grid */}
           <div>
             <h2 className="text-xl font-bold mb-6">
-              {selectedPrice 
+              {showHotOnly
+                ? "Hot Items"
+                : selectedPrice 
                 ? `Items under $${selectedPrice}`
                 : 'All Items'}
             </h2>
@@ -210,6 +235,8 @@ const MarketplacePage: React.FC = () => {
                 <p className="text-xl text-gray-600">
                   {searchQuery
                     ? `No items found matching "${searchQuery}"`
+                    : showHotOnly
+                    ? "No hot items available at the moment"
                     : selectedPrice
                     ? `No items found under $${selectedPrice}`
                     : category

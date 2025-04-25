@@ -110,13 +110,16 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
         updatedImages = [...listing.images, ...uploadedUrls];
       }
 
-      // For auction items, keep the original price
+      // Preserve the original pricing_mode and price for auction items
       const updateData = {
         ...editedListing,
         images: updatedImages,
+        pricing_mode: listing.pricing_mode, // Always preserve the original pricing_mode
         price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price,
         condition: editedListing.condition
       };
+
+      console.log('Updating listing with data:', updateData); // Debug log
 
       // Update the listing
       const updatedListing = await updateListing(listing.id, updateData);

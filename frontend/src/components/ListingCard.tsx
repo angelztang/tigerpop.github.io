@@ -20,6 +20,14 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
   const navigate = useNavigate();
   const currentUserId = getUserId();
 
+  // Debug logging
+  console.log('ListingCard props:', {
+    listingId: listing.id,
+    title: listing.title,
+    pricingMode: listing.pricing_mode,
+    isAuctionProp: isAuction
+  });
+
   const handleCardClick = () => {
     if (onClick) {
       onClick();
@@ -46,6 +54,9 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
     }
   };
 
+  // Determine if it's an auction based on both prop and listing data
+  const showAuctionTag = isAuction || listing.pricing_mode?.toLowerCase() === 'auction';
+
   return (
     <div
       onClick={handleCardClick}
@@ -57,7 +68,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       </div>
 
       {/* Auction Tag - Top Left */}
-      {isAuction && (
+      {showAuctionTag && (
         <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold z-10">
           🏷️ Auction Item
         </div>
@@ -91,7 +102,7 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
             <h3 className="text-lg font-semibold mb-1">{listing.title}</h3>
             <p className="text-gray-600 text-sm mb-2">{listing.description}</p>
             <div className="text-sm">
-              {isAuction ? (
+              {showAuctionTag ? (
                 listing.current_bid ? (
                   <span className="text-orange-500 font-bold">Current Bid: ${listing.current_bid.toFixed(2)}</span>
                 ) : (
