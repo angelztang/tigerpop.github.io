@@ -12,7 +12,7 @@ class Listing(db.Model):
     category = db.Column(db.String(50), nullable=False)
     condition = db.Column(db.String(50), nullable=True)
     status = db.Column(db.String(20), default='available')
-    pricing_mode = db.Column(db.String(20), default='fixed')
+    pricing_mode = db.Column(db.String(20), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
@@ -31,7 +31,7 @@ class Listing(db.Model):
         self.description = description
         self.price = price
         self.user_id = user_id
-        self.category = category or 'Other'
+        self.category = category or 'other'
         self.condition = condition
         self.status = status
         self.pricing_mode = pricing_mode

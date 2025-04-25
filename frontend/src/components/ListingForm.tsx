@@ -20,7 +20,7 @@ interface ListingFormData {
   category: string;
   condition: string;
   user_id: number;
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
   images: string[];
   is_auction: boolean;
   min_bid_increment: number;
@@ -33,7 +33,7 @@ interface FormCreateListingData {
   category: string;
   condition: string;
   images: string[];
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
   starting_price?: number;
 }
 

@@ -10,7 +10,7 @@ interface ListingDetailProps {
     price: number;
     image_urls: string[];
     condition: string;
-    pricing_mode: 'fixed' | 'auction';
+    pricing_mode: string;
     current_bid?: number;
     user_id: number;
   };

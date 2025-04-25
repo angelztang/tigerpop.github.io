@@ -13,7 +13,7 @@ interface ListingFormData {
   condition: string;
   user_id: number;
   netid: string;
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
   starting_price?: number;
 }
 

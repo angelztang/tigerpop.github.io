@@ -5,5 +5,5 @@ export interface CreateListingData {
   category: string;
   condition: string;
   netid: string;
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
 } 

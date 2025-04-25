@@ -44,7 +44,7 @@ export interface Listing {
   seller_id: number;
   buyer_id?: number;
   hearts_count?: number;
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
   starting_price?: number;
   current_bid?: number;
 }
@@ -57,7 +57,7 @@ export interface CreateListingData {
   netid: string;
   condition: string;
   images?: string[];
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
   user_id: number;
 }
 

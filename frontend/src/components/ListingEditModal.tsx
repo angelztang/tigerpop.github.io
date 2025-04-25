@@ -16,7 +16,7 @@ interface ListingFormData {
   category: string;
   images?: string[];
   condition: string;
-  pricing_mode: 'fixed' | 'auction';
+  pricing_mode: string;
 }
 
 const categories = [
