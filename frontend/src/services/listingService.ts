@@ -253,7 +253,10 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse<Listing[]>(response);
+    const data = await handleResponse<Listing[]>(response);
+    console.log('User listings response:', data); // Debug log
+    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode }))); // Debug log
+    return data;
   } catch (error) {
     console.error('Error fetching user listings:', error);
     throw error;

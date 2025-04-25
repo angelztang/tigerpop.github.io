@@ -25,7 +25,8 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
     listingId: listing.id,
     title: listing.title,
     pricingMode: listing.pricing_mode,
-    isAuctionProp: isAuction
+    isAuctionProp: isAuction,
+    showAuctionTag: isAuction || listing.pricing_mode?.toLowerCase() === 'auction'
   });
 
   const handleCardClick = () => {
