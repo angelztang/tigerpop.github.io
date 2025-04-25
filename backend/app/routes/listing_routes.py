@@ -346,7 +346,7 @@ def get_user_listings():
             'created_at': listing.created_at.isoformat() if listing.created_at else None,
             'images': [image.filename for image in listing.images],
             'condition': listing.condition,
-            'pricing_mode': listing.pricing_mode,
+            'pricing_mode': listing.pricing_mode.toLowerCase(),
             'current_bid': listing.get_current_bid()
         } for listing in listings])
     except Exception as e:
