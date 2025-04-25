@@ -46,7 +46,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     if (listing.pricing_mode?.toLowerCase() === 'auction') {
       fetchBids();
     }
-  }, [listing.id]);
+  }, [listing.id, listing]);
 
   useEffect(() => {
     setLocalListing(listing);
