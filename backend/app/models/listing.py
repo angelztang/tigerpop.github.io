@@ -56,7 +56,11 @@ class Listing(db.Model):
     
     def get_current_bid(self):
         if self.pricing_mode == 'auction' and self.bids:
-            return max(bid.amount for bid in self.bids)
+            current_bid = max(bid.amount for bid in self.bids)
+            if self.current_bid != current_bid:
+                self.current_bid = current_bid
+                db.session.commit()
+            return current_bid
         return None
     
     def __repr__(self):

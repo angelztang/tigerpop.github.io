@@ -441,10 +441,14 @@ def place_bid(id):
     # Send notifications
     notify_seller_new_bid(listing, new_bid)
     
+    # Get updated bid history
+    bids = Bid.query.filter_by(listing_id=id).order_by(Bid.amount.desc()).all()
+    
     return jsonify({
         'message': 'Bid placed successfully',
         'bid': new_bid.to_dict(),
-        'listing': listing.to_dict()
+        'listing': listing.to_dict(),
+        'bids': [bid.to_dict() for bid in bids]
     }), 201
 
 @bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
