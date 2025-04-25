@@ -262,6 +262,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               </label>
             </div>
 
+            {formData.is_auction && (
+              <div className="mt-4 bg-blue-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
+                <p className="text-gray-700">
+                  This item will be sold through an auction. You cannot edit the price once bids are placed. The highest bidder will win when the auction ends.
+                </p>
+              </div>
+            )}
+
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                 {formData.is_auction ? 'Starting Price' : 'Price'}:

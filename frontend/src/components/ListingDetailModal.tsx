@@ -142,9 +142,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{localListing.title}</h2>
               {localListing.pricing_mode?.toLowerCase() === 'auction' && (
-                <span className="px-2 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                <div className="mt-2 inline-block bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
                   🏷️ Auction Item
-                </span>
+                </div>
               )}
             </div>
             <div className="flex space-x-2">
