@@ -314,7 +314,10 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 currentBid={localListing.current_bid}
                 isSeller={isSeller}
                 onCloseBidding={() => {}}
-                onPlaceBid={onPlaceBid}
+                onPlaceBid={async (amount) => {
+                  await onPlaceBid(amount);
+                  await handleBidPlaced(amount);
+                }}
                 onBidPlaced={handleBidPlaced}
               />
             </div>

@@ -63,7 +63,8 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
 
       let response;
       if (onPlaceBid) {
-        response = await onPlaceBid(amount);
+        await onPlaceBid(amount);
+        response = true; // Assume success if onPlaceBid doesn't throw
       } else {
         response = await placeBid({
           listing_id: listingId,
@@ -79,8 +80,7 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         onBidPlaced?.(amount);
         
         // Fetch the updated bids from the server
-        const updatedBids = await getBids(listingId);
-        setBids(updatedBids);
+        await fetchBids();
       }
     } catch (err: unknown) {
       let errorMessage = 'Failed to place bid';
