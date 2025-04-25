@@ -50,17 +50,22 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
       onClick={handleCardClick}
       className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer transform transition hover:scale-[1.02] relative"
     >
-      {/* Hot Item Badge */}
-      {isHot && (
-        <div className="absolute top-2 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
-          🔥 Hot Item
+      {/* Status Tag - Top Right */}
+      <div className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-semibold z-10 ${getStatusColor(listing.status)}`}>
+        {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+      </div>
+
+      {/* Auction Tag - Top Left */}
+      {listing.pricing_mode?.toLowerCase() === 'auction' && (
+        <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold z-10">
+          🏷️ Auction Item
         </div>
       )}
 
-      {/* Auction Tag */}
-      {listing.pricing_mode?.toLowerCase() === 'auction' && (
-        <div className="absolute top-2 left-2 bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold z-10">
-          🏷️ Auction
+      {/* Hot Item Badge - Below Auction Tag */}
+      {isHot && (
+        <div className="absolute top-10 left-2 bg-red-500 text-white px-2 py-1 rounded-full text-xs font-semibold z-10">
+          🔥 Hot Item
         </div>
       )}
 
