@@ -1,5 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { API_URL } from '../config';
 
 interface TermsAndConditionsProps {
   netid: string;
@@ -8,9 +10,13 @@ interface TermsAndConditionsProps {
 const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ netid }) => {
   const navigate = useNavigate();
 
-  const handleAccept = () => {
-    navigate('/dashboard');
-  };
+  const handleAccept = async () => {
+
+      navigate('/dashboard');
+      window.location.reload();
+
+    }
+  ;
 
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
@@ -19,7 +25,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ netid }) => {
           <h2 className="text-3xl font-bold mb-6">Hi {netid}!</h2>
           <p className="text-gray-600 mb-8">just two more steps before getting started...</p>
 
-          <h3 className="text-2xl font-semibold text-orange-500 mb-6">2. Terms & Confirmation</h3>
+          <h3 className="text-2xl font-semibold text-orange-500 mb-6">1. Terms & Conditions</h3>
 
           <div className="space-y-4 mb-8">
             <div>
