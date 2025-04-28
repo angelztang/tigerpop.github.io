@@ -314,7 +314,7 @@ const MarketplacePage: React.FC = () => {
                   return "🔥 Hot Items";
                 }
                 
-                const activeFilters = [];
+                const activeFilters: string[] = [];
                 if (selectedPrice > 0) {
                   activeFilters.push(`under $${selectedPrice}`);
                 }
