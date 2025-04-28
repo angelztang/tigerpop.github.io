@@ -117,17 +117,14 @@ const MarketplacePage: React.FC = () => {
 
   const handlePriceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedPrice(Number(e.target.value));
-    setShowHotOnly(false);
   };
 
   const handleConditionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCondition(e.target.value);
-    setShowHotOnly(false);
   };
 
   const handleAuctionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedAuctionFilter(e.target.value);
-    setShowHotOnly(false);
   };
 
   const handleHotItemsClick = () => {
@@ -310,9 +307,7 @@ const MarketplacePage: React.FC = () => {
               {(() => {
                 const activeFilters: string[] = [];
                 
-                if (showHotOnly) {
-                  activeFilters.push('Hot Items');
-                }
+                // Standardize the order: price, condition, auction/fixed, hot items
                 if (selectedPrice > 0) {
                   activeFilters.push(`under $${selectedPrice}`);
                 }
@@ -321,6 +316,9 @@ const MarketplacePage: React.FC = () => {
                 }
                 if (selectedAuctionFilter !== 'all') {
                   activeFilters.push(selectedAuctionFilter === 'auction' ? 'Auction Items' : 'Fixed Price Items');
+                }
+                if (showHotOnly) {
+                  activeFilters.push('Hot Items');
                 }
                 
                 if (activeFilters.length === 0) {
