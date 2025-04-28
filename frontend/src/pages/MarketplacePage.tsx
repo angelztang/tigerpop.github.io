@@ -313,7 +313,7 @@ const MarketplacePage: React.FC = () => {
                 const activeFilters: string[] = [];
                 
                 if (showHotOnly) {
-                  activeFilters.push('🔥 Hot Items');
+                  activeFilters.push('Hot Items');
                 }
                 if (selectedPrice > 0) {
                   activeFilters.push(`under $${selectedPrice}`);
