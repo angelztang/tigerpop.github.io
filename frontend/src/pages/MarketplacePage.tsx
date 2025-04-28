@@ -310,11 +310,11 @@ const MarketplacePage: React.FC = () => {
           <div>
             <h2 className="text-xl font-bold mb-6">
               {(() => {
-                if (showHotOnly) {
-                  return "🔥 Hot Items";
-                }
-                
                 const activeFilters: string[] = [];
+                
+                if (showHotOnly) {
+                  activeFilters.push('🔥 Hot Items');
+                }
                 if (selectedPrice > 0) {
                   activeFilters.push(`under $${selectedPrice}`);
                 }
