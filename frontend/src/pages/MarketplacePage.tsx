@@ -132,8 +132,6 @@ const MarketplacePage: React.FC = () => {
 
   const handleHotItemsClick = () => {
     setShowHotOnly(!showHotOnly);
-    setSelectedPrice(0);
-    setSelectedCondition('');
   };
 
   const handleListingClick = (listing: Listing) => {
