@@ -173,6 +173,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
         return;
       }
 
+      if (createListingData.price > 1000000000) {
+        setError('Price cannot exceed $1,000,000,000');
+        setLoading(false);
+        return;
+      }
+
       // Handle image uploads if there are any
       if (selectedFiles.length > 0) {
         const uploadedUrls = await uploadImages(selectedFiles);
@@ -314,6 +320,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   onChange={handleInputChange}
                   required
                   min="0"
+                  max={1000000000}
                   step="0.01"
                   className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
                   placeholder="0.00"
