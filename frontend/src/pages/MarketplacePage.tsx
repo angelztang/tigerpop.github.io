@@ -228,16 +228,6 @@ const MarketplacePage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <div className="flex space-x-4">
-            <button
-              onClick={clearFilters}
-              className="px-4 py-2 rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              Clear Filters
-            </button>
-          </div>
-        </div>
         <div className="flex flex-col space-y-8">
           {/* Search Results Header */}
           {searchQuery && (
@@ -254,66 +244,97 @@ const MarketplacePage: React.FC = () => {
           )}
 
           {/* Filters */}
-          <div className="flex flex-wrap gap-4 items-center">
-            {/* Price Range Filter */}
-            <select
-              value={selectedPrice}
-              onChange={handlePriceChange}
-              className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              {priceRanges.map((range) => (
-                <option key={range.max} value={range.max}>
-                  {range.label}
-                </option>
-              ))}
-            </select>
+          <div className="flex flex-wrap gap-4 items-center justify-between">
+            <div className="flex flex-wrap gap-4 items-center">
+              {/* Price Range Filter */}
+              <select
+                value={selectedPrice}
+                onChange={handlePriceChange}
+                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {priceRanges.map((range) => (
+                  <option key={range.max} value={range.max}>
+                    {range.label}
+                  </option>
+                ))}
+              </select>
 
-            {/* Condition Filter */}
-            <select
-              value={selectedCondition}
-              onChange={handleConditionChange}
-              className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Any Condition</option>
-              {conditions.map((condition) => (
-                <option key={condition} value={condition}>
-                  {condition}
-                </option>
-              ))}
-            </select>
+              {/* Condition Filter */}
+              <select
+                value={selectedCondition}
+                onChange={handleConditionChange}
+                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Any Condition</option>
+                {conditions.map((condition) => (
+                  <option key={condition} value={condition}>
+                    {condition}
+                  </option>
+                ))}
+              </select>
 
-            {/* Auction Filter */}
-            <select
-              value={selectedAuctionFilter}
-              onChange={handleAuctionFilterChange}
-              className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="all">All Items</option>
-              <option value="auction">Auction Only</option>
-              <option value="fixed">Fixed Price Only</option>
-            </select>
+              {/* Auction Filter */}
+              <select
+                value={selectedAuctionFilter}
+                onChange={handleAuctionFilterChange}
+                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="all">All Items</option>
+                <option value="auction">Auction Only</option>
+                <option value="fixed">Fixed Price Only</option>
+              </select>
 
-            {/* Hot Items Toggle */}
+              {/* Hot Items Toggle */}
+              <button
+                onClick={handleHotItemsClick}
+                className={`px-4 py-2 rounded-md ${
+                  showHotOnly
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-700 border border-gray-300'
+                }`}
+              >
+                🔥 Hot Items
+              </button>
+            </div>
+
+            {/* Clear Filters Button */}
             <button
-              onClick={handleHotItemsClick}
-              className={`px-4 py-2 rounded-md ${
-                showHotOnly
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300'
-              }`}
+              onClick={clearFilters}
+              className="px-4 py-2 rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              🔥 Hot Items
+              Clear Filters
             </button>
           </div>
 
           {/* Listings Grid */}
           <div>
             <h2 className="text-xl font-bold mb-6">
-              {showHotOnly
-                ? "Hot Items"
-                : selectedPrice > 0 || selectedCondition
-                ? `Filtered Items${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition ? ` in ${selectedCondition} condition` : ''}`
-                : 'All Items'}
+              {(() => {
+                if (showHotOnly) {
+                  return "🔥 Hot Items";
+                }
+                
+                const activeFilters = [];
+                if (selectedPrice > 0) {
+                  activeFilters.push(`under $${selectedPrice}`);
+                }
+                if (selectedCondition) {
+                  activeFilters.push(`in ${selectedCondition} condition`);
+                }
+                if (selectedAuctionFilter !== 'all') {
+                  activeFilters.push(selectedAuctionFilter === 'auction' ? 'Auction Items' : 'Fixed Price Items');
+                }
+                
+                if (activeFilters.length === 0) {
+                  return 'All Items';
+                }
+                
+                if (activeFilters.length === 1) {
+                  return activeFilters[0].charAt(0).toUpperCase() + activeFilters[0].slice(1);
+                }
+                
+                return `Filtered Items (${activeFilters.join(', ')})`;
+              })()}
             </h2>
             {filteredListings.length === 0 ? (
               <div className="text-center py-12">
