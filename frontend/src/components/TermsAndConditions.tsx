@@ -23,7 +23,7 @@ const TermsAndConditions: React.FC<TermsAndConditionsProps> = ({ netid }) => {
       <div className="max-w-3xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden">
         <div className="p-8">
           <h2 className="text-3xl font-bold mb-6">Hi {netid}!</h2>
-          <p className="text-gray-600 mb-8">just two more steps before getting started...</p>
+          <p className="text-gray-600 mb-8">just one more step before getting started...</p>
 
           <h3 className="text-2xl font-semibold text-orange-500 mb-6">Terms & Conditions</h3>
 
