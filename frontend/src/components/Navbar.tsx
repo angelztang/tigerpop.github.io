@@ -49,7 +49,11 @@ const Navbar: React.FC<NavbarProps> = ({ authenticated, userInfo }) => {
             <div className="flex items-center">
               <h1 
                 className="text-2xl font-bold cursor-pointer"
-                onClick={() => navigate('/marketplace')}
+                onClick={() => {
+                  navigate('/marketplace');
+                  // Dispatch a custom event to clear filters
+                  window.dispatchEvent(new CustomEvent('clearFilters'));
+                }}
               >
                 <span className="text-orange-500">Tiger</span>
                 <span>Pop</span>

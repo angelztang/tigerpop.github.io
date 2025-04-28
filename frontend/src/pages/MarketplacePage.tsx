@@ -45,6 +45,18 @@ const MarketplacePage: React.FC = () => {
   const category = searchParams.get('category') || '';
   const currentUserId = parseInt(getUserId() || '0');
 
+  // Add event listener for clearFilters event
+  useEffect(() => {
+    const handleClearFilters = () => {
+      clearFilters();
+    };
+
+    window.addEventListener('clearFilters', handleClearFilters);
+    return () => {
+      window.removeEventListener('clearFilters', handleClearFilters);
+    };
+  }, []);
+
   const clearFilters = () => {
     setSelectedPrice(0);
     setSelectedCondition('');
@@ -214,21 +226,18 @@ const MarketplacePage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-orange-600 cursor-pointer" onClick={clearFilters}>
-          TigerPop
-        </h1>
-        <div className="flex space-x-4">
-          <button
-            onClick={clearFilters}
-            className="px-4 py-2 rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            Clear Filters
-          </button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex space-x-4">
+            <button
+              onClick={clearFilters}
+              className="px-4 py-2 rounded-md bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
         <div className="flex flex-col space-y-8">
           {/* Search Results Header */}
           {searchQuery && (
