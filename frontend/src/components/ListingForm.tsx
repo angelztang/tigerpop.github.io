@@ -105,6 +105,17 @@ const ListingForm: React.FC<ListingFormProps> = ({
     }
   }, []);
 
+  // Initialize preview URLs when selectedFiles changes
+  useEffect(() => {
+    const newPreviewUrls = selectedFiles.map(file => URL.createObjectURL(file));
+    setPreviewUrls(newPreviewUrls);
+
+    // Cleanup function to revoke object URLs
+    return () => {
+      newPreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [selectedFiles]);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
@@ -134,37 +145,30 @@ const ListingForm: React.FC<ListingFormProps> = ({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const totalFiles = (formData.images?.length || 0) + selectedFiles.length + files.length;
+      const totalFiles = selectedFiles.length + files.length;
       
       if (totalFiles > maxImages) {
-        setError(`You can only upload up to ${maxImages} images. You currently have ${(formData.images?.length || 0) + selectedFiles.length} images and tried to add ${files.length} more.`);
+        setError(`You can only upload up to ${maxImages} images. You currently have ${selectedFiles.length} images and tried to add ${files.length} more.`);
         return;
       }
       
       setSelectedFiles(prev => [...prev, ...files]);
-      setError(null); // Clear any existing error messages
-      
-      // Create preview URLs for new files
-      const newUrls = files.map(file => URL.createObjectURL(file));
-      setPreviewUrls(prev => [...prev, ...newUrls]);
+      if (onSelectedFilesChange) {
+        onSelectedFilesChange([...selectedFiles, ...files]);
+      }
+      setError(null);
     }
   };
 
   const removeImage = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => {
-      // Revoke the URL to prevent memory leaks
-      URL.revokeObjectURL(prev[index]);
-      return prev.filter((_, i) => i !== index);
+    setSelectedFiles(prev => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      if (onSelectedFilesChange) {
+        onSelectedFilesChange(newFiles);
+      }
+      return newFiles;
     });
   };
-
-  // Cleanup preview URLs when component unmounts
-  useEffect(() => {
-    return () => {
-      previewUrls.forEach(url => URL.revokeObjectURL(url));
-    };
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -383,22 +387,23 @@ const ListingForm: React.FC<ListingFormProps> = ({
             />
           </div>
 
-          <div className="mt-4">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Images ({formData.images.length}/{MAX_IMAGES})
+              Images ({selectedFiles.length}/{maxImages})
             </label>
             <div className="grid grid-cols-3 gap-4 mb-4">
-              {formData.images.map((url, index) => (
+              {previewUrls.map((url, index) => (
                 <div key={index} className="relative group">
                   <img
                     src={url}
-                    alt={`Image ${index + 1}`}
+                    alt={`Preview ${index + 1}`}
                     className="w-full h-32 object-cover rounded-md"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    disabled={isSubmittingLocal}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -416,12 +421,12 @@ const ListingForm: React.FC<ListingFormProps> = ({
                 onChange={handleFileChange}
                 className="hidden"
                 id="images"
-                disabled={formData.images.length >= MAX_IMAGES}
+                disabled={selectedFiles.length >= maxImages || isSubmittingLocal}
               />
               <label
                 htmlFor="images"
                 className={`inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md ${
-                  formData.images.length >= MAX_IMAGES
+                  selectedFiles.length >= maxImages || isSubmittingLocal
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
@@ -429,7 +434,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
                 Add Images
               </label>
               <span className="text-sm text-gray-500">
-                {formData.images.length}/{MAX_IMAGES} images chosen
+                {selectedFiles.length}/{maxImages} images chosen
               </span>
             </div>
             <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
