@@ -75,6 +75,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -339,25 +341,23 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
               Description (Please include the size of the item if applicable) <span className="text-red-500">*</span>
             </label>
-            <div className="relative">
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                required
-                rows={showFullDescription ? 6 : 3}
-                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-              />
-              {formData.description.length > 100 && (
-                <button
-                  type="button"
-                  onClick={() => setShowFullDescription(!showFullDescription)}
-                  className="absolute bottom-2 right-2 text-sm text-orange-500 hover:text-orange-600 focus:outline-none"
-                >
-                  {showFullDescription ? 'See Less' : 'See More'}
-                </button>
-              )}
+            <div className="overflow-hidden">
+              <h3 className="text-lg font-semibold mb-2">Description</h3>
+              <div className="relative">
+                <p className="text-gray-700 mb-2 break-words whitespace-pre-wrap">
+                  {isDescriptionExpanded 
+                    ? formData.description 
+                    : `${formData.description.slice(0, CHARACTER_LIMIT)}...`}
+                </p>
+                {formData.description.length > CHARACTER_LIMIT && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="text-orange-500 hover:text-orange-600 font-medium"
+                  >
+                    {isDescriptionExpanded ? 'See Less' : 'See More'}
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
