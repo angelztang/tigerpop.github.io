@@ -11,6 +11,7 @@ interface ListingFormProps {
   isSubmitting?: boolean;
   initialData?: Partial<ApiCreateListingData>;
   onClose?: () => void;
+  maxImages?: number;
 }
 
 interface ListingFormData {
@@ -58,7 +59,7 @@ const conditions = [
 
 const MAX_IMAGES = 10;
 
-const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
+const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose, maxImages = 10 }) => {
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
     description: '',
@@ -110,14 +111,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
-      const totalFiles = selectedFiles.length + files.length;
+      const totalFiles = (formData.images?.length || 0) + selectedFiles.length + files.length;
       
-      if (totalFiles > MAX_IMAGES) {
-        setError(`You can only upload up to ${MAX_IMAGES} images. You currently have ${selectedFiles.length} images and tried to add ${files.length} more.`);
+      if (totalFiles > maxImages) {
+        setError(`You can only upload up to ${maxImages} images. You currently have ${(formData.images?.length || 0) + selectedFiles.length} images and tried to add ${files.length} more.`);
         return;
       }
       
       setSelectedFiles(prev => [...prev, ...files]);
+      setError(null); // Clear any existing error messages
       
       // Create preview URLs for new files
       const newUrls = files.map(file => URL.createObjectURL(file));
@@ -218,7 +220,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
       className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full flex items-center justify-center z-50"
       onClick={handleClickOutside}
     >
-      <div className="relative bg-white rounded-lg p-8 m-4 max-w-xl w-full z-50 shadow-xl">
+      <div className="relative bg-white rounded-lg p-8 m-4 max-w-xl w-full z-50 shadow-xl overflow-y-auto max-h-[90vh]">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">Create New Listing</h2>
           <button
@@ -362,7 +364,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Images (jpg, jpeg, png) - Max {MAX_IMAGES} images:
+              Images (jpg, jpeg, png) - Max {maxImages} images:
             </label>
             <div className="mt-1">
               <input
@@ -372,12 +374,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
-                disabled={selectedFiles.length >= MAX_IMAGES}
+                disabled={(formData.images?.length || 0) + selectedFiles.length >= maxImages}
               />
               <label
                 htmlFor="file-upload"
                 className={`inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md ${
-                  selectedFiles.length >= MAX_IMAGES
+                  (formData.images?.length || 0) + selectedFiles.length >= maxImages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
@@ -385,8 +387,8 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 Add Images
               </label>
               <span className="ml-3 text-sm text-gray-500">
-                {selectedFiles.length > 0 
-                  ? `${selectedFiles.length}/${MAX_IMAGES} images selected` 
+                {(formData.images?.length || 0) + selectedFiles.length > 0 
+                  ? `${(formData.images?.length || 0) + selectedFiles.length}/${maxImages} images selected` 
                   : 'No files chosen'}
               </span>
             </div>
@@ -430,13 +432,24 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             </button>
             <button
               type="submit"
-              className={`px-4 py-2 text-white rounded-md ${
+              disabled={isSubmitting}
+              className={`px-4 py-2 text-white rounded-md flex items-center justify-center min-w-[120px] ${
                 isSubmitting
                   ? 'bg-orange-400 cursor-not-allowed'
                   : 'bg-orange-500 hover:bg-orange-600'
               } transition-colors`}
             >
-              {Object.keys(initialData).length > 0 ? 'Update Listing' : 'Create Listing'}
+              {isSubmitting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Creating...
+                </>
+              ) : (
+                Object.keys(initialData).length > 0 ? 'Update Listing' : 'Create Listing'
+              )}
             </button>
           </div>
         </form>

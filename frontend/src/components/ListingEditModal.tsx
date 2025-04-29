@@ -17,6 +17,7 @@ interface ListingFormData {
   images?: string[];
   condition: string;
   pricing_mode: string;
+  selectedFiles?: File[];
 }
 
 const categories = [
@@ -35,6 +36,7 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const MAX_IMAGES = 10;
 
   const handleDelete = async () => {
     setIsSubmitting(true);
@@ -52,11 +54,18 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
     }
   };
 
-
   const handleSubmit = async (formData: ListingFormData) => {
     setIsSubmitting(true);
     setError(null);
     try {
+      // Check if total images exceed the limit
+      const totalImages = (formData.images?.length || 0) + (formData.selectedFiles?.length || 0);
+      if (totalImages > MAX_IMAGES) {
+        setError(`You can only have up to ${MAX_IMAGES} images. You currently have ${totalImages} images.`);
+        setIsSubmitting(false);
+        return;
+      }
+
       await updateListing(listing.id, {
         ...formData,
         price: parseFloat(formData.price?.toString() || '0.00')
@@ -133,8 +142,10 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
             price: listing.price,
             category: listing.category,
             images: listing.images,
-            condition: listing.condition
+            condition: listing.condition,
+            pricing_mode: listing.pricing_mode
           }}
+          maxImages={MAX_IMAGES}
         />
 
         <div className="mt-6 flex justify-between">
