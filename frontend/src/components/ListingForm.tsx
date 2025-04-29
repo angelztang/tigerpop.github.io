@@ -133,6 +133,16 @@ const ListingForm: React.FC<ListingFormProps> = ({
 
     // Handle price validation
     if (name === 'price') {
+      // Allow empty value for backspacing
+      if (value === '') {
+        setFormData(prev => ({
+          ...prev,
+          [name]: 0
+        }));
+        setError(null);
+        return;
+      }
+
       const priceValue = parseFloat(value);
       if (isNaN(priceValue)) {
         setError('Price must be a valid number');
@@ -451,6 +461,12 @@ const ListingForm: React.FC<ListingFormProps> = ({
                 </div>
               ))}
             </div>
+
+            {error && error.includes('images') && (
+              <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+                {error}
+              </div>
+            )}
 
             <div className="flex items-center space-x-2">
               <input
