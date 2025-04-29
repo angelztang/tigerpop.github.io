@@ -233,6 +233,14 @@ const ListingForm: React.FC<ListingFormProps> = ({
         setError('Condition is required');
         return;
       }
+      if (formData.price === undefined || formData.price === null || formData.price < 0) {
+        setError(`Price must be at least $0`);
+        return;
+      }
+      if (formData.price > MAX_PRICE) {
+        setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
+        return;
+      }
 
       // Upload images if there are any
       let imageUrls = [...formData.images];
@@ -391,8 +399,9 @@ const ListingForm: React.FC<ListingFormProps> = ({
                   name="price"
                   value={formData.price || ''}
                   onChange={handleInputChange}
+                  onWheel={(e) => e.currentTarget.blur()}
                   required
-                  min={MIN_PRICE}
+                  min="0"
                   max={MAX_PRICE}
                   step="0.01"
                   disabled={isSubmittingLocal}
@@ -400,8 +409,13 @@ const ListingForm: React.FC<ListingFormProps> = ({
                   placeholder="0.00"
                 />
               </div>
+              {error && (error.includes('Price must be at least') || error.includes('Price cannot exceed')) && (
+                <p className="mt-1 text-sm text-red-600">
+                  {error}
+                </p>
+              )}
               <p className="mt-1 text-sm text-gray-500">
-                Price must be between ${MIN_PRICE} and ${MAX_PRICE.toLocaleString()}
+                Price must be between $0 and ${MAX_PRICE.toLocaleString()}
               </p>
             </div>
           </div>
