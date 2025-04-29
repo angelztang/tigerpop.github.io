@@ -74,6 +74,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showFullDescription, setShowFullDescription] = useState(false);
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -338,15 +339,26 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
               Description (Please include the size of the item if applicable) <span className="text-red-500">*</span>
             </label>
-            <textarea
-              id="description"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              required
-              rows={4}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            />
+            <div className="relative">
+              <textarea
+                id="description"
+                name="description"
+                value={formData.description}
+                onChange={handleInputChange}
+                required
+                rows={showFullDescription ? 6 : 3}
+                className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              />
+              {formData.description.length > 100 && (
+                <button
+                  type="button"
+                  onClick={() => setShowFullDescription(!showFullDescription)}
+                  className="absolute bottom-2 right-2 text-sm text-orange-500 hover:text-orange-600 focus:outline-none"
+                >
+                  {showFullDescription ? 'See Less' : 'See More'}
+                </button>
+              )}
+            </div>
           </div>
 
           <div>
