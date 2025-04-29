@@ -93,6 +93,8 @@ const ListingForm: React.FC<ListingFormProps> = ({
   const CHARACTER_LIMIT = 150;
   const TITLE_LIMIT = 100;
   const DESCRIPTION_LIMIT = 1000;
+  const MIN_PRICE = 0.01;
+  const MAX_PRICE = 1000000000; // 1 billion
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -121,10 +123,29 @@ const ListingForm: React.FC<ListingFormProps> = ({
     
     // Handle character limits
     if (name === 'title' && value.length > TITLE_LIMIT) {
+      setError(`Title cannot exceed ${TITLE_LIMIT} characters`);
       return;
     }
     if (name === 'description' && value.length > DESCRIPTION_LIMIT) {
+      setError(`Description cannot exceed ${DESCRIPTION_LIMIT} characters`);
       return;
+    }
+
+    // Handle price validation
+    if (name === 'price') {
+      const priceValue = parseFloat(value);
+      if (isNaN(priceValue)) {
+        setError('Price must be a valid number');
+        return;
+      }
+      if (priceValue < MIN_PRICE) {
+        setError(`Price must be at least $${MIN_PRICE}`);
+        return;
+      }
+      if (priceValue > MAX_PRICE) {
+        setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
+        return;
+      }
     }
 
     if (type === 'checkbox') {
@@ -140,6 +161,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
         [name]: value
       }));
     }
+    setError(null); // Clear any previous errors when input is valid
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -181,8 +203,16 @@ const ListingForm: React.FC<ListingFormProps> = ({
         setError('Title is required');
         return;
       }
+      if (formData.title.length > TITLE_LIMIT) {
+        setError(`Title cannot exceed ${TITLE_LIMIT} characters`);
+        return;
+      }
       if (!formData.description.trim()) {
         setError('Description is required');
+        return;
+      }
+      if (formData.description.length > DESCRIPTION_LIMIT) {
+        setError(`Description cannot exceed ${DESCRIPTION_LIMIT} characters`);
         return;
       }
       if (!formData.category) {
@@ -193,8 +223,12 @@ const ListingForm: React.FC<ListingFormProps> = ({
         setError('Condition is required');
         return;
       }
-      if (formData.price <= 0) {
-        setError('Price must be greater than 0');
+      if (formData.price < MIN_PRICE) {
+        setError(`Price must be at least $${MIN_PRICE}`);
+        return;
+      }
+      if (formData.price > MAX_PRICE) {
+        setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
         return;
       }
 
@@ -237,7 +271,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
-            aria-label="Close"
+            disabled={isSubmittingLocal}
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
@@ -246,6 +280,12 @@ const ListingForm: React.FC<ListingFormProps> = ({
         </div>
 
         <p className="text-sm text-gray-500 mb-4">Fields marked with an asterisk (*) are mandatory</p>
+
+        {error && (
+          <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
@@ -350,18 +390,17 @@ const ListingForm: React.FC<ListingFormProps> = ({
                   value={formData.price}
                   onChange={handleInputChange}
                   required
-                  min="0"
-                  max={1000000000}
+                  min={MIN_PRICE}
+                  max={MAX_PRICE}
                   step="0.01"
-                  className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md"
+                  disabled={isSubmittingLocal}
+                  className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
                   placeholder="0.00"
                 />
               </div>
-              {formData.is_auction && (
-                <p className="mt-1 text-sm text-gray-500">
-                  This will be the minimum bid amount for your auction
-                </p>
-              )}
+              <p className="mt-1 text-sm text-gray-500">
+                Price must be between ${MIN_PRICE} and ${MAX_PRICE.toLocaleString()}
+              </p>
             </div>
           </div>
 

@@ -36,7 +36,12 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const MAX_IMAGES = 10;
+  const TITLE_LIMIT = 100;
+  const DESCRIPTION_LIMIT = 1000;
+  const MIN_PRICE = 0.01;
+  const MAX_PRICE = 1000000000; // 1 billion
 
   const handleDelete = async () => {
     setIsSubmitting(true);
@@ -58,6 +63,49 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
     setIsSubmitting(true);
     setError(null);
     try {
+      // Validate form data
+      if (!formData.title.trim()) {
+        setError('Title is required');
+        setIsSubmitting(false);
+        return;
+      }
+      if (formData.title.length > TITLE_LIMIT) {
+        setError(`Title cannot exceed ${TITLE_LIMIT} characters`);
+        setIsSubmitting(false);
+        return;
+      }
+      if (!formData.description.trim()) {
+        setError('Description is required');
+        setIsSubmitting(false);
+        return;
+      }
+      if (formData.description.length > DESCRIPTION_LIMIT) {
+        setError(`Description cannot exceed ${DESCRIPTION_LIMIT} characters`);
+        setIsSubmitting(false);
+        return;
+      }
+      if (!formData.category) {
+        setError('Category is required');
+        setIsSubmitting(false);
+        return;
+      }
+      if (!formData.condition) {
+        setError('Condition is required');
+        setIsSubmitting(false);
+        return;
+      }
+      const price = formData.price ?? 0;
+      if (price < MIN_PRICE) {
+        setError(`Price must be at least $${MIN_PRICE}`);
+        setIsSubmitting(false);
+        return;
+      }
+      if (price > MAX_PRICE) {
+        setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
+        setIsSubmitting(false);
+        return;
+      }
+
       // Check if total images exceed the limit
       const totalImages = (formData.images?.length || 0) + (formData.selectedFiles?.length || 0);
       if (totalImages > MAX_IMAGES) {
@@ -80,6 +128,14 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
     }
   };
 
+  const handleSelectedFilesChange = (files: File[]) => {
+    setSelectedFiles(files);
+  };
+
+  const handleImageRemove = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -88,6 +144,7 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
           <button
             onClick={onClose}
             className="text-gray-500 hover:text-gray-700"
+            disabled={isSubmitting}
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -146,12 +203,16 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
             pricing_mode: listing.pricing_mode
           }}
           maxImages={MAX_IMAGES}
+          selectedFiles={selectedFiles}
+          onSelectedFilesChange={handleSelectedFilesChange}
+          onImageRemove={handleImageRemove}
         />
 
         <div className="mt-6 flex justify-between">
           <button
             onClick={() => setShowDeleteConfirm(true)}
-            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
+            disabled={isSubmitting}
           >
             Delete Listing
           </button>
@@ -165,15 +226,14 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
               <div className="flex justify-end space-x-4">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  disabled={isSubmitting}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    handleDelete();
-                  }}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors"
+                  onClick={handleDelete}
+                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:bg-red-300 disabled:cursor-not-allowed"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? 'Deleting...' : 'Delete'}
