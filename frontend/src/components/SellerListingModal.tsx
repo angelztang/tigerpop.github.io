@@ -512,12 +512,12 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
 
           {/* Action Buttons */}
           <div className="mt-6 flex justify-end space-x-4">
-            {!isEditing && listing.status !== 'sold' && (
+            {!isEditing && listing.status !== 'sold' && listing.status === 'available' && listing.pricing_mode?.toLowerCase() === 'auction' && (
               <button
-                onClick={() => setIsEditing(true)}
-                className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600"
+                onClick={() => setShowCloseBiddingModal(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
               >
-                Edit Listing
+                Close Bidding
               </button>
             )}
             {!isEditing && (listing.status === 'available' || listing.status === 'pending') && (
@@ -527,31 +527,6 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
               >
                 Mark as Sold
               </button>
-            )}
-            {!isEditing && listing.status === 'available' && listing.pricing_mode?.toLowerCase() === 'auction' && (
-              <button
-                onClick={() => setShowCloseBiddingModal(true)}
-                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              >
-                Close Bidding
-              </button>
-            )}
-            {isEditing && (
-              <>
-                <button
-                  onClick={() => setIsEditing(false)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSubmitting}
-                  className="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Saving...' : 'Save Changes'}
-                </button>
-              </>
             )}
             {listing.status !== 'sold' && (
               <button
