@@ -505,7 +505,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
 
               <h3 className="text-lg font-semibold mb-2 mt-4">Status</h3>
               <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
-                {listing.status}
+                {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
               </span>
             </div>
           </div>

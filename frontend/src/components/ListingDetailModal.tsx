@@ -312,7 +312,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
               <h3 className="text-lg font-semibold mb-2">Status</h3>
               <div className="mb-4">
                 <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(localListing.status)}`}>
-                  {localListing.status}
+                  {localListing.status.charAt(0).toUpperCase() + localListing.status.slice(1)}
                 </span>
               </div>
 
