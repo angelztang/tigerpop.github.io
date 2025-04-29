@@ -12,6 +12,9 @@ interface ListingFormProps {
   initialData?: Partial<ApiCreateListingData>;
   onClose?: () => void;
   maxImages?: number;
+  selectedFiles?: File[];
+  onSelectedFilesChange?: (files: File[]) => void;
+  onImageRemove?: (index: number) => void;
 }
 
 interface ListingFormData {
@@ -59,7 +62,16 @@ const conditions = [
 
 const MAX_IMAGES = 10;
 
-const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose, maxImages = 10 }) => {
+const ListingForm: React.FC<ListingFormProps> = ({ 
+  onSubmit, 
+  isSubmitting = false, 
+  initialData = {}, 
+  onClose, 
+  maxImages = 10,
+  selectedFiles: externalSelectedFiles = [],
+  onSelectedFilesChange,
+  onImageRemove
+}) => {
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
     description: '',
@@ -73,12 +85,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
     min_bid_increment: 1.0,
     ...initialData
   });
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>(externalSelectedFiles);
   const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isSubmittingLocal, setIsSubmittingLocal] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
   const CHARACTER_LIMIT = 150;
+  const TITLE_LIMIT = 100;
+  const DESCRIPTION_LIMIT = 1000;
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -93,6 +107,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
+    
+    // Handle character limits
+    if (name === 'title' && value.length > TITLE_LIMIT) {
+      return;
+    }
+    if (name === 'description' && value.length > DESCRIPTION_LIMIT) {
+      return;
+    }
+
     if (type === 'checkbox') {
       const isAuction = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
@@ -145,67 +168,51 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
+    setError(null);
+    setIsSubmittingLocal(true);
 
     try {
-      const userId = getUserId();
-      const netid = localStorage.getItem('netid');
-      
-      if (!userId) {
-        setError('User not authenticated. Please log in.');
+      // Validate form data
+      if (!formData.title.trim()) {
+        setError('Title is required');
+        return;
+      }
+      if (!formData.description.trim()) {
+        setError('Description is required');
+        return;
+      }
+      if (!formData.category) {
+        setError('Category is required');
+        return;
+      }
+      if (!formData.condition) {
+        setError('Condition is required');
+        return;
+      }
+      if (formData.price <= 0) {
+        setError('Price must be greater than 0');
         return;
       }
 
-      if (!netid) {
-        setError('User netid not found. Please log in again.');
-        return;
-      }
-
-      // Convert form data to CreateListingData format
-      const createListingData: ApiCreateListingData = {
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        condition: formData.condition,
-        images: formData.images,
-        pricing_mode: formData.pricing_mode,
-        netid: netid,
-        user_id: parseInt(userId),
-        price: formData.price
-      };
-
-      // Validate required fields
-      if (!createListingData.title || !createListingData.description || !createListingData.category) {
-        setError('Please fill in all required fields');
-        return;
-      }
-
-      if (!createListingData.price) {
-        setError('Please enter a price');
-        return;
-      }
-
-      if (createListingData.price > 1000000000) {
-        setError('Price cannot exceed $1,000,000,000');
-        setLoading(false);
-        return;
-      }
-
-      // Handle image uploads if there are any
+      // Upload images if there are any
+      let imageUrls = [...formData.images];
       if (selectedFiles.length > 0) {
         const uploadedUrls = await uploadImages(selectedFiles);
-        createListingData.images = uploadedUrls;
+        imageUrls = [...imageUrls, ...uploadedUrls];
       }
 
-      await onSubmit(createListingData);
-      if (onClose) {
-        onClose();
-      }
+      // Prepare the data for submission
+      const submitData = {
+        ...formData,
+        images: imageUrls,
+        netid: localStorage.getItem('netid') || '',
+      };
+
+      await onSubmit(submitData);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while submitting the listing');
+      setError(err instanceof Error ? err.message : 'An error occurred while creating the listing');
     } finally {
-      setLoading(false);
+      setIsSubmittingLocal(false);
     }
   };
 
@@ -238,9 +245,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-              Title <span className="text-red-500">*</span>
-            </label>
+            <div className="flex justify-between items-center">
+              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                Title <span className="text-red-500">*</span>
+              </label>
+              <span className="text-sm text-gray-500">
+                {formData.title.length}/{TITLE_LIMIT} characters
+              </span>
+            </div>
             <input
               type="text"
               id="title"
@@ -248,7 +260,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               value={formData.title}
               onChange={handleInputChange}
               required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              disabled={isSubmittingLocal}
+              maxLength={TITLE_LIMIT}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -348,9 +362,14 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
           </div>
 
           <div>
-            <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-              Description (Please include the size of the item if applicable) <span className="text-red-500">*</span>
-            </label>
+            <div className="flex justify-between items-center">
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+                Description <span className="text-red-500">*</span>
+              </label>
+              <span className="text-sm text-gray-500">
+                {formData.description.length}/{DESCRIPTION_LIMIT} characters
+              </span>
+            </div>
             <textarea
               id="description"
               name="description"
@@ -358,7 +377,9 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
               onChange={handleInputChange}
               required
               rows={4}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+              maxLength={DESCRIPTION_LIMIT}
+              disabled={isSubmittingLocal}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
           </div>
 
@@ -418,20 +439,21 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              disabled={isSubmittingLocal}
+              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmittingLocal}
               className={`px-4 py-2 text-white rounded-md flex items-center justify-center min-w-[120px] ${
-                isSubmitting
+                isSubmittingLocal
                   ? 'bg-orange-400 cursor-not-allowed'
                   : 'bg-orange-500 hover:bg-orange-600'
               } transition-colors`}
             >
-              {isSubmitting ? (
+              {isSubmittingLocal ? (
                 <>
                   <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
