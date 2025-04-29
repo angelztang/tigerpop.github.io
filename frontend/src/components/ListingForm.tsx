@@ -131,7 +131,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
       return;
     }
 
-    // Handle price validation
+    // Handle price input
     if (name === 'price') {
       // Allow empty value for backspacing
       if (value === '') {
@@ -139,23 +139,16 @@ const ListingForm: React.FC<ListingFormProps> = ({
           ...prev,
           [name]: 0
         }));
-        setError(null);
         return;
       }
 
+      // Allow 0 and decimal inputs
       const priceValue = parseFloat(value);
-      if (isNaN(priceValue)) {
-        setError('Price must be a valid number');
-        return;
-      }
-      if (priceValue < MIN_PRICE) {
-        setError(`Price must be at least $${MIN_PRICE}`);
-        return;
-      }
-      if (priceValue > MAX_PRICE) {
-        setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
-        return;
-      }
+      setFormData(prev => ({
+        ...prev,
+        [name]: isNaN(priceValue) ? 0 : priceValue
+      }));
+      return;
     }
 
     if (type === 'checkbox') {
@@ -291,7 +284,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
 
         <p className="text-sm text-gray-500 mb-4">Fields marked with an asterisk (*) are mandatory</p>
 
-        {error && !error.toLowerCase().includes('image') && (
+        {error && !error.toLowerCase().includes('image') && !error.toLowerCase().includes('price') && (
           <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
             {error}
           </div>
