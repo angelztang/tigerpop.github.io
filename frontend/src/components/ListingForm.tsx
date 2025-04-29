@@ -77,8 +77,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
-  const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
+  const CHARACTER_LIMIT = 150;
 
   // Initialize user_id when component mounts
   useEffect(() => {
@@ -350,24 +349,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
               Description (Please include the size of the item if applicable) <span className="text-red-500">*</span>
             </label>
-            <div className="overflow-hidden">
-              <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <div className="relative">
-                <p className="text-gray-700 mb-2 break-words whitespace-pre-wrap">
-                  {isDescriptionExpanded 
-                    ? formData.description 
-                    : `${formData.description.slice(0, CHARACTER_LIMIT)}...`}
-                </p>
-                {formData.description.length > CHARACTER_LIMIT && (
-                  <button
-                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
-                    className="text-orange-500 hover:text-orange-600 font-medium"
-                  >
-                    {isDescriptionExpanded ? 'See Less' : 'See More'}
-                  </button>
-                )}
-              </div>
-            </div>
+            <textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              required
+              rows={4}
+              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+            />
           </div>
 
           <div>
@@ -400,26 +390,31 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                   : 'No files chosen'}
               </span>
             </div>
+            {error && (
+              <p className="mt-2 text-sm text-red-600">{error}</p>
+            )}
             {previewUrls.length > 0 && (
-              <div className="mt-4 grid grid-cols-3 gap-4">
-                {previewUrls.map((url, index) => (
-                  <div key={index} className="relative group">
-                    <img
-                      src={url}
-                      alt={`Preview ${index + 1}`}
-                      className="w-full h-32 object-cover rounded-md"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(index)}
-                      className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+              <div className="mt-4 max-h-[300px] overflow-y-auto">
+                <div className="grid grid-cols-3 gap-4">
+                  {previewUrls.map((url, index) => (
+                    <div key={index} className="relative group">
+                      <img
+                        src={url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-32 object-cover rounded-md"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(index)}
+                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
             <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
