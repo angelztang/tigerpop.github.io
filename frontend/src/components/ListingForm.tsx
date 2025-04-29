@@ -374,12 +374,12 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
-                disabled={(formData.images?.length || 0) + selectedFiles.length >= maxImages}
+                disabled={(formData.images?.length || 0) >= maxImages}
               />
               <label
                 htmlFor="file-upload"
                 className={`inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md ${
-                  (formData.images?.length || 0) + selectedFiles.length >= maxImages
+                  (formData.images?.length || 0) >= maxImages
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
@@ -387,10 +387,15 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 Add Images
               </label>
               <span className="ml-3 text-sm text-gray-500">
-                {(formData.images?.length || 0) + selectedFiles.length > 0 
-                  ? `${(formData.images?.length || 0) + selectedFiles.length}/${maxImages} images selected` 
+                {(formData.images?.length || 0) > 0 
+                  ? `${(formData.images?.length || 0)}/${maxImages} images selected` 
                   : 'No files chosen'}
               </span>
+              {(formData.images?.length || 0) >= maxImages && (
+                <p className="mt-2 text-sm text-gray-500">
+                  Maximum number of images reached. Remove some images to add new ones.
+                </p>
+              )}
             </div>
             {error && (
               <p className="mt-2 text-sm text-red-600">{error}</p>
