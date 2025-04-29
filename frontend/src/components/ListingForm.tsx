@@ -233,14 +233,6 @@ const ListingForm: React.FC<ListingFormProps> = ({
         setError('Condition is required');
         return;
       }
-      if (formData.price < MIN_PRICE) {
-        setError(`Price must be at least $${MIN_PRICE}`);
-        return;
-      }
-      if (formData.price > MAX_PRICE) {
-        setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
-        return;
-      }
 
       // Upload images if there are any
       let imageUrls = [...formData.images];
@@ -397,7 +389,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
                   type="number"
                   id="price"
                   name="price"
-                  value={formData.price}
+                  value={formData.price || ''}
                   onChange={handleInputChange}
                   required
                   min={MIN_PRICE}
