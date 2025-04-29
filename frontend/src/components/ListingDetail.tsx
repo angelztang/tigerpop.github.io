@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import BiddingInterface from './BiddingInterface';
 import { getUserId } from '../services/authService';
 
@@ -19,6 +19,8 @@ interface ListingDetailProps {
 
 const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
   const currentUserId = getUserId();
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -67,7 +69,21 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
           
           <div className="mb-4">
             <h3 className="text-lg font-semibold mb-2">Description</h3>
-            <p className="text-gray-700">{listing.description}</p>
+            <div className="relative">
+              <p className="text-gray-700">
+                {isDescriptionExpanded 
+                  ? listing.description 
+                  : `${listing.description.slice(0, CHARACTER_LIMIT)}${listing.description.length > CHARACTER_LIMIT ? '...' : ''}`}
+              </p>
+              {listing.description.length > CHARACTER_LIMIT && (
+                <button
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className="text-orange-500 hover:text-orange-600 font-medium mt-2"
+                >
+                  {isDescriptionExpanded ? 'See Less' : 'See More'}
+                </button>
+              )}
+            </div>
           </div>
           
           <div className="mb-4">
