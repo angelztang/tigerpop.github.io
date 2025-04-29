@@ -142,8 +142,8 @@ const ListingForm: React.FC<ListingFormProps> = ({
         return;
       }
 
-      // Allow 0 and decimal inputs
-      const priceValue = parseFloat(value);
+      // Allow decimal inputs like ".04"
+      const priceValue = value === '.' ? 0 : parseFloat(value);
       setFormData(prev => ({
         ...prev,
         [name]: isNaN(priceValue) ? 0 : priceValue
