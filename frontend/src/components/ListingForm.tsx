@@ -362,68 +362,55 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Images (jpg, jpeg, png) - Max {maxImages} images:
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Images ({formData.images.length}/{MAX_IMAGES})
             </label>
-            <div className="mt-1">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              {formData.images.map((url, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={url}
+                    alt={`Image ${index + 1}`}
+                    className="w-full h-32 object-cover rounded-md"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex items-center space-x-2">
               <input
                 type="file"
-                accept="image/jpeg,image/png"
                 multiple
+                accept="image/jpeg,image/png"
                 onChange={handleFileChange}
                 className="hidden"
-                id="file-upload"
-                disabled={(formData.images?.length || 0) >= maxImages}
+                id="images"
+                disabled={formData.images.length >= MAX_IMAGES}
               />
               <label
-                htmlFor="file-upload"
+                htmlFor="images"
                 className={`inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md ${
-                  (formData.images?.length || 0) >= maxImages
+                  formData.images.length >= MAX_IMAGES
                     ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
                 } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
               >
                 Add Images
               </label>
-              <span className="ml-3 text-sm text-gray-500">
-                {(formData.images?.length || 0) > 0 
-                  ? `${(formData.images?.length || 0)}/${maxImages} images selected` 
-                  : 'No files chosen'}
+              <span className="text-sm text-gray-500">
+                {formData.images.length}/{MAX_IMAGES} images chosen
               </span>
-              {(formData.images?.length || 0) >= maxImages && (
-                <p className="mt-2 text-sm text-gray-500">
-                  Maximum number of images reached. Remove some images to add new ones.
-                </p>
-              )}
             </div>
-            {error && (
-              <p className="mt-2 text-sm text-red-600">{error}</p>
-            )}
-            {previewUrls.length > 0 && (
-              <div className="mt-4 max-h-[300px] overflow-y-auto">
-                <div className="grid grid-cols-3 gap-4">
-                  {previewUrls.map((url, index) => (
-                    <div key={index} className="relative group">
-                      <img
-                        src={url}
-                        alt={`Preview ${index + 1}`}
-                        className="w-full h-32 object-cover rounded-md"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeImage(index)}
-                        className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
             <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
           </div>
 
