@@ -39,6 +39,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [localListing, setLocalListing] = useState(listing);
   const [bids, setBids] = useState<Bid[]>([]);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
   const modalRef = useRef<HTMLDivElement>(null);
@@ -258,10 +260,24 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="overflow-hidden">
               <h3 className="text-lg font-semibold mb-2">Description</h3>
-              <p className="text-gray-700 mb-6 break-words whitespace-pre-wrap">{localListing.description}</p>
+              <div className="relative">
+                <p className="text-gray-700 mb-2 break-words whitespace-pre-wrap">
+                  {isDescriptionExpanded 
+                    ? localListing.description 
+                    : `${localListing.description.slice(0, CHARACTER_LIMIT)}${localListing.description.length > CHARACTER_LIMIT ? '...' : ''}`}
+                </p>
+                {localListing.description.length > CHARACTER_LIMIT && (
+                  <button
+                    onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                    className="text-orange-500 hover:text-orange-600 font-medium"
+                  >
+                    {isDescriptionExpanded ? 'See Less' : 'See More'}
+                  </button>
+                )}
+              </div>
               
               {localListing.pricing_mode?.toLowerCase() === 'auction' && (
-                <div className="bg-blue-50 p-4 rounded-lg">
+                <div className="bg-blue-50 p-4 rounded-lg mt-4">
                   <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
                   <p className="text-gray-700">
                     This item is being sold through an auction. You can place bids on this item, and the highest bidder will win when the auction ends. The current bid is shown below, and you can place a new bid that must be higher than the current bid.

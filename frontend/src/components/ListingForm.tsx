@@ -56,6 +56,8 @@ const conditions = [
   'Used'
 ];
 
+const MAX_IMAGES = 10;
+
 const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = false, initialData = {}, onClose }) => {
   const [formData, setFormData] = useState<ListingFormData>({
     title: '',
@@ -109,6 +111,13 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
+      const totalFiles = selectedFiles.length + files.length;
+      
+      if (totalFiles > MAX_IMAGES) {
+        setError(`You can only upload up to ${MAX_IMAGES} images. You currently have ${selectedFiles.length} images and tried to add ${files.length} more.`);
+        return;
+      }
+      
       setSelectedFiles(prev => [...prev, ...files]);
       
       // Create preview URLs for new files
@@ -363,7 +372,7 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Images (jpg, jpeg, png):
+              Images (jpg, jpeg, png) - Max {MAX_IMAGES} images:
             </label>
             <div className="mt-1">
               <input
@@ -373,15 +382,22 @@ const ListingForm: React.FC<ListingFormProps> = ({ onSubmit, isSubmitting = fals
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
+                disabled={selectedFiles.length >= MAX_IMAGES}
               />
               <label
                 htmlFor="file-upload"
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 cursor-pointer"
+                className={`inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md ${
+                  selectedFiles.length >= MAX_IMAGES
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
+                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
               >
                 Add Images
               </label>
               <span className="ml-3 text-sm text-gray-500">
-                {selectedFiles.length > 0 ? `${selectedFiles.length} file(s) selected` : 'No files chosen'}
+                {selectedFiles.length > 0 
+                  ? `${selectedFiles.length}/${MAX_IMAGES} images selected` 
+                  : 'No files chosen'}
               </span>
             </div>
             {previewUrls.length > 0 && (
