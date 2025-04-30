@@ -253,9 +253,26 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
       credentials: 'include',
       mode: 'cors'
     });
-    const data = await handleResponse<Listing[]>(response);
-    console.log('User listings response:', data); // Debug log
-    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode }))); // Debug log
+    
+    // Log raw response
+    const rawData = await response.json();
+    console.log('Raw API response:', rawData);
+    console.log('Raw pricing_mode values:', rawData.map((l: any) => ({ id: l.id, pricing_mode: l.pricing_mode })));
+    
+    // Type check and transform the data
+    if (!Array.isArray(rawData)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    // Transform pricing_mode to match the expected format
+    const data: Listing[] = rawData.map(listing => ({
+      ...listing,
+      pricing_mode: listing.pricing_mode?.toLowerCase() as Listing['pricing_mode']
+    }));
+    
+    console.log('Processed listings:', data);
+    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode })));
+    
     return data;
   } catch (error) {
     console.error('Error fetching user listings:', error);

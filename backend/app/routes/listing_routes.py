@@ -326,8 +326,18 @@ def get_user_listings():
                    .order_by(Listing.created_at.desc())
                    .all())
         
+        # Debug log raw listings
+        current_app.logger.info(f"Raw listings before serialization:")
+        for listing in listings:
+            current_app.logger.info(f"Listing {listing.id}: pricing_mode={listing.pricing_mode}")
+        
         # Convert to dictionary format using the model's to_dict method
         result = [listing.to_dict() for listing in listings]
+        
+        # Debug log serialized listings
+        current_app.logger.info(f"Serialized listings:")
+        for listing_dict in result:
+            current_app.logger.info(f"Listing {listing_dict['id']}: pricing_mode={listing_dict.get('pricing_mode')}")
         
         return jsonify(result)
     except Exception as e:
