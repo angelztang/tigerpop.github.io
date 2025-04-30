@@ -158,21 +158,14 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
         updatedImages = [...listing.images, ...uploadedUrls];
       }
 
-      // Create the update data with proper typing
+      // Preserve the original pricing_mode and price for auction items
       const updateData: Partial<Listing> = {
         ...editedListing,
         images: updatedImages,
-        pricing_mode: editedListing.pricing_mode as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION',
-        price: editedListing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price,
+        pricing_mode: listing.pricing_mode as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION',
+        price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price,
         condition: editedListing.condition
       };
-
-      // Remove any undefined values
-      Object.keys(updateData).forEach(key => {
-        if (updateData[key as keyof Partial<Listing>] === undefined) {
-          delete updateData[key as keyof Partial<Listing>];
-        }
-      });
 
       console.log('Updating listing with data:', updateData); // Debug log
 
