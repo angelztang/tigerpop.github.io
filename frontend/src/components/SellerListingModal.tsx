@@ -160,7 +160,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
       const updateData = {
         ...editedListing,
         images: updatedImages,
-        pricing_mode: listing.pricing_mode, // Always preserve the original pricing_mode
+        pricing_mode: listing.pricing_mode as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION', // Ensure correct type
         price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price,
         condition: editedListing.condition
       };
