@@ -93,7 +93,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
   const CHARACTER_LIMIT = 150;
   const TITLE_LIMIT = 100;
   const DESCRIPTION_LIMIT = 1000;
-  const MIN_PRICE = 0.01;
+  const MIN_PRICE = 1;
   const MAX_PRICE = 1000000000; // 1 billion
 
   // Initialize user_id when component mounts
@@ -226,8 +226,8 @@ const ListingForm: React.FC<ListingFormProps> = ({
         setError('Condition is required');
         return;
       }
-      if (formData.price === undefined || formData.price === null || formData.price < 0) {
-        setError(`Price must be at least $0`);
+      if (formData.price === undefined || formData.price === null || formData.price < MIN_PRICE) {
+        setError(`Price must be at least $${MIN_PRICE}`);
         return;
       }
       if (formData.price > MAX_PRICE) {
@@ -394,7 +394,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
                   onChange={handleInputChange}
                   onWheel={(e) => e.currentTarget.blur()}
                   required
-                  min="0"
+                  min={MIN_PRICE}
                   max={MAX_PRICE}
                   step="0.01"
                   disabled={isSubmittingLocal}
@@ -408,7 +408,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
                 </p>
               )}
               <p className="mt-1 text-sm text-gray-500">
-                Price must be between $0 and ${MAX_PRICE.toLocaleString()}
+                Price must be between ${MIN_PRICE} and ${MAX_PRICE.toLocaleString()}
               </p>
             </div>
           </div>
