@@ -250,15 +250,21 @@ def create_listing():
         current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
         # Validate required fields
-        if not all([title, description, category, user_id]):
+        if not all([title, description, category, user_id, pricing_mode]):
             missing_fields = []
             if not title: missing_fields.append('title')
             if not description: missing_fields.append('description')
             if not category: missing_fields.append('category')
             if not condition: missing_fields.append('condition')
             if not user_id: missing_fields.append('user_id')
+            if not pricing_mode: missing_fields.append('pricing_mode')
             current_app.logger.error(f"Missing required fields: {missing_fields}")
             return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
+
+        # Validate pricing_mode
+        if pricing_mode.lower() not in ['fixed', 'auction']:
+            current_app.logger.error(f"Invalid pricing_mode: {pricing_mode}")
+            return jsonify({'error': 'pricing_mode must be either "fixed" or "auction"'}), 400
 
         # Validate price based on pricing mode
         if not price:
@@ -280,7 +286,7 @@ def create_listing():
                 category=category,
                 condition=condition,
                 status='available',
-                pricing_mode=pricing_mode
+                pricing_mode=pricing_mode.lower()  # Ensure consistent casing
             )
             current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
             current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
@@ -582,7 +588,14 @@ def update_listing(listing_id):
         allowed_fields = ['title', 'description', 'price', 'category', 'condition', 'status', 'pricing_mode']
         for field in allowed_fields:
             if field in data:
-                setattr(listing, field, data[field])
+                if field == 'pricing_mode':
+                    # Validate pricing_mode
+                    if data[field].lower() not in ['fixed', 'auction']:
+                        current_app.logger.error(f"Invalid pricing_mode: {data[field]}")
+                        return jsonify({'error': 'pricing_mode must be either "fixed" or "auction"'}), 400
+                    setattr(listing, field, data[field].lower())  # Ensure consistent casing
+                else:
+                    setattr(listing, field, data[field])
         
         db.session.commit()
         
