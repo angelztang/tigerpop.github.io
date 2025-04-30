@@ -24,7 +24,7 @@ interface ListingFormData {
   category: string;
   condition: string;
   user_id: number;
-  pricing_mode: string;
+  pricing_mode: 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION';
   images: string[];
   is_auction: boolean;
   min_bid_increment: number;
@@ -37,7 +37,7 @@ interface FormCreateListingData {
   category: string;
   condition: string;
   images: string[];
-  pricing_mode: string;
+  pricing_mode: 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION';
   starting_price?: number;
 }
 
@@ -157,6 +157,11 @@ const ListingForm: React.FC<ListingFormProps> = ({
         ...prev,
         is_auction: isAuction,
         pricing_mode: isAuction ? 'auction' : 'fixed'
+      }));
+    } else if (name === 'pricing_mode') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value.toLowerCase() as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION'
       }));
     } else {
       setFormData(prev => ({

@@ -212,7 +212,10 @@ def get_listings():
                 'images': [image.filename for image in listing.images],
                 'condition': listing.condition,
                 'pricing_mode': listing.pricing_mode,
-                'current_bid': current_bid
+                'current_bid': current_bid,
+                'user_netid': listing.seller.netid if listing.seller else None,
+                'seller_id': listing.user_id,
+                'updated_at': listing.updated_at.isoformat() if listing.updated_at else None
             })
         
         return jsonify(result)

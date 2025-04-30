@@ -16,7 +16,7 @@ interface ListingFormData {
   category: string;
   images?: string[];
   condition: string;
-  pricing_mode: string;
+  pricing_mode: 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION';
 }
 
 const SellerDashboard: React.FC = () => {
