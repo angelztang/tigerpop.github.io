@@ -192,7 +192,13 @@ def get_listings():
         listings = query.order_by(Listing.created_at.desc()).all()
         
         # Convert to dictionary format using the model's to_dict method
-        result = [listing.to_dict() for listing in listings]
+        result = []
+        for listing in listings:
+            listing_dict = listing.to_dict()
+            # Add any additional fields needed
+            listing_dict['user_netid'] = listing.seller.netid if listing.seller else None
+            listing_dict['seller_id'] = listing.user_id
+            result.append(listing_dict)
         
         return jsonify(result)
     except Exception as e:
@@ -351,21 +357,8 @@ def get_buyer_listings():
         # Query for listings where the user is the buyer
         listings = Listing.query.filter_by(buyer_id=user.id).order_by(Listing.created_at.desc()).all()
         
-        # Convert to dictionary format
-        return jsonify([{
-            'id': listing.id,
-            'title': listing.title,
-            'description': listing.description,
-            'price': listing.price,
-            'category': listing.category,
-            'status': listing.status,
-            'user_id': listing.user_id,
-            'buyer_id': listing.buyer_id,
-            'created_at': listing.created_at.isoformat() if listing.created_at else None,
-            'images': [image.filename for image in listing.images],
-            'condition': listing.condition,
-            'pricing_mode': listing.pricing_mode
-        } for listing in listings])
+        # Convert to dictionary format using the model's to_dict method
+        return jsonify([listing.to_dict() for listing in listings])
     except Exception as e:
         current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch buyer listings'}), 500
@@ -634,7 +627,7 @@ def get_hot_items():
             Listing.created_at.desc()  # Secondary sort by creation date for ties
         ).limit(4).all()  # Get top 4
         
-        # Convert to list of dictionaries
+        # Convert to list of dictionaries using the model's to_dict method
         result = []
         for listing, heart_count in hot_listings:
             listing_dict = listing.to_dict()
