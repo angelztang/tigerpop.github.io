@@ -45,7 +45,7 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isEditing, setIsEditing] = useState(false);
   const [showFullDescription, setShowFullDescription] = useState(false);
-  const [editedListing, setEditedListing] = useState({
+  const [editedListing, setEditedListing] = useState<Listing>({
     ...listing,
     condition: listing.condition || 'good' // Ensure condition is initialized
   });
@@ -112,7 +112,9 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
     const { name, value } = e.target;
     setEditedListing(prev => ({
       ...prev,
-      [name]: name === 'price' ? parseFloat(value) : value,
+      [name]: name === 'price' ? parseFloat(value) : 
+              name === 'pricing_mode' ? (value.toLowerCase() as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION') : 
+              value,
       condition: name === 'condition' ? value : prev.condition // Ensure condition is properly updated
     }));
   };
@@ -157,10 +159,10 @@ const SellerListingModal: React.FC<SellerListingModalProps> = ({ listing, onClos
       }
 
       // Preserve the original pricing_mode and price for auction items
-      const updateData = {
+      const updateData: Partial<Listing> = {
         ...editedListing,
         images: updatedImages,
-        pricing_mode: listing.pricing_mode as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION', // Ensure correct type
+        pricing_mode: listing.pricing_mode as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION',
         price: listing.pricing_mode?.toLowerCase() === 'auction' ? listing.price : editedListing.price,
         condition: editedListing.condition
       };
