@@ -16,7 +16,7 @@ interface ListingFormData {
   category: string;
   images?: string[];
   condition: string;
-  pricing_mode: string;
+  pricing_mode: 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION';
   selectedFiles?: File[];
 }
 
@@ -114,10 +114,18 @@ const ListingEditModal: React.FC<ListingEditModalProps> = ({ listing, onClose, o
         return;
       }
 
-      await updateListing(listing.id, {
-        ...formData,
-        price: parseFloat(formData.price?.toString() || '0.00')
-      });
+      // Create update data with proper typing
+      const updateData: Partial<Listing> = {
+        title: formData.title,
+        description: formData.description,
+        price: parseFloat(formData.price?.toString() || '0.00'),
+        category: formData.category,
+        images: formData.images,
+        condition: formData.condition,
+        pricing_mode: formData.pricing_mode
+      };
+
+      await updateListing(listing.id, updateData);
       onUpdate();
       onClose();
     } catch (err) {
