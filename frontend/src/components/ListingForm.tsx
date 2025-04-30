@@ -158,11 +158,6 @@ const ListingForm: React.FC<ListingFormProps> = ({
         is_auction: isAuction,
         pricing_mode: isAuction ? 'auction' : 'fixed'
       }));
-    } else if (name === 'pricing_mode') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value.toLowerCase() as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION'
-      }));
     } else {
       setFormData(prev => ({
         ...prev,
