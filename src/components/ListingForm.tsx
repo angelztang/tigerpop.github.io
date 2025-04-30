@@ -248,10 +248,16 @@ const ListingForm: React.FC<ListingFormProps> = ({
       }
 
       // Prepare the data for submission
-      const submitData = {
-        ...formData,
+      const submitData: ApiCreateListingData = {
+        title: formData.title,
+        description: formData.description,
+        price: formData.price,
+        category: formData.category,
+        condition: formData.condition,
         images: imageUrls,
+        pricing_mode: formData.pricing_mode as 'fixed' | 'auction' | 'Fixed' | 'Auction' | 'FIXED' | 'AUCTION',
         netid: localStorage.getItem('netid') || '',
+        user_id: formData.user_id
       };
 
       await onSubmit(submitData);

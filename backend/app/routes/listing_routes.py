@@ -338,29 +338,8 @@ def get_user_listings():
                    .order_by(Listing.created_at.desc())
                    .all())
         
-        # Convert to dictionary format
-        result = []
-        for listing in listings:
-            try:
-                current_bid = listing.get_current_bid()
-            except Exception as e:
-                current_app.logger.error(f"Error getting current bid for listing {listing.id}: {str(e)}")
-                current_bid = None
-                
-            result.append({
-                'id': listing.id,
-                'title': listing.title,
-                'description': listing.description,
-                'price': listing.price,
-                'category': listing.category,
-                'status': listing.status,
-                'user_id': listing.user_id,
-                'created_at': listing.created_at.isoformat() if listing.created_at else None,
-                'images': [image.filename for image in listing.images],
-                'condition': listing.condition,
-                'pricing_mode': listing.pricing_mode,
-                'current_bid': current_bid
-            })
+        # Convert to dictionary format using the model's to_dict method
+        result = [listing.to_dict() for listing in listings]
         
         return jsonify(result)
     except Exception as e:
