@@ -13,6 +13,7 @@ interface ListingDetailProps {
     pricing_mode: string;
     current_bid?: number;
     user_id: number;
+    status: string;
   };
   isSeller: boolean;
 }
@@ -21,6 +22,19 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
   const currentUserId = getUserId();
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'sold':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'cancelled':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
     <div className="max-w-4xl mx-auto p-4">
@@ -89,6 +103,13 @@ const ListingDetail: React.FC<ListingDetailProps> = ({ listing, isSeller }) => {
           <div className="mb-4">
             <h3 className="text-lg font-semibold mb-2">Condition</h3>
             <p className="text-gray-700">{listing.condition}</p>
+          </div>
+
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">Status</h3>
+            <span className={`px-2 py-1 rounded-full text-sm font-medium ${getStatusColor(listing.status)}`}>
+              {listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+            </span>
           </div>
           
           {listing.pricing_mode?.toLowerCase() === 'auction' && currentUserId && (

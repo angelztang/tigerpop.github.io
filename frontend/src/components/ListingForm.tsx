@@ -422,7 +422,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
           <div>
             <div className="flex justify-between items-center">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description <span className="text-red-500">*</span>
+                Description (Please include the size of the item if applicable)<span className="text-red-500">*</span>
               </label>
               <span className="text-sm text-gray-500">
                 {formData.description.length}/{DESCRIPTION_LIMIT} characters
