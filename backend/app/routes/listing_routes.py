@@ -321,6 +321,9 @@ def get_user_listings():
             
         # Get all listings for this user by joining with users table
         listings = (Listing.query
+                   .options(db.load_only(Listing.id, Listing.title, Listing.description, Listing.price, 
+                                       Listing.category, Listing.condition, Listing.status, Listing.pricing_mode,
+                                       Listing.created_at, Listing.updated_at, Listing.user_id, Listing.buyer_id))
                    .join(User, Listing.user_id == User.id)
                    .filter(User.netid == netid)
                    .order_by(Listing.created_at.desc())
