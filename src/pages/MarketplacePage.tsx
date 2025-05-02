@@ -397,6 +397,23 @@ const MarketplacePage: React.FC = () => {
                 bidder_id: currentUserId,
                 amount
               });
+              
+              // Immediately update the selected listing with the new bid
+              if (selectedListing) {
+                setSelectedListing({
+                  ...selectedListing,
+                  current_bid: amount
+                });
+              }
+              
+              // Update the listing in the listings array
+              setListings(prev => prev.map(listing => 
+                listing.id === selectedListing.id 
+                  ? { ...listing, current_bid: amount }
+                  : listing
+              ));
+              
+              // Refresh the listings and hot items
               const categoryParam = category ? `&category=${category}` : '';
               const [updatedListings, hotItemsData] = await Promise.all([
                 getListings(`?status=available${categoryParam}`),
