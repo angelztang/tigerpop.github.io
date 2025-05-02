@@ -118,14 +118,13 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       // Fetch updated bids
       await fetchBids();
       
-      // Notify parent component of the update
-      onUpdate?.({
-        ...localListing,
-        current_bid: newBid
-      });
-
-      // Update the listing prop to ensure parent state is updated
-      listing.current_bid = newBid;
+      // Notify parent component of the update with the complete listing data
+      if (onUpdate) {
+        onUpdate({
+          ...localListing,
+          current_bid: newBid
+        });
+      }
     } catch (error) {
       console.error('Error updating bid:', error);
     }

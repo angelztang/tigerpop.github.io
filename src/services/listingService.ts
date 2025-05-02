@@ -443,10 +443,10 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
   try {
     const response = await fetch(`${API_URL}/api/listing/${bidData.listing_id}/bids`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: getHeaders(),
       body: JSON.stringify(bidData),
+      credentials: 'include',
+      mode: 'cors'
     });
 
     if (!response.ok) {
@@ -477,13 +477,7 @@ export const getBids = async (listingId: number): Promise<Bid[]> => {
     credentials: 'include',
     mode: 'cors'
   });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Failed to fetch bids');
-  }
-
-  return response.json();
+  return handleResponse(response);
 };
 
 export const closeBidding = async (listingId: number): Promise<void> => {

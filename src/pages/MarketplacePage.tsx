@@ -372,7 +372,11 @@ const MarketplacePage: React.FC = () => {
           isHearted={heartedListings.includes(selectedListing.id)}
           onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
-          onUpdate={async () => {
+          onUpdate={async (updatedListing) => {
+            // Update the selected listing with the new bid
+            setSelectedListing(updatedListing);
+            
+            // Refresh the listings
             const categoryParam = category ? `&category=${category}` : '';
             const [updatedListings, hotItemsData] = await Promise.all([
               getListings(`?status=available${categoryParam}`),
