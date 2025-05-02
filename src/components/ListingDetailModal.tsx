@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Listing, getBids, Bid } from '../services/listingService';
+import { Listing, getBids, Bid, closeBidding } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import BiddingInterface from './BiddingInterface';
@@ -9,7 +9,7 @@ interface ListingDetailModalProps {
   isHearted: boolean;
   onHeartClick: () => void;
   onClose: () => void;
-  onUpdate?: (updatedListing: Listing) => void;
+  onUpdate: (updatedListing: Listing) => void;
   onListingUpdated?: () => void;
   onHeart: () => void;
   onUnheart: () => void;
@@ -44,6 +44,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
   const modalRef = useRef<HTMLDivElement>(null);
+  const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (listing.pricing_mode?.toLowerCase() === 'auction') {
@@ -92,7 +94,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     try {
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
-      onUpdate?.({ ...listing, status: 'pending' });
+      onUpdate({ ...listing, status: 'pending' });
       onListingUpdated?.();
       setTimeout(() => {
         onClose();
@@ -146,6 +148,24 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
+    }
+  };
+
+  const handleCloseBidding = async () => {
+    setIsSubmitting(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      await closeBidding(localListing.id);
+      setSuccess('Bidding closed successfully! The highest bidder has been notified.');
+      setLocalListing(prev => ({ ...prev, status: 'pending' }));
+      onUpdate({ ...localListing, status: 'pending' });
+      setShowCloseBiddingModal(false);
+    } catch (err) {
+      setError('Failed to close bidding. Please try again.');
+      console.error('Error closing bidding:', err);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -335,13 +355,52 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 startingPrice={localListing.price}
                 currentBid={localListing.current_bid}
                 isSeller={isSeller}
-                onCloseBidding={() => {}}
+                onCloseBidding={() => setShowCloseBiddingModal(true)}
                 onPlaceBid={async (amount) => {
                   await onPlaceBid(amount);
                   await handleBidPlaced(amount);
                 }}
                 onBidPlaced={handleBidPlaced}
               />
+            </div>
+          )}
+
+          {/* Success/Error Messages */}
+          {success && (
+            <div className="mt-4 p-4 bg-green-100 text-green-700 rounded-md">
+              {success}
+            </div>
+          )}
+          {error && (
+            <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
+
+          {/* Close Bidding Confirmation Modal */}
+          {showCloseBiddingModal && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg p-6 max-w-md w-full">
+                <h3 className="text-lg font-semibold mb-4">Close Bidding</h3>
+                <p className="text-gray-600 mb-4">
+                  Are you sure you want to close bidding for this auction? This will notify the highest bidder and mark the listing as pending.
+                </p>
+                <div className="flex justify-end space-x-4">
+                  <button
+                    onClick={() => setShowCloseBiddingModal(false)}
+                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCloseBidding}
+                    disabled={isSubmitting}
+                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
+                  >
+                    {isSubmitting ? 'Processing...' : 'Close Bidding'}
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
