@@ -458,7 +458,7 @@ export interface CreateBidData {
 
 export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/${bidData.listing_id}/bids`, {
+    const response = await fetch(`${API_URL}/api/listings/${bidData.listing_id}/bids`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -489,7 +489,7 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
 };
 
 export const getBids = async (listingId: number): Promise<Bid[]> => {
-  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`);
+  const response = await fetch(`${API_URL}/api/listings/${listingId}/bids`);
 
   if (!response.ok) {
     const error = await response.json();

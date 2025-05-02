@@ -381,51 +381,6 @@ def get_buyer_listings():
         current_app.logger.error(f"Error fetching buyer listings: {str(e)}")
         return jsonify({'error': 'Failed to fetch buyer listings'}), 500
 
-@bp.route('/<int:id>/bids', methods=['POST'])
-def place_bid(id):
-    listing = Listing.query.get_or_404(id)
-    data = request.get_json()
-    
-    if not data or 'amount' not in data or 'bidder_id' not in data:
-        return jsonify({'error': 'Missing required fields'}), 400
-        
-    if listing.status != 'available':
-        return jsonify({'error': 'This listing is not available for bidding'}), 400
-        
-    if listing.pricing_mode != 'auction':
-        return jsonify({'error': 'This listing is not an auction'}), 400
-        
-    if data['amount'] <= listing.current_bid:
-        return jsonify({'error': 'Bid amount must be higher than current bid'}), 400
-        
-    # Create new bid
-    new_bid = Bid(
-        listing_id=listing.id,
-        bidder_id=data['bidder_id'],
-        amount=data['amount']
-    )
-    
-    # Update listing's current bid and bidder
-    listing.current_bid = data['amount']
-    listing.current_bidder_id = data['bidder_id']
-    
-    # Add bid to database
-    db.session.add(new_bid)
-    db.session.commit()
-    
-    # Send notifications
-    notify_seller_new_bid(listing, new_bid)
-    
-    # Get updated bid history
-    bids = Bid.query.filter_by(listing_id=id).order_by(Bid.amount.desc()).all()
-    
-    return jsonify({
-        'message': 'Bid placed successfully',
-        'bid': new_bid.to_dict(),
-        'listing': listing.to_dict(),
-        'bids': [bid.to_dict() for bid in bids]
-    }), 201
-
 @bp.route('/<int:id>/heart', methods=['POST', 'OPTIONS'])
 @bp.route('/<int:id>/heart/', methods=['POST', 'OPTIONS'])
 def heart_listing(id):
@@ -662,13 +617,3 @@ def get_hot_items():
     except Exception as e:
         current_app.logger.error(f"Error getting hot items: {str(e)}")
         return jsonify({'error': 'Failed to get hot items'}), 500
-
-@bp.route('/<int:id>/bids', methods=['GET'])
-def get_bids(id):
-    try:
-        listing = Listing.query.get_or_404(id)
-        bids = Bid.query.filter_by(listing_id=id).order_by(Bid.amount.desc()).all()
-        return jsonify([bid.to_dict() for bid in bids])
-    except Exception as e:
-        current_app.logger.error(f"Error fetching bids: {str(e)}")
-        return jsonify({'error': 'Failed to fetch bids'}), 500
