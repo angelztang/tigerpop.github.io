@@ -321,26 +321,31 @@ def get_user_listings():
             
         # Get all listings for this user by joining with users table
         listings = (Listing.query
-                   .options(db.load_only(Listing.id, Listing.title, Listing.description, Listing.price, 
-                                       Listing.category, Listing.condition, Listing.status, Listing.pricing_mode,
-                                       Listing.created_at, Listing.updated_at, Listing.user_id, Listing.buyer_id))
                    .join(User, Listing.user_id == User.id)
                    .filter(User.netid == netid)
                    .order_by(Listing.created_at.desc())
                    .all())
         
-        # Debug log raw listings
-        current_app.logger.info(f"Raw listings before serialization:")
+        # Construct response manually
+        result = []
         for listing in listings:
-            current_app.logger.info(f"Listing {listing.id}: pricing_mode={listing.pricing_mode}")
-        
-        # Convert to dictionary format using the model's to_dict method
-        result = [listing.to_dict() for listing in listings]
-        
-        # Debug log serialized listings
-        current_app.logger.info(f"Serialized listings:")
-        for listing_dict in result:
-            current_app.logger.info(f"Listing {listing_dict['id']}: pricing_mode={listing_dict.get('pricing_mode')}")
+            listing_dict = {
+                'id': listing.id,
+                'title': listing.title,
+                'description': listing.description,
+                'price': listing.price,
+                'category': listing.category,
+                'condition': listing.condition,
+                'status': listing.status,
+                'pricing_mode': listing.pricing_mode or 'fixed',  # Ensure pricing_mode is never undefined
+                'created_at': listing.created_at.isoformat() if listing.created_at else None,
+                'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
+                'user_id': listing.user_id,
+                'buyer_id': listing.buyer_id,
+                'images': [image.filename for image in listing.images],
+                'current_bid': listing.get_current_bid()
+            }
+            result.append(listing_dict)
         
         return jsonify(result)
     except Exception as e:
