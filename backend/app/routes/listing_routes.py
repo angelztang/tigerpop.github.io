@@ -326,31 +326,31 @@ def get_user_listings():
                    .order_by(Listing.created_at.desc())
                    .all())
         
-        # Construct response manually
+        # Debug log raw listings
+        current_app.logger.info(f"Raw listings before serialization:")
+        for listing in listings:
+            current_app.logger.info(f"Listing {listing.id}: pricing_mode={listing.pricing_mode}, title={listing.title}")
+            current_app.logger.info(f"Full listing object: {listing.__dict__}")
+        
+        # Convert to dictionary format using the model's to_dict method
         result = []
         for listing in listings:
-            listing_dict = {
-                'id': listing.id,
-                'title': listing.title,
-                'description': listing.description,
-                'price': listing.price,
-                'category': listing.category,
-                'condition': listing.condition,
-                'status': listing.status,
-                'pricing_mode': listing.pricing_mode or 'fixed',  # Ensure pricing_mode is never undefined
-                'created_at': listing.created_at.isoformat() if listing.created_at else None,
-                'updated_at': listing.updated_at.isoformat() if listing.updated_at else None,
-                'user_id': listing.user_id,
-                'buyer_id': listing.buyer_id,
-                'images': [image.filename for image in listing.images],
-                'current_bid': listing.get_current_bid()
-            }
+            listing_dict = listing.to_dict()
+            # Log the pricing_mode value from the database
+            current_app.logger.info(f"Listing {listing.id} pricing_mode from DB: {listing.pricing_mode}")
+            # Log the pricing_mode value after serialization
+            current_app.logger.info(f"Listing {listing.id} pricing_mode after serialization: {listing_dict.get('pricing_mode')}")
             result.append(listing_dict)
+        
+        # Debug log serialized listings
+        current_app.logger.info(f"Serialized listings:")
+        for listing_dict in result:
+            current_app.logger.info(f"Listing {listing_dict['id']}: pricing_mode={listing_dict.get('pricing_mode')}, title={listing_dict.get('title')}")
         
         return jsonify(result)
     except Exception as e:
-        current_app.logger.error(f"Error fetching user listings: {str(e)}")
-        return jsonify({'error': 'Failed to fetch user listings'}), 500
+        current_app.logger.error(f"Error in get_user_listings: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 @bp.route('/buyer', methods=['GET'])
 @bp.route('/buyer/', methods=['GET'])
