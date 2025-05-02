@@ -43,6 +43,9 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
+  console.log('ListingDetailModal - isSeller:', isSeller);
+  console.log('ListingDetailModal - userId:', userId);
+  console.log('ListingDetailModal - listing.user_id:', listing.user_id);
   const modalRef = useRef<HTMLDivElement>(null);
   const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
   const [success, setSuccess] = useState<string | null>(null);

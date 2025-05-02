@@ -174,7 +174,12 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
 
       {isSeller && onCloseBidding && (
         <button
-          onClick={onCloseBidding}
+          onClick={() => {
+            console.log('Close bidding button clicked');
+            console.log('isSeller:', isSeller);
+            console.log('onCloseBidding:', onCloseBidding);
+            onCloseBidding();
+          }}
           className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors"
         >
           Close Bidding
