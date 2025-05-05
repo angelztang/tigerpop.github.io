@@ -1,16 +1,5 @@
-// Email service using the official EmailJS npm package
+// Email service using only EmailJS since backend email endpoints are not accessible
 import emailjs from '@emailjs/browser';
-
-// Get these values from your EmailJS account dashboard after setting up:
-// 1. Create an account at emailjs.com
-// 2. Add a new service using Gmail with these credentials:
-//    - Service: Gmail
-//    - Username: tigerpopmarketplace@gmail.com
-//    - Password: vvtb vsht wwro tvlb
-//    - Port: 587
-//    - Enable: TLS
-// 3. Create a template with variables: {{email}}, {{title}}, {{price}}, {{category}}
-// 4. Copy your IDs below
 
 // Your EmailJS credentials
 const SERVICE_ID = 'service_ticjydc';
@@ -49,7 +38,7 @@ export const sendEmailNotification = async (params: EmailParams): Promise<boolea
       listing_title: params.listingTitle,
       listing_price: params.listingPrice,
       listing_category: params.listingCategory,
-      buyer_netid: 'hc8499'
+      buyer_netid: params.buyerNetid
     };
 
     // Clear any previous EmailJS flags
