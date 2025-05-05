@@ -77,7 +77,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
     description: '',
     price: 0,
     category: '',
-    condition: 'good',
+    condition: '',
     user_id: 0,
     pricing_mode: 'fixed',
     images: [],
@@ -151,7 +151,8 @@ const ListingForm: React.FC<ListingFormProps> = ({
       return;
     }
 
-    if (type === 'checkbox') {
+    if (name === 'is_auction') {
+      // For checkbox, get the checked property
       const isAuction = (e.target as HTMLInputElement).checked;
       setFormData(prev => ({
         ...prev,
@@ -204,34 +205,42 @@ const ListingForm: React.FC<ListingFormProps> = ({
       // Validate form data
       if (!formData.title.trim()) {
         setError('Title is required');
+        setIsSubmittingLocal(false);
         return;
       }
       if (formData.title.length > TITLE_LIMIT) {
         setError(`Title cannot exceed ${TITLE_LIMIT} characters`);
+        setIsSubmittingLocal(false);
         return;
       }
       if (!formData.description.trim()) {
         setError('Description is required');
+        setIsSubmittingLocal(false);
         return;
       }
       if (formData.description.length > DESCRIPTION_LIMIT) {
         setError(`Description cannot exceed ${DESCRIPTION_LIMIT} characters`);
+        setIsSubmittingLocal(false);
         return;
       }
       if (!formData.category) {
         setError('Category is required');
+        setIsSubmittingLocal(false);
         return;
       }
       if (!formData.condition) {
         setError('Condition is required');
+        setIsSubmittingLocal(false);
         return;
       }
       if (formData.price === undefined || formData.price === null || formData.price < MIN_PRICE) {
         setError(`Price must be at least $${MIN_PRICE}`);
+        setIsSubmittingLocal(false);
         return;
       }
       if (formData.price > MAX_PRICE) {
         setError(`Price cannot exceed $${MAX_PRICE.toLocaleString()}`);
+        setIsSubmittingLocal(false);
         return;
       }
 
@@ -298,237 +307,219 @@ const ListingForm: React.FC<ListingFormProps> = ({
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <div className="flex justify-between items-center">
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                Title <span className="text-red-500">*</span>
-              </label>
-              <span className="text-sm text-gray-500">
-                {formData.title.length}/{TITLE_LIMIT} characters
-              </span>
-            </div>
+            <label 
+              htmlFor="title" 
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Title<span className="text-red-500">*</span>
+            </label>
             <input
-              type="text"
               id="title"
               name="title"
+              type="text"
+              placeholder="Enter a title for your listing"
               value={formData.title}
               onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               required
-              disabled={isSubmittingLocal}
-              maxLength={TITLE_LIMIT}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
-          </div>
-
-          <div>
-            <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
-              Category <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="category"
-              name="category"
-              value={formData.category}
-              onChange={handleInputChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            >
-              <option value="">Select a category</option>
-              {categories.map(category => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label htmlFor="condition" className="block text-sm font-medium text-gray-700 mb-1">
-              Condition <span className="text-red-500">*</span>
-            </label>
-            <select
-              id="condition"
-              name="condition"
-              value={formData.condition}
-              onChange={handleInputChange}
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-            >
-              <option value="">Select condition</option>
-              {conditions.map(condition => (
-                <option key={condition} value={condition}>
-                  {condition}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center">
-              <input
-                type="checkbox"
-                id="is_auction"
-                checked={formData.is_auction}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
-              />
-              <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-700">
-                Accept bids for this item
-              </label>
+            <div className="flex justify-end mt-1">
+              <span className="text-xs text-gray-500">{formData.title.length}/{TITLE_LIMIT}</span>
             </div>
+          </div>
 
-            {formData.is_auction && (
-              <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-                <h3 className="text-lg font-semibold mb-2 text-blue-800">Auction Item</h3>
-                <p className="text-gray-700">
-                  This item will be sold through an auction. You cannot edit the price once bids are placed. The highest bidder will win when the auction ends (which will be indicated by the seller). When the seller closes the auction, the highest bidder will recieve an email indicating so, and other bidders will recieve an email notifying them they did not recieve the item.
-                </p>
+          <div>
+            <label 
+              htmlFor="category" 
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Category<span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                id="category"
+                name="category"
+                value={formData.category}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
+                required
+              >
+                <option value="" disabled>Select a category</option>
+                {categories.map(category => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-            )}
+            </div>
+          </div>
 
-            <div>
-              <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                {formData.is_auction ? 'Starting Price' : 'Price'} <span className="text-red-500">*</span>
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="text-gray-500 sm:text-sm">$</span>
-                </div>
-                <input
-                  type="number"
-                  id="price"
-                  name="price"
-                  value={formData.price || ''}
-                  onChange={handleInputChange}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  required
-                  min={MIN_PRICE}
-                  max={MAX_PRICE}
-                  step="0.01"
-                  disabled={isSubmittingLocal}
-                  className="focus:ring-orange-500 focus:border-orange-500 block w-full pl-7 pr-12 sm:text-sm border-gray-300 rounded-md disabled:bg-gray-100 disabled:cursor-not-allowed"
-                  placeholder="0.00"
-                />
+          <div>
+            <label 
+              htmlFor="condition" 
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Condition<span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <select
+                id="condition"
+                name="condition"
+                value={formData.condition}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 appearance-none"
+                required
+              >
+                <option value="" disabled>Select condition</option>
+                {conditions.map(condition => (
+                  <option key={condition} value={condition}>{condition}</option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
               </div>
-              {error && (error.includes('Price must be at least') || error.includes('Price cannot exceed')) && (
-                <p className="mt-1 text-sm text-red-600">
-                  {error}
-                </p>
-              )}
-              <p className="mt-1 text-sm text-gray-500">
-                Price must be between ${MIN_PRICE} and ${MAX_PRICE.toLocaleString()}
+            </div>
+          </div>
+
+          <div className="flex items-center">
+            <input
+              id="is_auction"
+              name="is_auction"
+              type="checkbox"
+              checked={formData.is_auction}
+              onChange={handleInputChange}
+              className="h-4 w-4 text-orange-500 focus:ring-orange-500 border-gray-300 rounded"
+            />
+            <label htmlFor="is_auction" className="ml-2 block text-sm text-gray-700">
+              Accept bids for this item
+            </label>
+          </div>
+          
+          {formData.is_auction && (
+            <div className="bg-blue-50 p-3 rounded-md">
+              <p className="text-sm text-blue-800">
+                This item will be sold through an auction. Buyers will place bids, and the highest bidder will win when the auction ends.
               </p>
             </div>
+          )}
+
+          <div>
+            <label 
+              htmlFor="price" 
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              {formData.is_auction ? 'Starting Price' : 'Price'}<span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <span className="text-gray-500 sm:text-sm">$</span>
+              </div>
+              <input
+                id="price"
+                name="price"
+                type="number"
+                placeholder="0.00"
+                step="0.01"
+                min={MIN_PRICE}
+                max={MAX_PRICE}
+                value={formData.price || ''}
+                onChange={handleInputChange}
+                className="w-full pl-7 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                required
+              />
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Price must be between ${MIN_PRICE} and ${MAX_PRICE.toLocaleString()}
+            </p>
           </div>
 
           <div>
-            <div className="flex justify-between items-center">
-              <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-                Description (Please include the size of the item if applicable)<span className="text-red-500">*</span>
-              </label>
-              <span className="text-sm text-gray-500">
-                {formData.description.length}/{DESCRIPTION_LIMIT} characters
-              </span>
-            </div>
+            <label 
+              htmlFor="description" 
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
+              Description<span className="text-red-500">*</span>
+            </label>
             <textarea
               id="description"
               name="description"
+              rows={5}
+              placeholder="Size, retail price, or additional comments"
               value={formData.description}
               onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
               required
-              rows={4}
-              maxLength={DESCRIPTION_LIMIT}
-              disabled={isSubmittingLocal}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
+            <div className="flex justify-end mt-1">
+              <span className="text-xs text-gray-500">{formData.description.length}/{DESCRIPTION_LIMIT}</span>
+            </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Images ({selectedFiles.length}/{maxImages})
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Images ({previewUrls.length}/{MAX_IMAGES})
             </label>
-            <div className="grid grid-cols-3 gap-4 mb-4">
+            <div className="flex flex-wrap gap-4 mb-3">
               {previewUrls.map((url, index) => (
-                <div key={index} className="relative group">
+                <div key={index} className="relative w-24 h-24 border rounded-md overflow-hidden">
                   <img
                     src={url}
-                    alt={`Preview ${index + 1}`}
-                    className="w-full h-32 object-cover rounded-md"
+                    alt={`Preview ${index}`}
+                    className="w-full h-full object-cover"
                   />
                   <button
                     type="button"
                     onClick={() => removeImage(index)}
-                    disabled={isSubmittingLocal}
-                    className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center m-1"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    ×
                   </button>
                 </div>
               ))}
             </div>
-
-            {error && error.includes('images') && (
-              <div className="mb-4 p-4 bg-red-100 text-red-700 rounded-md">
-                {error}
+            
+            {previewUrls.length < maxImages && (
+              <div className="mt-3">
+                <label className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer focus:outline-none focus:ring-2 focus:ring-orange-500">
+                  <svg className="w-5 h-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
+                  Add Images
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="hidden"
+                    multiple
+                  />
+                </label>
               </div>
             )}
-
-            <div className="flex items-center space-x-2">
-              <input
-                type="file"
-                multiple
-                accept="image/jpeg,image/png"
-                onChange={handleFileChange}
-                className="hidden"
-                id="images"
-                disabled={selectedFiles.length >= maxImages || isSubmittingLocal}
-              />
-              <label
-                htmlFor="images"
-                className={`inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md ${
-                  selectedFiles.length >= maxImages || isSubmittingLocal
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                    : 'text-gray-700 bg-white hover:bg-gray-50 cursor-pointer'
-                } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500`}
-              >
-                Add Images
-              </label>
-              <span className="text-sm text-gray-500">
-                {selectedFiles.length}/{maxImages} images chosen
-              </span>
-            </div>
-            <p className="mt-1 text-sm text-gray-500">Accepted formats: JPG, JPEG, PNG</p>
+            
+            <p className="text-xs text-gray-500 mt-2">
+              Accepted formats: JPG, JPEG, PNG
+            </p>
           </div>
 
-          <div className="flex justify-end space-x-4">
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
             <button
               type="button"
               onClick={onClose}
-              disabled={isSubmittingLocal}
-              className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={isSubmittingLocal}
-              className={`px-4 py-2 text-white rounded-md flex items-center justify-center min-w-[120px] ${
-                isSubmittingLocal
-                  ? 'bg-orange-400 cursor-not-allowed'
-                  : 'bg-orange-500 hover:bg-orange-600'
-              } transition-colors`}
+              disabled={isSubmitting || isSubmittingLocal}
+              className="px-4 py-2 text-sm font-medium text-white bg-orange-500 border border-transparent rounded-md hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
             >
-              {isSubmittingLocal ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Creating...
-                </>
-              ) : (
-                Object.keys(initialData).length > 0 ? 'Update Listing' : 'Create Listing'
-              )}
+              {isSubmitting || isSubmittingLocal ? 'Creating...' : 'Create Listing'}
             </button>
           </div>
         </form>

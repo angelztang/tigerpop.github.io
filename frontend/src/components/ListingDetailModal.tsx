@@ -88,20 +88,70 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
 
   const handleNotifySeller = async () => {
     setIsSubmitting(true);
-    setError(null);
+    setError('');
+    setNotificationSent(false);
+    
+    // Clear any previous EmailJS flags
+    localStorage.removeItem('emailjs_success');
+    localStorage.removeItem('emailjs_timestamp');
+    
     try {
-      const response = await requestToBuy(listing.id);
-      setNotificationSent(true);
-      onUpdate?.({ ...listing, status: 'pending' });
-      onListingUpdated?.();
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    } catch (err: unknown) {
-      console.error('Error sending notification:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
-      const errorDetails = err instanceof Error && 'details' in err ? (err as any).details : '';
-      setError(`${errorMessage}${errorDetails ? `: ${errorDetails}` : ''}`);
+      const buyerNetid = localStorage.getItem('netid') || '';
+      const result = await requestToBuy(listing.id, buyerNetid);
+      
+      console.log('Request to buy result:', result);
+      
+      if (result.success) {
+        setNotificationSent(true);
+        
+        // Update the local listing status to pending
+        const updatedListing = { ...listing, status: 'pending' as const };
+        setLocalListing(updatedListing);
+        
+        // Update the parent component's listing state if a callback was provided
+        if (onUpdate) {
+          onUpdate(updatedListing);
+        }
+      } else {
+        // Check if EmailJS succeeded despite API error
+        const emailWasSent = localStorage.getItem('emailjs_success') === 'true';
+        
+        if (emailWasSent) {
+          setNotificationSent(true);
+          
+          // Update the local listing status to pending even if API failed
+          const updatedListing = { ...listing, status: 'pending' as const };
+          setLocalListing(updatedListing);
+          
+          // Update the parent component's listing state if a callback was provided
+          if (onUpdate) {
+            onUpdate(updatedListing);
+          }
+        } else {
+          setError(result.message || 'Failed to send notification');
+        }
+      }
+    } catch (err) {
+      console.error('Error notifying seller:', err);
+      
+      // Check if EmailJS succeeded despite the error
+      const emailWasSent = localStorage.getItem('emailjs_success') === 'true';
+      
+      if (emailWasSent) {
+        setNotificationSent(true);
+        
+        // Update the local listing status to pending even if there was an error
+        const updatedListing = { ...listing, status: 'pending' as const };
+        setLocalListing(updatedListing);
+        
+        // Update the parent component's listing state if a callback was provided
+        if (onUpdate) {
+          onUpdate(updatedListing);
+        }
+      } else {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        setError(`Failed to send notification: ${errorMessage}`);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -316,14 +366,32 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 </span>
               </div>
 
-              {localListing.status === 'available' && localListing.pricing_mode?.toLowerCase() !== 'auction' && (
+              {/* Notification Button */}
+              {localListing.status === 'available' && localListing.pricing_mode?.toLowerCase() !== 'auction' && !notificationSent && (
                 <button
                   onClick={handleNotifySeller}
                   disabled={isSubmitting}
-                  className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
+                  className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Sending...' : 'Notify Seller to Buy'}
                 </button>
+              )}
+
+              {/* Success Message */}
+              {notificationSent && (
+                <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-md">
+                  <p className="font-semibold">Notification sent successfully!</p>
+                  <p className="text-sm mt-1">The seller will be notified via email.</p>
+                  <p className="text-sm mt-1">Item status changed to <span className="font-semibold">Pending</span></p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-md">
+                  <p className="font-semibold">Failed to send notification</p>
+                  <p className="text-sm mt-1">{error}</p>
+                </div>
               )}
             </div>
           </div>

@@ -6,6 +6,7 @@
     "node": "20.x"
   },
   "dependencies": {
+    "@emailjs/browser": "^3.12.1",
     "@heroicons/react": "^2.0.18",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
@@ -14,7 +15,7 @@
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
     "autoprefixer": "^10.4.17",
-    "axios": "^1.8.4",
+    "axios": "^1.9.0",
     "postcss": "^8.4.35",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

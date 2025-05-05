@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Listing, getBids, Bid, closeBidding } from '../services/listingService';
+import { Listing, getBids, Bid } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
 import { getUserId } from '../services/authService';
 import BiddingInterface from './BiddingInterface';
@@ -9,7 +9,7 @@ interface ListingDetailModalProps {
   isHearted: boolean;
   onHeartClick: () => void;
   onClose: () => void;
-  onUpdate: (updatedListing: Listing) => void;
+  onUpdate?: (updatedListing: Listing) => void;
   onListingUpdated?: () => void;
   onHeart: () => void;
   onUnheart: () => void;
@@ -43,12 +43,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
-  console.log('ListingDetailModal - isSeller:', isSeller);
-  console.log('ListingDetailModal - userId:', userId);
-  console.log('ListingDetailModal - listing.user_id:', listing.user_id);
   const modalRef = useRef<HTMLDivElement>(null);
-  const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (listing.pricing_mode?.toLowerCase() === 'auction') {
@@ -93,20 +88,33 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
 
   const handleNotifySeller = async () => {
     setIsSubmitting(true);
-    setError(null);
+    setError('');
+    setNotificationSent(false);
+    
     try {
-      const response = await requestToBuy(listing.id);
-      setNotificationSent(true);
-      onUpdate({ ...listing, status: 'pending' });
-      onListingUpdated?.();
-      setTimeout(() => {
-        onClose();
-      }, 2000);
-    } catch (err: unknown) {
-      console.error('Error sending notification:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
-      const errorDetails = err instanceof Error && 'details' in err ? (err as any).details : '';
-      setError(`${errorMessage}${errorDetails ? `: ${errorDetails}` : ''}`);
+      const buyerNetid = localStorage.getItem('netid') || '';
+      const result = await requestToBuy(listing.id, buyerNetid);
+      
+      console.log('Request to buy result:', result);
+      
+      if (result.success) {
+        setNotificationSent(true);
+        
+        // Update the local listing status to pending
+        const updatedListing = { ...listing, status: 'pending' as const };
+        setLocalListing(updatedListing);
+        
+        // Update the parent component's listing state if a callback was provided
+        if (onUpdate) {
+          onUpdate(updatedListing);
+        }
+      } else {
+        setError(result.message || 'Failed to send notification');
+      }
+    } catch (err) {
+      console.error('Error notifying seller:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+      setError(`Failed to send notification: ${errorMessage}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -123,13 +131,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       // Fetch updated bids
       await fetchBids();
       
-      // Notify parent component of the update with the complete listing data
-      if (onUpdate) {
-        onUpdate({
-          ...localListing,
-          current_bid: newBid
-        });
-      }
+      // Notify parent component of the update
+      onUpdate?.({
+        ...localListing,
+        current_bid: newBid
+      });
+
+      // Update the listing prop to ensure parent state is updated
+      listing.current_bid = newBid;
     } catch (error) {
       console.error('Error updating bid:', error);
     }
@@ -151,24 +160,6 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === e.currentTarget) {
       onClose();
-    }
-  };
-
-  const handleCloseBidding = async () => {
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      await closeBidding(localListing.id);
-      setSuccess('Bidding closed successfully! The highest bidder has been notified.');
-      setLocalListing(prev => ({ ...prev, status: 'pending' }));
-      onUpdate({ ...localListing, status: 'pending' });
-      setShowCloseBiddingModal(false);
-    } catch (err) {
-      setError('Failed to close bidding. Please try again.');
-      console.error('Error closing bidding:', err);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
@@ -338,14 +329,32 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 </span>
               </div>
 
-              {localListing.status === 'available' && localListing.pricing_mode?.toLowerCase() !== 'auction' && (
+              {/* Notification Button */}
+              {localListing.status === 'available' && localListing.pricing_mode?.toLowerCase() !== 'auction' && !notificationSent && (
                 <button
                   onClick={handleNotifySeller}
                   disabled={isSubmitting}
-                  className="w-full bg-orange-500 text-white py-2 px-4 rounded hover:bg-orange-600 disabled:opacity-50"
+                  className="w-full bg-orange-500 text-white py-2 px-4 rounded-md hover:bg-orange-600 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Sending...' : 'Notify Seller to Buy'}
                 </button>
+              )}
+
+              {/* Success Message */}
+              {notificationSent && (
+                <div className="mt-4 p-4 bg-green-100 text-green-800 rounded-md">
+                  <p className="font-semibold">Notification sent successfully!</p>
+                  <p className="text-sm mt-1">The seller will be notified via email.</p>
+                  <p className="text-sm mt-1">Item status changed to <span className="font-semibold">Pending</span></p>
+                </div>
+              )}
+
+              {/* Error Message */}
+              {error && (
+                <div className="mt-4 p-4 bg-red-100 text-red-800 rounded-md">
+                  <p className="font-semibold">Failed to send notification</p>
+                  <p className="text-sm mt-1">{error}</p>
+                </div>
               )}
             </div>
           </div>
@@ -358,52 +367,13 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 startingPrice={localListing.price}
                 currentBid={localListing.current_bid}
                 isSeller={isSeller}
-                onCloseBidding={() => setShowCloseBiddingModal(true)}
+                onCloseBidding={() => {}}
                 onPlaceBid={async (amount) => {
                   await onPlaceBid(amount);
                   await handleBidPlaced(amount);
                 }}
                 onBidPlaced={handleBidPlaced}
               />
-            </div>
-          )}
-
-          {/* Success/Error Messages */}
-          {success && (
-            <div className="mt-4 p-4 bg-green-100 text-green-700 rounded-md">
-              {success}
-            </div>
-          )}
-          {error && (
-            <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
-
-          {/* Close Bidding Confirmation Modal */}
-          {showCloseBiddingModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold mb-4">Close Bidding</h3>
-                <p className="text-gray-600 mb-4">
-                  Are you sure you want to close bidding for this auction? This will notify the highest bidder and mark the listing as pending.
-                </p>
-                <div className="flex justify-end space-x-4">
-                  <button
-                    onClick={() => setShowCloseBiddingModal(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCloseBidding}
-                    disabled={isSubmitting}
-                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Processing...' : 'Close Bidding'}
-                  </button>
-                </div>
-              </div>
             </div>
           )}
         </div>

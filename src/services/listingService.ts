@@ -1,8 +1,16 @@
 // Handles fetching, creating, and updating listings (API calls)
 
 import { getUserId, getNetid, getUserInfo } from './authService';
+import { sendEmailNotification, EmailParams } from './emailService';
+import axios from 'axios';
+import { API_URL } from '../config';
 
-const API_URL = 'https://tigerpop-marketplace-backend-76fa6fb8c8a2.herokuapp.com';
+const getHeaders = () => {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  };
+};
 
 // Helper function to handle API responses
 const handleResponse = async <T>(response: Response): Promise<T> => {
@@ -11,19 +19,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
   }
   return response.json();
-};
-
-// Helper function to get request headers
-const getHeaders = () => {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
-  };
-  const token = localStorage.getItem('access_token');
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
-  return headers;
 };
 
 export interface Listing {
@@ -214,8 +209,14 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
       formData.append('images', file);
     });
 
-    const headers = getHeaders();
-    delete headers['Content-Type']; // Let the browser set the correct content type for FormData
+    // Create headers without Content-Type
+    const headersObj = getHeaders();
+    const headers = new Headers();
+    for (const [key, value] of Object.entries(headersObj)) {
+      if (key !== 'Content-Type') {
+        headers.append(key, value);
+      }
+    }
 
     const response = await fetch(`${API_URL}/api/listing/upload/`, {
       method: 'POST',
@@ -253,9 +254,26 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
       credentials: 'include',
       mode: 'cors'
     });
-    const data = await handleResponse<Listing[]>(response);
-    console.log('User listings response:', data); // Debug log
-    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode }))); // Debug log
+    
+    // Log raw response
+    const rawData = await response.json();
+    console.log('Raw API response:', rawData);
+    console.log('Raw pricing_mode values:', rawData.map((l: any) => ({ id: l.id, pricing_mode: l.pricing_mode })));
+    
+    // Type check and transform the data
+    if (!Array.isArray(rawData)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    // Transform pricing_mode to match the expected format
+    const data: Listing[] = rawData.map(listing => ({
+      ...listing,
+      pricing_mode: listing.pricing_mode?.toLowerCase() as Listing['pricing_mode']
+    }));
+    
+    console.log('Processed listings:', data);
+    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode })));
+    
     return data;
   } catch (error) {
     console.error('Error fetching user listings:', error);
@@ -263,27 +281,62 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
   }
 };
 
-export const requestToBuy = async (listingId: number): Promise<any> => {
+export const requestToBuy = async (listingId: number, buyerNetid: string): Promise<{ success: boolean; message: string }> => {
   try {
-    const userId = getUserId();
-    if (!userId) {
-      throw new Error('User not authenticated');
+    // First, get the listing details to use in the email
+    const listing = await getListing(listingId);
+    
+    // Get seller's email from listing owner's netid
+    const sellerNetid = listing.user_netid || 'hc8499';  // Use actual seller netid if available
+    const sellerEmail = `${sellerNetid}@princeton.edu`;
+    
+    // Format price for email
+    const formattedPrice = `$${listing.price.toFixed(2)}`;
+
+    // Prepare email params
+    const emailParams: EmailParams = {
+      recipientEmail: sellerEmail,
+      listingTitle: listing.title,
+      listingPrice: formattedPrice,
+      listingCategory: listing.category,
+      buyerNetid: buyerNetid
+    };
+
+    // Send email notification using backend service
+    const emailSent = await sendEmailNotification(emailParams);
+    console.log('Email notification result:', emailSent);
+
+    // Make API call to record the request
+    const response = await axios.post(`${API_URL}/api/listing/${listingId}/request`, { buyerId: buyerNetid });
+    
+    // If API call succeeds, return success
+    if (response.status === 200 || response.status === 201) {
+      console.log('Buy request recorded in API:', response.data);
+      return { 
+        success: true, 
+        message: 'Notification sent successfully and request recorded' 
+      };
+    } else {
+      // If API call fails but email was sent, still consider it partially successful
+      if (emailSent) {
+        return { 
+          success: true, 
+          message: 'Notification sent successfully, but request not recorded in database' 
+        };
+      }
+      return { 
+        success: false, 
+        message: 'Failed to record request in database and notification not sent' 
+      };
     }
-    const response = await fetch(`${API_URL}/api/listing/${listingId}/buy/`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        buyer_id: userId,
-        message: 'I am interested in this item',
-        contact_info: 'Please contact me via email'
-      }),
-      credentials: 'include',
-      mode: 'cors'
-    });
-    return handleResponse(response);
   } catch (error) {
-    console.error('Error sending notification:', error);
-    throw error;
+    console.error('Error in requestToBuy:', error);
+    
+    // Full failure
+    return {
+      success: false,
+      message: 'Failed to send notification and record request'
+    };
   }
 };
 
@@ -443,10 +496,10 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
   try {
     const response = await fetch(`${API_URL}/api/listing/${bidData.listing_id}/bids`, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(bidData),
-      credentials: 'include',
-      mode: 'cors'
     });
 
     if (!response.ok) {
@@ -472,12 +525,14 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
 };
 
 export const getBids = async (listingId: number): Promise<Bid[]> => {
-  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`, {
-    headers: getHeaders(),
-    credentials: 'include',
-    mode: 'cors'
-  });
-  return handleResponse(response);
+  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch bids');
+  }
+
+  return response.json();
 };
 
 export const closeBidding = async (listingId: number): Promise<void> => {
@@ -491,6 +546,19 @@ export const closeBidding = async (listingId: number): Promise<void> => {
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || 'Failed to close bidding');
+  }
+};
+
+export const getListingById = async (id: number): Promise<any> => {
+  try {
+    const response = await axios.get(`${API_URL}/api/listing/${id}`);
+    if (response.status === 200) {
+      return response.data;
+    }
+    throw new Error(`Failed to fetch listing with ID ${id}`);
+  } catch (error) {
+    console.error(`Error fetching listing ${id}:`, error);
+    return null;
   }
 };
   
