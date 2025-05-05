@@ -31,7 +31,9 @@ git push https://git.heroku.com/tigerpop-marketplace-backend.git backend-deploy:
 
 # Cleanup
 echo "🧹 Cleaning up..."
+git stash push -m "Stashing changes before checkout" --include-untracked
 git checkout hannah
 git branch -D backend-deploy
+git stash pop || echo "No stash to pop or conflict occurred - continuing anyway"
 
 echo "✅ Backend deployment complete!" 
