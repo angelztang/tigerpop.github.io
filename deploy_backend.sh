@@ -26,8 +26,8 @@ echo "⬆️ Pushing to Heroku..."
 git push https://git.heroku.com/tigerpop-marketplace-backend.git backend-deploy:main --force
 
 # Run database migrations
-echo "🔄 Running database migrations..."
-heroku run --app tigerpop-marketplace-backend flask db upgrade
+# echo "🔄 Running database migrations..."
+# heroku run --app tigerpop-marketplace-backend flask db upgrade
 
 # Cleanup
 echo "🧹 Cleaning up..."
