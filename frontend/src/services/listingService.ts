@@ -76,15 +76,9 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
     // Always include status=available
     const baseFilters = '?status=available';
     
-    // If we have selected conditions, add them to the filters
-    let conditionParams = '';
-    if (selectedCondition && selectedCondition.length > 0) {
-      conditionParams = selectedCondition.map(condition => `condition=${encodeURIComponent(condition)}`).join('&');
-    }
-    
     const url = filters 
-      ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}${conditionParams ? `&${conditionParams}` : ''}`
-      : `${baseUrl}${baseFilters}${conditionParams ? `&${conditionParams}` : ''}`;
+      ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}`
+      : `${baseUrl}${baseFilters}`;
     
     console.log('Fetching listings from:', url);
     
