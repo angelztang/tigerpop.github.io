@@ -617,3 +617,41 @@ def get_hot_items():
     except Exception as e:
         current_app.logger.error(f"Error getting hot items: {str(e)}")
         return jsonify({'error': 'Failed to get hot items'}), 500
+
+@bp.route('/<int:listing_id>/request', methods=['POST', 'OPTIONS'])
+def request_to_buy(listing_id):
+    """Handle a buyer's request to purchase a listing."""
+    # Handle OPTIONS request
+    if request.method == 'OPTIONS':
+        response = current_app.make_default_options_response()
+        response.headers["Access-Control-Allow-Methods"] = "POST, OPTIONS"
+        return response
+        
+    try:
+        data = request.get_json()
+        buyer_id = data.get('buyerId')
+        
+        if not buyer_id:
+            return jsonify({'error': 'Buyer ID is required'}), 400
+            
+        # Get the listing
+        listing = Listing.query.get(listing_id)
+        if not listing:
+            return jsonify({'error': 'Listing not found'}), 404
+            
+        # Check if the listing is available
+        if listing.status != 'available':
+            return jsonify({'error': 'This listing is not available for purchase'}), 400
+            
+        # Record the request in the logs
+        current_app.logger.info(f"Buyer {buyer_id} requested to buy listing {listing_id}")
+        
+        # For now, we'll just return success - in the future we might want to store these requests
+        return jsonify({
+            'success': True,
+            'message': 'Your request has been recorded'
+        })
+        
+    except Exception as e:
+        current_app.logger.error(f"Error processing buy request: {str(e)}")
+        return jsonify({'error': 'Failed to process request'}), 500
