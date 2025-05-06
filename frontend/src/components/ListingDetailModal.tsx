@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Listing, getBids, Bid } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
-import { getUserId } from '../services/authService';
+import { getUserId, getNetid } from '../services/authService';
 import BiddingInterface from './BiddingInterface';
 
 interface ListingDetailModalProps {
@@ -90,6 +90,10 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
+      const netid = getNetid();
+      if (!netid) {
+        throw new Error('Please log in to request to buy this item');
+      }
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
       onUpdate?.({ ...listing, status: 'pending' });
