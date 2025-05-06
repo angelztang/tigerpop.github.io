@@ -262,18 +262,22 @@ const MarketplacePage: React.FC = () => {
               </select>
 
               {/* Condition Filter */}
-              <select
-                value={selectedCondition}
-                onChange={handleConditionChange}
-                multiple
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
-              >
-                {conditions.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {condition}
-                  </option>
-                ))}
-              </select>
+              <div className="flex flex-col space-y-2">
+                <label className="text-sm font-medium text-gray-700">Condition</label>
+                <select
+                  multiple
+                  value={selectedCondition}
+                  onChange={handleConditionChange}
+                  className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                >
+                  {conditions.map((condition) => (
+                    <option key={condition} value={condition}>
+                      {condition}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500">Hold Ctrl/Cmd to select multiple conditions</p>
+              </div>
 
               {/* Auction Filter */}
               <select

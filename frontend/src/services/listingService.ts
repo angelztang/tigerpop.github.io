@@ -76,9 +76,20 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
     // Always include status=available
     const baseFilters = '?status=available';
     
-    const url = filters 
-      ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}`
-      : `${baseUrl}${baseFilters}`;
+    // Parse the filters string to handle multiple conditions
+    let filterParams = '';
+    if (filters) {
+      const params = new URLSearchParams(filters.replace('?', ''));
+      // Handle multiple conditions
+      const conditions = params.getAll('condition');
+      params.delete('condition');
+      conditions.forEach(condition => {
+        params.append('condition', condition);
+      });
+      filterParams = '&' + params.toString();
+    }
+    
+    const url = `${baseUrl}${baseFilters}${filterParams}`;
     
     console.log('Fetching listings from:', url);
     
