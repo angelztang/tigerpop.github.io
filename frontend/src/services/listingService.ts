@@ -114,7 +114,11 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
       throw new Error('Invalid response format: expected array of listings');
     }
     
-    return data;
+    // Filter out any listings that are not available
+    const availableListings = data.filter(listing => listing.status === 'available');
+    console.log('Filtered available listings:', availableListings);
+    
+    return availableListings;
   } catch (error) {
     console.error('Error in getListings:', error);
     throw error;
@@ -297,25 +301,16 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
   try {
-    const userId = getUserId();
-    if (!userId) {
+    const netid = getNetid();
+    if (!netid) {
       throw new Error('User not authenticated');
-    }
-
-    // Get the JWT token
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('No authentication token found');
     }
 
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
-      headers: {
-        ...getHeaders(),
-        'Authorization': `Bearer ${token}`
-      },
+      headers: getHeaders(),
       body: JSON.stringify({
-        buyer_id: userId,
+        netid: netid,
         message: 'I am interested in this item',
         contact_info: 'Please contact me via email'
       }),

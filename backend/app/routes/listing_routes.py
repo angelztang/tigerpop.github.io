@@ -167,8 +167,15 @@ def get_listings():
         status = request.args.get('status', 'available')
         conditions = request.args.getlist('condition')  # Get list of conditions
         
+        # Log the incoming request parameters
+        current_app.logger.info(f"Listing request parameters: status={status}, category={category}, max_price={max_price}")
+        
         # Start with base query
         query = Listing.query
+        
+        # Log the initial query
+        current_app.logger.info("Initial query before filters:")
+        current_app.logger.info(str(query))
         
         # Apply filters if they exist
         if max_price:
@@ -177,6 +184,8 @@ def get_listings():
             query = query.filter(Listing.category.ilike(category))
         if status:
             query = query.filter(Listing.status == status)
+            current_app.logger.info(f"Applied status filter: {status}")
+            current_app.logger.info(f"Query after status filter: {str(query)}")
         if conditions:  # Handle multiple conditions
             query = query.filter(Listing.condition.in_(conditions))
             
@@ -194,6 +203,11 @@ def get_listings():
         # Get all listings
         listings = query.order_by(Listing.created_at.desc()).all()
         
+        # Log the raw listings from the database
+        current_app.logger.info(f"Raw listings from database (count: {len(listings)}):")
+        for listing in listings:
+            current_app.logger.info(f"Listing ID: {listing.id}, Title: {listing.title}, Status: {listing.status}, Pricing Mode: {listing.pricing_mode}")
+        
         # Convert to dictionary format using the model's to_dict method
         result = []
         for listing in listings:
@@ -202,10 +216,17 @@ def get_listings():
             listing_dict['user_netid'] = listing.seller.netid if listing.seller else None
             listing_dict['seller_id'] = listing.user_id
             result.append(listing_dict)
+            
+            # Log the processed listing data
+            current_app.logger.info(f"Processed listing: ID={listing_dict['id']}, Status={listing_dict['status']}, Pricing Mode={listing_dict['pricing_mode']}")
+        
+        # Log the final result count
+        current_app.logger.info(f"Final result count: {len(result)}")
         
         return jsonify(result)
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
+        current_app.logger.exception("Full traceback:")
         return jsonify({'error': 'Failed to fetch listings'}), 500
 
 @bp.route('', methods=['POST'])
@@ -622,17 +643,25 @@ def get_hot_items():
         return jsonify({'error': 'Failed to get hot items'}), 500
 
 @bp.route('/<int:listing_id>/request', methods=['POST'])
-@jwt_required()
 def request_to_buy(listing_id):
     try:
-        # Get current user from JWT
-        current_user_id = get_jwt_identity()
-        
         # Get the listing
         listing = Listing.query.get_or_404(listing_id)
         
+        # Get buyer's netid from request
+        data = request.get_json()
+        buyer_netid = data.get('netid')
+        if not buyer_netid:
+            return jsonify({'error': 'Buyer netid is required'}), 400
+            
+        # Get the buyer's information
+        buyer = User.query.filter_by(netid=buyer_netid).first()
+        if not buyer:
+            current_app.logger.error(f"Buyer not found with netid {buyer_netid}")
+            return jsonify({'error': 'Buyer not found'}), 404
+        
         # Prevent users from requesting their own listings
-        if listing.user_id == current_user_id:
+        if listing.user_id == buyer.id:
             return jsonify({'error': 'You cannot request to buy your own listing'}), 400
         
         # Get the seller's information (user_id in listings table is the seller's id)
@@ -645,23 +674,16 @@ def request_to_buy(listing_id):
             current_app.logger.error(f"Seller {seller.netid} has no email")
             return jsonify({'error': 'Seller has no email'}), 404
             
-        # Get the buyer's information
-        buyer = User.query.get(current_user_id)
-        if not buyer:
-            current_app.logger.error(f"Buyer not found with id {current_user_id}")
-            return jsonify({'error': 'Buyer not found'}), 404
-            
         # Get message and contact info from request
-        data = request.get_json()
         message = data.get('message', 'I am interested in this item')
         contact_info = data.get('contact_info', 'Please contact me via email')
         
         # Log the email sending attempt
         current_app.logger.info(f"Attempting to send email to seller {seller.netid} ({seller.email}) from buyer {buyer.netid}")
         
-        # Create email message
-        subject = str(f"New Interest in Your Listing: {listing.title}")
-        body = str(f"""
+        # Create email message with explicit string conversion
+        subject = f"New Interest in Your Listing: {listing.title}"
+        body = f"""
 Someone is interested in your listing "{listing.title}":
 
 Buyer's NetID: {buyer.netid}
@@ -674,12 +696,12 @@ Listing Details:
 - Category: {listing.category}
 
 You can contact the buyer using their NetID: {buyer.netid}
-""")
+"""
         
         msg = Message(
-            subject=subject,
+            subject=str(subject),  # Ensure subject is a string
             recipients=[seller.email],
-            body=body
+            body=str(body)  # Ensure body is a string
         )
         
         # Send the email
