@@ -33,7 +33,7 @@ const MarketplacePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number>(0);
-  const [selectedCondition, setSelectedCondition] = useState<string>('');
+  const [selectedCondition, setSelectedCondition] = useState<string[]>([]);
   const [selectedAuctionFilter, setSelectedAuctionFilter] = useState<string>('all'); // 'all', 'auction', 'fixed'
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -59,7 +59,7 @@ const MarketplacePage: React.FC = () => {
 
   const clearFilters = () => {
     setSelectedPrice(0);
-    setSelectedCondition('');
+    setSelectedCondition([]);
     setSelectedAuctionFilter('all');
     setShowHotOnly(false);
     // Clear search and category from URL
@@ -120,7 +120,14 @@ const MarketplacePage: React.FC = () => {
   };
 
   const handleConditionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCondition(e.target.value);
+    const options = e.target.options;
+    const selectedValues: string[] = [];
+    for (let i = 0; i < options.length; i++) {
+      if (options[i].selected) {
+        selectedValues.push(options[i].value);
+      }
+    }
+    setSelectedCondition(selectedValues);
   };
 
   const handleAuctionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -182,8 +189,8 @@ const MarketplacePage: React.FC = () => {
     // Apply price filter
     if (selectedPrice > 0 && listing.price > selectedPrice) return false;
     
-    // Apply condition filter
-    if (selectedCondition && listing.condition !== selectedCondition) return false;
+    // Apply condition filter - now checks if listing condition is in selected conditions array
+    if (selectedCondition.length > 0 && !selectedCondition.includes(listing.condition)) return false;
     
     // Apply auction filter
     if (selectedAuctionFilter !== 'all') {
@@ -258,9 +265,9 @@ const MarketplacePage: React.FC = () => {
               <select
                 value={selectedCondition}
                 onChange={handleConditionChange}
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                multiple
+                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
               >
-                <option value="">Any Condition</option>
                 {conditions.map((condition) => (
                   <option key={condition} value={condition}>
                     {condition}
@@ -311,8 +318,8 @@ const MarketplacePage: React.FC = () => {
                 if (selectedPrice > 0) {
                   activeFilters.push(`under $${selectedPrice}`);
                 }
-                if (selectedCondition) {
-                  activeFilters.push(`in ${selectedCondition} condition`);
+                if (selectedCondition.length > 0) {
+                  activeFilters.push(`in ${selectedCondition.join(' or ')} condition`);
                 }
                 if (selectedAuctionFilter !== 'all') {
                   activeFilters.push(selectedAuctionFilter === 'auction' ? 'Auction Items' : 'Fixed Price Items');
@@ -339,8 +346,8 @@ const MarketplacePage: React.FC = () => {
                     ? `No items found matching "${searchQuery}"`
                     : showHotOnly
                     ? "No hot items available at the moment"
-                    : selectedPrice > 0 || selectedCondition
-                    ? `No items found${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition ? ` in ${selectedCondition} condition` : ''}`
+                    : selectedPrice > 0 || selectedCondition.length > 0
+                    ? `No items found${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition.length > 0 ? ` in ${selectedCondition.join(' or ')} condition` : ''}`
                     : category
                     ? `No ${category} available in the marketplace yet`
                     : 'No items available in the marketplace yet'}

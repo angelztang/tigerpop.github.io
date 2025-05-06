@@ -73,7 +73,7 @@ bp = Blueprint('listing', __name__)
 
 # Configure upload settings
 UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'uploads')
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png'}  # Only allow these image formats
 
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
@@ -165,6 +165,7 @@ def get_listings():
         category = request.args.get('category')
         search = request.args.get('search')
         status = request.args.get('status', 'available')
+        conditions = request.args.getlist('condition')  # Get list of conditions
         
         # Start with base query
         query = Listing.query
@@ -176,6 +177,8 @@ def get_listings():
             query = query.filter(Listing.category.ilike(category))
         if status:
             query = query.filter(Listing.status == status)
+        if conditions:  # Handle multiple conditions
+            query = query.filter(Listing.condition.in_(conditions))
             
         # Apply search filter if search query is provided
         if search:
@@ -617,3 +620,65 @@ def get_hot_items():
     except Exception as e:
         current_app.logger.error(f"Error getting hot items: {str(e)}")
         return jsonify({'error': 'Failed to get hot items'}), 500
+
+@bp.route('/<int:listing_id>/request', methods=['POST'])
+@jwt_required()
+def request_to_buy(listing_id):
+    try:
+        # Get current user from JWT
+        current_user_id = get_jwt_identity()
+        
+        # Get the listing
+        listing = Listing.query.get_or_404(listing_id)
+        
+        # Prevent users from requesting their own listings
+        if listing.user_id == current_user_id:
+            return jsonify({'error': 'You cannot request to buy your own listing'}), 400
+        
+        # Get the seller's email
+        seller = User.query.get(listing.user_id)
+        if not seller or not seller.email:
+            return jsonify({'error': 'Seller not found or has no email'}), 404
+            
+        # Get the buyer's information
+        buyer = User.query.get(current_user_id)
+        if not buyer:
+            return jsonify({'error': 'Buyer not found'}), 404
+            
+        # Get message and contact info from request
+        data = request.get_json()
+        message = data.get('message', 'I am interested in this item')
+        contact_info = data.get('contact_info', 'Please contact me via email')
+        
+        # Create email message
+        msg = Message(
+            subject=f"New Interest in Your Listing: {listing.title}",
+            recipients=[seller.email],
+            body=f"""
+            Someone is interested in your listing "{listing.title}":
+            
+            Buyer: {buyer.netid}
+            Message: {message}
+            Contact Information: {contact_info}
+            
+            Listing Details:
+            - Price: ${listing.price}
+            - Condition: {listing.condition}
+            - Category: {listing.category}
+            
+            You can contact the buyer using the provided contact information.
+            """
+        )
+        
+        # Send the email
+        try:
+            mail.send(msg)
+            current_app.logger.info(f"Sent interest notification to seller {seller.email}")
+            return jsonify({'message': 'Request sent successfully'}), 200
+        except Exception as e:
+            current_app.logger.error(f"Failed to send email: {str(e)}")
+            return jsonify({'error': 'Failed to send notification'}), 500
+            
+    except Exception as e:
+        current_app.logger.error(f"Error processing buy request: {str(e)}")
+        return jsonify({'error': 'Failed to process request'}), 500

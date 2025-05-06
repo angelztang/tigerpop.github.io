@@ -172,6 +172,17 @@ const ListingForm: React.FC<ListingFormProps> = ({
       const files = Array.from(e.target.files);
       const totalFiles = selectedFiles.length + files.length;
       
+      // Check file types
+      const invalidFiles = files.filter(file => {
+        const fileType = file.type.toLowerCase();
+        return !['image/jpeg', 'image/jpg', 'image/png'].includes(fileType);
+      });
+
+      if (invalidFiles.length > 0) {
+        setError('Only JPG, JPEG, and PNG files are allowed.');
+        return;
+      }
+      
       if (totalFiles > maxImages) {
         setError(`You can only upload up to ${maxImages} images. You currently have ${selectedFiles.length} images and tried to add ${files.length} more.`);
         return;
@@ -477,7 +488,7 @@ const ListingForm: React.FC<ListingFormProps> = ({
               <input
                 type="file"
                 multiple
-                accept="image/jpeg,image/png"
+                accept="image/jpeg,image/jpg,image/png"
                 onChange={handleFileChange}
                 className="hidden"
                 id="images"
