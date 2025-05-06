@@ -98,9 +98,11 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       setNotificationSent(true);
       onUpdate?.({ ...listing, status: 'pending' });
       onListingUpdated?.();
+      // Show success message for 3 seconds before closing
       setTimeout(() => {
+        setNotificationSent(false);
         onClose();
-      }, 2000);
+      }, 3000);
     } catch (err: unknown) {
       console.error('Error sending notification:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
@@ -158,6 +160,11 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleOverlayClick}>
       <div ref={modalRef} className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
+          {notificationSent && (
+            <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+              Email sent successfully! The seller will be notified.
+            </div>
+          )}
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{localListing.title}</h2>
