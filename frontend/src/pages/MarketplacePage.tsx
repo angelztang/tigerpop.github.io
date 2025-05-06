@@ -44,6 +44,7 @@ const MarketplacePage: React.FC = () => {
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
   const category = searchParams.get('category') || '';
   const currentUserId = parseInt(getUserId() || '0');
+  const [isConditionDropdownOpen, setIsConditionDropdownOpen] = useState(false);
 
   // Add event listener for clearFilters event
   useEffect(() => {
@@ -119,15 +120,14 @@ const MarketplacePage: React.FC = () => {
     setSelectedPrice(Number(e.target.value));
   };
 
-  const handleConditionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const options = e.target.options;
-    const selectedValues: string[] = [];
-    for (let i = 0; i < options.length; i++) {
-      if (options[i].selected) {
-        selectedValues.push(options[i].value);
+  const handleConditionClick = (condition: string) => {
+    setSelectedCondition(prev => {
+      if (prev.includes(condition)) {
+        return prev.filter(c => c !== condition);
+      } else {
+        return [...prev, condition];
       }
-    }
-    setSelectedCondition(selectedValues);
+    });
   };
 
   const handleAuctionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -211,6 +211,20 @@ const MarketplacePage: React.FC = () => {
     return true;
   });
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.condition-dropdown')) {
+        setIsConditionDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -262,21 +276,46 @@ const MarketplacePage: React.FC = () => {
               </select>
 
               {/* Condition Filter */}
-              <div className="flex flex-col space-y-2">
-                <label className="text-sm font-medium text-gray-700">Condition</label>
-                <select
-                  multiple
-                  value={selectedCondition}
-                  onChange={handleConditionChange}
-                  className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+              <div className="relative condition-dropdown">
+                <label className="text-sm font-medium text-gray-700 mb-1 block">Condition</label>
+                <button
+                  type="button"
+                  onClick={() => setIsConditionDropdownOpen(!isConditionDropdownOpen)}
+                  className="w-full rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
-                  {conditions.map((condition) => (
-                    <option key={condition} value={condition}>
-                      {condition}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500">Hold Ctrl/Cmd to select multiple conditions</p>
+                  {selectedCondition.length > 0 
+                    ? selectedCondition.join(', ')
+                    : 'Select conditions'}
+                </button>
+                
+                {isConditionDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {conditions.map((condition) => (
+                        <li
+                          key={condition}
+                          onClick={() => handleConditionClick(condition)}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-blue-50 ${
+                            selectedCondition.includes(condition) ? 'bg-blue-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`ml-3 block truncate ${
+                              selectedCondition.includes(condition) ? 'font-semibold' : 'font-normal'
+                            }`}>
+                              {condition}
+                            </span>
+                            {selectedCondition.includes(condition) && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-blue-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Auction Filter */}
