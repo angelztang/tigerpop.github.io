@@ -51,7 +51,8 @@ class Listing(db.Model):
             'user_id': self.user_id,
             'buyer_id': self.buyer_id,
             'images': [image.filename for image in self.images],
-            'current_bid': self.get_current_bid()
+            'current_bid': self.get_current_bid(),
+            'user_netid': self.seller.netid if self.seller else None
         }
     
     def get_current_bid(self):
