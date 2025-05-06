@@ -271,7 +271,7 @@ const MarketplacePage: React.FC = () => {
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-4 items-center">
               {/* Price Range Filter */}
-              <div className="relative price-dropdown">
+              <div className="relative price-dropdown w-48">
                 <button
                   type="button"
                   onClick={() => setIsPriceDropdownOpen(!isPriceDropdownOpen)}
@@ -314,7 +314,7 @@ const MarketplacePage: React.FC = () => {
               </div>
 
               {/* Condition Filter */}
-              <div className="relative condition-dropdown">
+              <div className="relative condition-dropdown w-48">
                 <button
                   type="button"
                   onClick={() => setIsConditionDropdownOpen(!isConditionDropdownOpen)}
@@ -356,7 +356,7 @@ const MarketplacePage: React.FC = () => {
               </div>
 
               {/* Auction Filter */}
-              <div className="relative auction-dropdown">
+              <div className="relative auction-dropdown w-48">
                 <button
                   type="button"
                   onClick={() => setIsAuctionDropdownOpen(!isAuctionDropdownOpen)}
