@@ -301,9 +301,19 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
     if (!userId) {
       throw new Error('User not authenticated');
     }
+
+    // Get the JWT token
+    const token = localStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: {
+        ...getHeaders(),
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify({
         buyer_id: userId,
         message: 'I am interested in this item',
@@ -312,7 +322,13 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
   } catch (error) {
     console.error('Error sending notification:', error);
     throw error;
