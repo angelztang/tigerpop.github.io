@@ -645,13 +645,19 @@ def get_hot_items():
 @bp.route('/<int:listing_id>/request', methods=['POST'])
 def request_to_buy(listing_id):
     try:
+        current_app.logger.info(f"Starting request_to_buy for listing {listing_id}")
+        
         # Get the listing
         listing = Listing.query.get_or_404(listing_id)
+        current_app.logger.info(f"Found listing: {listing.id}, status: {listing.status}")
         
         # Get buyer's netid from request
         data = request.get_json()
+        current_app.logger.info(f"Received request data: {data}")
+        
         buyer_netid = data.get('netid')
         if not buyer_netid:
+            current_app.logger.error("No netid provided in request")
             return jsonify({'error': 'Buyer netid is required'}), 400
             
         # Get the buyer's information
@@ -662,9 +668,15 @@ def request_to_buy(listing_id):
         
         # Prevent users from requesting their own listings
         if listing.user_id == buyer.id:
+            current_app.logger.error(f"User {buyer_netid} attempted to buy their own listing")
             return jsonify({'error': 'You cannot request to buy your own listing'}), 400
+            
+        # Check if listing is available
+        if listing.status != 'available':
+            current_app.logger.error(f"Listing {listing_id} is not available (status: {listing.status})")
+            return jsonify({'error': 'This listing is no longer available'}), 400
         
-        # Get the seller's information (user_id in listings table is the seller's id)
+        # Get the seller's information
         seller = User.query.get(listing.user_id)
         if not seller:
             current_app.logger.error(f"Seller not found for listing {listing_id}")
@@ -698,21 +710,40 @@ Listing Details:
 You can contact the buyer using their NetID: {buyer.netid}
 """
         
-        msg = Message(
-            subject=str(subject),  # Ensure subject is a string
-            recipients=[seller.email],
-            body=str(body)  # Ensure body is a string
-        )
-        
-        # Send the email
         try:
+            msg = Message(
+                subject=str(subject),
+                recipients=[seller.email],
+                body=str(body)
+            )
+            
+            # Send the email
             mail.send(msg)
             current_app.logger.info(f"Successfully sent interest notification to seller {seller.netid} ({seller.email})")
-            return jsonify({'message': 'Request sent successfully'}), 200
-        except Exception as e:
-            current_app.logger.error(f"Failed to send email to seller {seller.netid}: {str(e)}")
+            
+            # Update listing status to pending
+            try:
+                listing.status = 'pending'
+                listing.buyer_id = buyer.id
+                db.session.commit()
+                current_app.logger.info(f"Updated listing {listing_id} status to pending")
+            except Exception as db_error:
+                current_app.logger.error(f"Database error while updating listing: {str(db_error)}")
+                current_app.logger.exception("Full traceback:")
+                db.session.rollback()
+                return jsonify({'error': 'Failed to update listing status'}), 500
+            
+            return jsonify({
+                'message': 'Request sent successfully',
+                'listing': listing.to_dict()
+            }), 200
+            
+        except Exception as email_error:
+            current_app.logger.error(f"Failed to send email to seller {seller.netid}: {str(email_error)}")
+            current_app.logger.exception("Full traceback:")
             return jsonify({'error': 'Failed to send notification'}), 500
             
     except Exception as e:
         current_app.logger.error(f"Error processing buy request: {str(e)}")
+        current_app.logger.exception("Full traceback:")
         return jsonify({'error': 'Failed to process request'}), 500
