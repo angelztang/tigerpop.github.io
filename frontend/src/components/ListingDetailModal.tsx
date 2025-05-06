@@ -104,16 +104,20 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       setNotificationSent(true);
       onUpdate?.({ ...listing, status: 'pending' });
       onListingUpdated?.();
-      // Show success message for 1.5 seconds before closing
+      // Show success message for 1 second before closing
       setTimeout(() => {
         setNotificationSent(false);
         onClose();
-      }, 1500);
+      }, 1000);
     } catch (err: unknown) {
       console.error('Error sending notification:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
       const errorDetails = err instanceof Error && 'details' in err ? (err as any).details : '';
       setError(`${errorMessage}${errorDetails ? `: ${errorDetails}` : ''}`);
+      // Clear error message after 2 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 2000);
     } finally {
       setIsSubmitting(false);
     }
@@ -169,6 +173,11 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
           {notificationSent && (
             <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
               Email sent successfully! The seller will be notified.
+            </div>
+          )}
+          {error && (
+            <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+              {error}
             </div>
           )}
           <div className="flex justify-between items-start mb-4">
