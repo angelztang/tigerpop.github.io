@@ -277,27 +277,44 @@ const MarketplacePage: React.FC = () => {
 
               {/* Condition Filter */}
               <div className="relative condition-dropdown">
-                <select
-                  multiple
-                  value={selectedCondition}
-                  onChange={(e) => {
-                    const options = e.target.options;
-                    const selectedValues: string[] = [];
-                    for (let i = 0; i < options.length; i++) {
-                      if (options[i].selected) {
-                        selectedValues.push(options[i].value);
-                      }
-                    }
-                    setSelectedCondition(selectedValues);
-                  }}
-                  className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
+                <button
+                  type="button"
+                  onClick={() => setIsConditionDropdownOpen(!isConditionDropdownOpen)}
+                  className="rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full"
                 >
-                  {conditions.map((condition) => (
-                    <option key={condition} value={condition}>
-                      {condition}
-                    </option>
-                  ))}
-                </select>
+                  {selectedCondition.length > 0 
+                    ? selectedCondition.join(', ')
+                    : 'All Conditions'}
+                </button>
+                
+                {isConditionDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {conditions.map((condition) => (
+                        <li
+                          key={condition}
+                          onClick={() => handleConditionClick(condition)}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 ${
+                            selectedCondition.includes(condition) ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`block truncate ${
+                              selectedCondition.includes(condition) ? 'font-medium' : 'font-normal'
+                            }`}>
+                              {condition}
+                            </span>
+                            {selectedCondition.includes(condition) && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               {/* Auction Filter */}
