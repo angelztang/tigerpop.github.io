@@ -24,7 +24,7 @@ class Listing(db.Model):
     seller = db.relationship('User', foreign_keys=[user_id], backref='listings')
     buyer = db.relationship('User', foreign_keys=[buyer_id], backref='purchases')
     images = db.relationship('ListingImage', backref='listing', lazy=True, cascade='all, delete-orphan')
-    bids = db.relationship('Bid', backref=db.backref('listing_parent', lazy=True), lazy=True, cascade='all, delete-orphan')
+    bids = db.relationship('Bid', backref='listing_parent', lazy=True, cascade='all, delete-orphan')
     
     def __init__(self, title, description, price, user_id, condition, category=None, status='available', pricing_mode='fixed'):
         self.title = title

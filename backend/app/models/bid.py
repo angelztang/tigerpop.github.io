@@ -11,7 +11,7 @@ class Bid(db.Model):
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
 
     # Relationships
-    listing = db.relationship('Listing', backref=db.backref('bids', lazy=True, cascade='all, delete-orphan'))
+    listing = db.relationship('Listing')
     bidder = db.relationship('User', backref=db.backref('bids', lazy=True))
 
     def __init__(self, listing_id, bidder_id, amount, timestamp=None):
