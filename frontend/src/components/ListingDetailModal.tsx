@@ -94,15 +94,21 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       if (!netid) {
         throw new Error('Please log in to request to buy this item');
       }
+      
+      // Check if user is trying to buy their own listing
+      if (netid === listing.user_netid) {
+        throw new Error("You can't buy your own listing!");
+      }
+
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
       onUpdate?.({ ...listing, status: 'pending' });
       onListingUpdated?.();
-      // Show success message for 3 seconds before closing
+      // Show success message for 1.5 seconds before closing
       setTimeout(() => {
         setNotificationSent(false);
         onClose();
-      }, 3000);
+      }, 1500);
     } catch (err: unknown) {
       console.error('Error sending notification:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
