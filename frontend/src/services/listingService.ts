@@ -301,7 +301,7 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
     if (!userId) {
       throw new Error('User not authenticated');
     }
-    const response = await fetch(`${API_URL}/api/listing/${listingId}/buy/`, {
+    const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({

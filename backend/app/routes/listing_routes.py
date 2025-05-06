@@ -635,14 +635,20 @@ def request_to_buy(listing_id):
         if listing.user_id == current_user_id:
             return jsonify({'error': 'You cannot request to buy your own listing'}), 400
         
-        # Get the seller's email
+        # Get the seller's information (user_id in listings table is the seller's id)
         seller = User.query.get(listing.user_id)
-        if not seller or not seller.email:
-            return jsonify({'error': 'Seller not found or has no email'}), 404
+        if not seller:
+            current_app.logger.error(f"Seller not found for listing {listing_id}")
+            return jsonify({'error': 'Seller not found'}), 404
+            
+        if not seller.email:
+            current_app.logger.error(f"Seller {seller.netid} has no email")
+            return jsonify({'error': 'Seller has no email'}), 404
             
         # Get the buyer's information
         buyer = User.query.get(current_user_id)
         if not buyer:
+            current_app.logger.error(f"Buyer not found with id {current_user_id}")
             return jsonify({'error': 'Buyer not found'}), 404
             
         # Get message and contact info from request
@@ -650,33 +656,39 @@ def request_to_buy(listing_id):
         message = data.get('message', 'I am interested in this item')
         contact_info = data.get('contact_info', 'Please contact me via email')
         
+        # Log the email sending attempt
+        current_app.logger.info(f"Attempting to send email to seller {seller.netid} ({seller.email}) from buyer {buyer.netid}")
+        
         # Create email message
+        subject = f"New Interest in Your Listing: {listing.title}"
+        body = f"""
+        Someone is interested in your listing "{listing.title}":
+        
+        Buyer's NetID: {buyer.netid}
+        Message: {message}
+        Contact Information: {contact_info}
+        
+        Listing Details:
+        - Price: ${listing.price}
+        - Condition: {listing.condition}
+        - Category: {listing.category}
+        
+        You can contact the buyer using their NetID: {buyer.netid}
+        """
+        
         msg = Message(
-            subject=f"New Interest in Your Listing: {listing.title}",
+            subject=subject,
             recipients=[seller.email],
-            body=f"""
-            Someone is interested in your listing "{listing.title}":
-            
-            Buyer: {buyer.netid}
-            Message: {message}
-            Contact Information: {contact_info}
-            
-            Listing Details:
-            - Price: ${listing.price}
-            - Condition: {listing.condition}
-            - Category: {listing.category}
-            
-            You can contact the buyer using the provided contact information.
-            """
+            body=body
         )
         
         # Send the email
         try:
             mail.send(msg)
-            current_app.logger.info(f"Sent interest notification to seller {seller.email}")
+            current_app.logger.info(f"Successfully sent interest notification to seller {seller.netid} ({seller.email})")
             return jsonify({'message': 'Request sent successfully'}), 200
         except Exception as e:
-            current_app.logger.error(f"Failed to send email: {str(e)}")
+            current_app.logger.error(f"Failed to send email to seller {seller.netid}: {str(e)}")
             return jsonify({'error': 'Failed to send notification'}), 500
             
     except Exception as e:

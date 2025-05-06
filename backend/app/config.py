@@ -37,7 +37,10 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = 'tigerpopmarketplace@gmail.com'
     MAIL_PASSWORD = 'vvtb vsht wwro tvlb'
-    MAIL_DEFAULT_SENDER = ('TigerPop', "tigerpopmarketplace@gmail.com")
+    MAIL_DEFAULT_SENDER = 'tigerpopmarketplace@gmail.com'
+    MAIL_MAX_EMAILS = 10
+    MAIL_ASCII_ATTACHMENTS = False
+    MAIL_SUPPRESS_SEND = False
 
     # Logging configuration
     LOG_TO_STDOUT = os.environ.get('LOG_TO_STDOUT', True)  # Default to True for Heroku
