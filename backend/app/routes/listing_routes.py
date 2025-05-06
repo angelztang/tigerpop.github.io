@@ -660,21 +660,21 @@ def request_to_buy(listing_id):
         current_app.logger.info(f"Attempting to send email to seller {seller.netid} ({seller.email}) from buyer {buyer.netid}")
         
         # Create email message
-        subject = f"New Interest in Your Listing: {listing.title}"
-        body = f"""
-        Someone is interested in your listing "{listing.title}":
-        
-        Buyer's NetID: {buyer.netid}
-        Message: {message}
-        Contact Information: {contact_info}
-        
-        Listing Details:
-        - Price: ${listing.price}
-        - Condition: {listing.condition}
-        - Category: {listing.category}
-        
-        You can contact the buyer using their NetID: {buyer.netid}
-        """
+        subject = str(f"New Interest in Your Listing: {listing.title}")
+        body = str(f"""
+Someone is interested in your listing "{listing.title}":
+
+Buyer's NetID: {buyer.netid}
+Message: {message}
+Contact Information: {contact_info}
+
+Listing Details:
+- Price: ${listing.price}
+- Condition: {listing.condition}
+- Category: {listing.category}
+
+You can contact the buyer using their NetID: {buyer.netid}
+""")
         
         msg = Message(
             subject=subject,
