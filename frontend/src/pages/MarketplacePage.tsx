@@ -45,6 +45,8 @@ const MarketplacePage: React.FC = () => {
   const category = searchParams.get('category') || '';
   const currentUserId = parseInt(getUserId() || '0');
   const [isConditionDropdownOpen, setIsConditionDropdownOpen] = useState(false);
+  const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
+  const [isAuctionDropdownOpen, setIsAuctionDropdownOpen] = useState(false);
 
   // Add event listener for clearFilters event
   useEffect(() => {
@@ -217,6 +219,12 @@ const MarketplacePage: React.FC = () => {
       if (!target.closest('.condition-dropdown')) {
         setIsConditionDropdownOpen(false);
       }
+      if (!target.closest('.price-dropdown')) {
+        setIsPriceDropdownOpen(false);
+      }
+      if (!target.closest('.auction-dropdown')) {
+        setIsAuctionDropdownOpen(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -263,17 +271,47 @@ const MarketplacePage: React.FC = () => {
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-4 items-center">
               {/* Price Range Filter */}
-              <select
-                value={selectedPrice}
-                onChange={handlePriceChange}
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {priceRanges.map((range) => (
-                  <option key={range.max} value={range.max}>
-                    {range.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative price-dropdown">
+                <button
+                  type="button"
+                  onClick={() => setIsPriceDropdownOpen(!isPriceDropdownOpen)}
+                  className="rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full"
+                >
+                  {priceRanges.find(range => range.max === selectedPrice)?.label || 'Any Price'}
+                </button>
+                
+                {isPriceDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {priceRanges.map((range) => (
+                        <li
+                          key={range.max}
+                          onClick={() => {
+                            setSelectedPrice(range.max);
+                            setIsPriceDropdownOpen(false);
+                          }}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 ${
+                            selectedPrice === range.max ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`block truncate ${
+                              selectedPrice === range.max ? 'font-medium' : 'font-normal'
+                            }`}>
+                              {range.label}
+                            </span>
+                            {selectedPrice === range.max && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Condition Filter */}
               <div className="relative condition-dropdown">
@@ -318,15 +356,52 @@ const MarketplacePage: React.FC = () => {
               </div>
 
               {/* Auction Filter */}
-              <select
-                value={selectedAuctionFilter}
-                onChange={handleAuctionFilterChange}
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Items</option>
-                <option value="auction">Auction Only</option>
-                <option value="fixed">Fixed Price Only</option>
-              </select>
+              <div className="relative auction-dropdown">
+                <button
+                  type="button"
+                  onClick={() => setIsAuctionDropdownOpen(!isAuctionDropdownOpen)}
+                  className="rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full"
+                >
+                  {selectedAuctionFilter === 'all' ? 'All Items' : 
+                   selectedAuctionFilter === 'auction' ? 'Auction Only' : 'Fixed Price Only'}
+                </button>
+                
+                {isAuctionDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {[
+                        { value: 'all', label: 'All Items' },
+                        { value: 'auction', label: 'Auction Only' },
+                        { value: 'fixed', label: 'Fixed Price Only' }
+                      ].map((option) => (
+                        <li
+                          key={option.value}
+                          onClick={() => {
+                            setSelectedAuctionFilter(option.value);
+                            setIsAuctionDropdownOpen(false);
+                          }}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 ${
+                            selectedAuctionFilter === option.value ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`block truncate ${
+                              selectedAuctionFilter === option.value ? 'font-medium' : 'font-normal'
+                            }`}>
+                              {option.label}
+                            </span>
+                            {selectedAuctionFilter === option.value && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Hot Items Toggle */}
               <button
