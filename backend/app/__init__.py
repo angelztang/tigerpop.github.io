@@ -74,7 +74,7 @@ def create_app(config_class=Config):
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(listing_bp, url_prefix='/api/listing')
     app.register_blueprint(user_bp, url_prefix='/api/user')
-    app.register_blueprint(bid_bp, url_prefix='/api')
+    app.register_blueprint(bid_bp, url_prefix='/api/listings')
     app.register_blueprint(cas_bp, url_prefix='/api/auth/cas')
 
     return app
