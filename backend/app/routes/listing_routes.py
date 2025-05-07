@@ -690,8 +690,14 @@ def request_to_buy(listing_id):
         message = data.get('message', 'I am interested in this item')
         contact_info = data.get('contact_info', 'Please contact me via email')
         
-        # Log the email sending attempt
-        current_app.logger.info(f"Attempting to send email to seller {seller.netid} ({seller.email}) from buyer {buyer.netid}")
+        # Log the email sending attempt with more visibility
+        current_app.logger.info("=" * 50)
+        current_app.logger.info(f"ATTEMPTING TO SEND EMAIL:")
+        current_app.logger.info(f"From: tigerpopmarketplace@gmail.com")
+        current_app.logger.info(f"To: {seller.email}")
+        current_app.logger.info(f"Seller NetID: {seller.netid}")
+        current_app.logger.info(f"Buyer NetID: {buyer.netid}")
+        current_app.logger.info("=" * 50)
         
         # Create email message with explicit string conversion
         subject = f"New Interest in Your Listing: {listing.title}"
@@ -719,7 +725,11 @@ You can contact the buyer using their NetID: {buyer.netid}
             
             # Send the email
             mail.send(msg)
-            current_app.logger.info(f"Successfully sent interest notification to seller {seller.netid} ({seller.email})")
+            current_app.logger.info("=" * 50)
+            current_app.logger.info(f"EMAIL SENT SUCCESSFULLY:")
+            current_app.logger.info(f"To: {seller.email}")
+            current_app.logger.info(f"Seller NetID: {seller.netid}")
+            current_app.logger.info("=" * 50)
             
             # Update listing status to pending
             try:
@@ -739,7 +749,12 @@ You can contact the buyer using their NetID: {buyer.netid}
             }), 200
             
         except Exception as email_error:
-            current_app.logger.error(f"Failed to send email to seller {seller.netid}: {str(email_error)}")
+            current_app.logger.error("=" * 50)
+            current_app.logger.error(f"FAILED TO SEND EMAIL:")
+            current_app.logger.error(f"To: {seller.email}")
+            current_app.logger.error(f"Seller NetID: {seller.netid}")
+            current_app.logger.error(f"Error: {str(email_error)}")
+            current_app.logger.error("=" * 50)
             current_app.logger.exception("Full traceback:")
             return jsonify({'error': 'Failed to send notification'}), 500
             
