@@ -265,15 +265,15 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
   try {
-    const userId = getUserId();
-    if (!userId) {
+    const netid = getNetid();
+    if (!netid) {
       throw new Error('User not authenticated');
     }
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({
-        buyer_id: userId,
+        netid: netid,
         message: 'I am interested in this item',
         contact_info: 'Please contact me via email'
       }),

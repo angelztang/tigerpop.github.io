@@ -637,6 +637,11 @@ def request_to_buy(listing_id):
             current_app.logger.error(f"Seller not found for listing {listing_id}")
             return jsonify({'error': 'Seller not found'}), 404
             
+        # Log seller's email address
+        current_app.logger.info(f"Seller's email address: {seller.email}")
+        current_app.logger.info(f"Seller's NetID: {seller.netid}")
+        current_app.logger.info(f"Buyer's NetID: {buyer.netid}")
+            
         # Update listing status to pending
         try:
             listing.status = 'pending'
