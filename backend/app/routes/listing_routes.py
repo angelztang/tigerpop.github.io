@@ -656,6 +656,8 @@ def request_to_buy(listing_id):
             
             # Send email notification to seller
             try:
+                current_app.logger.info(f"Preparing to send email to seller at {seller_email}")
+                current_app.logger.info(f"Email will contain buyer's contact info: {buyer_email}")
                 msg = Message(
                     'New Purchase Request',
                     recipients=[seller_email],
@@ -663,9 +665,9 @@ def request_to_buy(listing_id):
                          f'Please contact them at {buyer_email} to arrange the transaction.'
                 )
                 mail.send(msg)
-                current_app.logger.info(f"Sent purchase request notification to seller at {seller_email}")
+                current_app.logger.info(f"Successfully sent purchase request notification to seller at {seller_email}")
             except Exception as email_error:
-                current_app.logger.error(f"Error sending email notification: {str(email_error)}")
+                current_app.logger.error(f"Error sending email notification to {seller_email}: {str(email_error)}")
                 # Don't fail the request if email fails
                 
         except Exception as db_error:
