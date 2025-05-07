@@ -1,73 +1,13 @@
 from flask import Blueprint, request, jsonify, current_app, session
 from werkzeug.utils import secure_filename
 import os
-from ..extensions import db, mail
+from ..extensions import db
 from ..models import Listing, ListingImage, User, HeartedListing
 from ..models.bid import Bid
 from datetime import datetime, timedelta
 from sqlalchemy import and_, or_, func
-from flask_mail import Message
 from ..utils.cloudinary_config import upload_image
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-
-# --- Email Notification Helpers ---
-def get_user_email(user_id):
-    user = User.query.get(user_id)
-    return getattr(user, 'email', None) if user else None
-
-def notify_seller_new_bid(listing, bid):
-    seller = User.query.get(listing.user_id)
-    if not seller or not getattr(seller, 'email', None):
-        current_app.logger.warning(f"No email for seller (user_id={listing.user_id})")
-        return
-    msg = Message(
-        subject=f"New Bid on Your Listing: {listing.title}",
-        recipients=[seller.email],
-        body=f"A new bid of ${bid.amount:.2f} was placed on your auction '{listing.title}'."
-    )
-    try:
-        mail.send(msg)
-        current_app.logger.info(f"Notified seller {seller.email} of new bid.")
-    except Exception as e:
-        current_app.logger.error(f"Failed to send seller bid email: {e}")
-
-def notify_outbid(prev_bid, listing):
-    prev_bidder = User.query.get(prev_bid.bidder_id)
-    if not prev_bidder or not getattr(prev_bidder, 'email', None):
-        current_app.logger.warning(f"No email for outbid user (user_id={prev_bid.bidder_id})")
-        return
-    msg = Message(
-        subject=f"You've Been Outbid on {listing.title}",
-        recipients=[prev_bidder.email],
-        body=f"You've been outbid on '{listing.title}'. The new highest bid is ${prev_bid.amount:.2f}."
-    )
-    try:
-        mail.send(msg)
-        current_app.logger.info(f"Notified outbid user {prev_bidder.email}.")
-    except Exception as e:
-        current_app.logger.error(f"Failed to send outbid email: {e}")
-
-def notify_winner(winning_bid, listing):
-    winner = User.query.get(winning_bid.bidder_id)
-    if not winner or not getattr(winner, 'email', None):
-        current_app.logger.warning(f"No email for winner (user_id={winning_bid.bidder_id})")
-        return
-    msg = Message(
-        subject=f"You Won the Auction: {listing.title}",
-        recipients=[winner.email],
-        body=f"Congratulations! You won the auction for '{listing.title}' with a bid of ${winning_bid.amount:.2f}."
-    )
-    try:
-        mail.send(msg)
-        current_app.logger.info(f"Notified winner {winner.email}.")
-    except Exception as e:
-        current_app.logger.error(f"Failed to send winner email: {e}")
-
-from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-import base64
-import io
-from PIL import Image
-import json
 
 bp = Blueprint('listing', __name__)
 
@@ -177,53 +117,66 @@ def get_listings():
         current_app.logger.info("Initial query before filters:")
         current_app.logger.info(str(query))
         
-        # Apply filters if they exist
-        if max_price:
-            query = query.filter(Listing.price <= max_price)
-        if category:
-            query = query.filter(Listing.category.ilike(category))
-        if status:
-            query = query.filter(Listing.status == status)
-            current_app.logger.info(f"Applied status filter: {status}")
-            current_app.logger.info(f"Query after status filter: {str(query)}")
-        if conditions:  # Handle multiple conditions
-            query = query.filter(Listing.condition.in_(conditions))
-            
-        # Apply search filter if search query is provided
-        if search:
-            search_terms = search.split()
-            for term in search_terms:
-                query = query.filter(
-                    db.or_(
-                        Listing.title.ilike(f'%{term}%'),
-                        Listing.description.ilike(f'%{term}%')
+        try:
+            # Apply filters if they exist
+            if max_price:
+                query = query.filter(Listing.price <= max_price)
+            if category:
+                query = query.filter(Listing.category.ilike(category))
+            if status:
+                query = query.filter(Listing.status == status)
+                current_app.logger.info(f"Applied status filter: {status}")
+                current_app.logger.info(f"Query after status filter: {str(query)}")
+            if conditions:  # Handle multiple conditions
+                query = query.filter(Listing.condition.in_(conditions))
+                
+            # Apply search filter if search query is provided
+            if search:
+                search_terms = search.split()
+                for term in search_terms:
+                    query = query.filter(
+                        db.or_(
+                            Listing.title.ilike(f'%{term}%'),
+                            Listing.description.ilike(f'%{term}%')
+                        )
                     )
-                )
+                
+            # Get all listings
+            current_app.logger.info("Executing query...")
+            listings = query.order_by(Listing.created_at.desc()).all()
+            current_app.logger.info(f"Query executed successfully. Found {len(listings)} listings.")
             
-        # Get all listings
-        listings = query.order_by(Listing.created_at.desc()).all()
-        
-        # Log the raw listings from the database
-        current_app.logger.info(f"Raw listings from database (count: {len(listings)}):")
-        for listing in listings:
-            current_app.logger.info(f"Listing ID: {listing.id}, Title: {listing.title}, Status: {listing.status}, Pricing Mode: {listing.pricing_mode}")
-        
-        # Convert to dictionary format using the model's to_dict method
-        result = []
-        for listing in listings:
-            listing_dict = listing.to_dict()
-            # Add any additional fields needed
-            listing_dict['user_netid'] = listing.seller.netid if listing.seller else None
-            listing_dict['seller_id'] = listing.user_id
-            result.append(listing_dict)
+            # Log the raw listings from the database
+            current_app.logger.info(f"Raw listings from database (count: {len(listings)}):")
+            for listing in listings:
+                current_app.logger.info(f"Listing ID: {listing.id}, Title: {listing.title}, Status: {listing.status}, Pricing Mode: {listing.pricing_mode}")
             
-            # Log the processed listing data
-            current_app.logger.info(f"Processed listing: ID={listing_dict['id']}, Status={listing_dict['status']}, Pricing Mode={listing_dict['pricing_mode']}")
-        
-        # Log the final result count
-        current_app.logger.info(f"Final result count: {len(result)}")
-        
-        return jsonify(result)
+            # Convert to dictionary format using the model's to_dict method
+            result = []
+            for listing in listings:
+                try:
+                    listing_dict = listing.to_dict()
+                    # Add any additional fields needed
+                    listing_dict['user_netid'] = listing.seller.netid if listing.seller else None
+                    listing_dict['seller_id'] = listing.user_id
+                    result.append(listing_dict)
+                    
+                    # Log the processed listing data
+                    current_app.logger.info(f"Processed listing: ID={listing_dict['id']}, Status={listing_dict['status']}, Pricing Mode={listing_dict['pricing_mode']}")
+                except Exception as dict_error:
+                    current_app.logger.error(f"Error converting listing {listing.id} to dict: {str(dict_error)}")
+                    current_app.logger.exception("Full traceback:")
+                    continue
+            
+            # Log the final result count
+            current_app.logger.info(f"Final result count: {len(result)}")
+            
+            return jsonify(result)
+        except Exception as query_error:
+            current_app.logger.error(f"Error executing query: {str(query_error)}")
+            current_app.logger.exception("Full traceback:")
+            return jsonify({'error': 'Failed to execute query'}), 500
+            
     except Exception as e:
         current_app.logger.error(f"Error fetching listings: {str(e)}")
         current_app.logger.exception("Full traceback:")
@@ -527,8 +480,10 @@ def close_bidding(id):
         # Get highest bid
         highest_bid = Bid.query.filter_by(listing_id=id).order_by(Bid.amount.desc()).first()
         if highest_bid:
-            # Send notification to highest bidder
-            notify_winner(highest_bid, listing)
+            # Update the listing with the winning bid information
+            listing.buyer_id = highest_bid.bidder_id
+            listing.current_bid = highest_bid.amount
+            db.session.commit()
             
         return jsonify({'message': 'Bidding closed successfully'}), 200
     except Exception as e:
@@ -682,81 +637,22 @@ def request_to_buy(listing_id):
             current_app.logger.error(f"Seller not found for listing {listing_id}")
             return jsonify({'error': 'Seller not found'}), 404
             
-        if not seller.email:
-            current_app.logger.error(f"Seller {seller.netid} has no email")
-            return jsonify({'error': 'Seller has no email'}), 404
-            
-        # Get message and contact info from request
-        message = data.get('message', 'I am interested in this item')
-        contact_info = data.get('contact_info', 'Please contact me via email')
-        
-        # Log the email sending attempt with more visibility
-        current_app.logger.info("=" * 50)
-        current_app.logger.info(f"ATTEMPTING TO SEND EMAIL:")
-        current_app.logger.info(f"From: tigerpopmarketplace@gmail.com")
-        current_app.logger.info(f"To: {seller.email}")
-        current_app.logger.info(f"Seller NetID: {seller.netid}")
-        current_app.logger.info(f"Buyer NetID: {buyer.netid}")
-        current_app.logger.info("=" * 50)
-        
-        # Create email message with explicit string conversion
-        subject = f"New Interest in Your Listing: {listing.title}"
-        body = f"""
-Someone is interested in your listing "{listing.title}":
-
-Buyer's NetID: {buyer.netid}
-Message: {message}
-Contact Information: {contact_info}
-
-Listing Details:
-- Price: ${listing.price}
-- Condition: {listing.condition}
-- Category: {listing.category}
-
-You can contact the buyer using their NetID: {buyer.netid}
-"""
-        
+        # Update listing status to pending
         try:
-            msg = Message(
-                subject=str(subject),
-                recipients=[seller.email],
-                body=str(body)
-            )
-            
-            # Send the email
-            mail.send(msg)
-            current_app.logger.info("=" * 50)
-            current_app.logger.info(f"EMAIL SENT SUCCESSFULLY:")
-            current_app.logger.info(f"To: {seller.email}")
-            current_app.logger.info(f"Seller NetID: {seller.netid}")
-            current_app.logger.info("=" * 50)
-            
-            # Update listing status to pending
-            try:
-                listing.status = 'pending'
-                listing.buyer_id = buyer.id
-                db.session.commit()
-                current_app.logger.info(f"Updated listing {listing_id} status to pending")
-            except Exception as db_error:
-                current_app.logger.error(f"Database error while updating listing: {str(db_error)}")
-                current_app.logger.exception("Full traceback:")
-                db.session.rollback()
-                return jsonify({'error': 'Failed to update listing status'}), 500
-            
-            return jsonify({
-                'message': 'Request sent successfully',
-                'listing': listing.to_dict()
-            }), 200
-            
-        except Exception as email_error:
-            current_app.logger.error("=" * 50)
-            current_app.logger.error(f"FAILED TO SEND EMAIL:")
-            current_app.logger.error(f"To: {seller.email}")
-            current_app.logger.error(f"Seller NetID: {seller.netid}")
-            current_app.logger.error(f"Error: {str(email_error)}")
-            current_app.logger.error("=" * 50)
+            listing.status = 'pending'
+            listing.buyer_id = buyer.id
+            db.session.commit()
+            current_app.logger.info(f"Updated listing {listing_id} status to pending")
+        except Exception as db_error:
+            current_app.logger.error(f"Database error while updating listing: {str(db_error)}")
             current_app.logger.exception("Full traceback:")
-            return jsonify({'error': 'Failed to send notification'}), 500
+            db.session.rollback()
+            return jsonify({'error': 'Failed to update listing status'}), 500
+        
+        return jsonify({
+            'message': 'Request sent successfully',
+            'listing': listing.to_dict()
+        }), 200
             
     except Exception as e:
         current_app.logger.error(f"Error processing buy request: {str(e)}")
