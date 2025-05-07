@@ -99,10 +99,12 @@ def send_bid_notifications(listing, bid):
     try:
         # Notify seller
         seller = User.query.get(listing.user_id)
-        if seller and hasattr(seller, 'email'):
+        if seller:
+            seller_email = seller.email
+            current_app.logger.info(f"Sending bid notification to seller at {seller_email}")
             msg = Message(
                 'New Bid on Your Listing',
-                recipients=[seller.email],
+                recipients=[seller_email],
                 body=f'A new bid of ${bid.amount} has been placed on your listing: {listing.title}'
             )
             mail.send(msg)
@@ -115,10 +117,12 @@ def send_bid_notifications(listing, bid):
 
         if previous_bid:
             previous_bidder = User.query.get(previous_bid.bidder_id)
-            if previous_bidder and hasattr(previous_bidder, 'email'):
+            if previous_bidder:
+                bidder_email = previous_bidder.email
+                current_app.logger.info(f"Sending outbid notification to previous bidder at {bidder_email}")
                 msg = Message(
                     'You Have Been Outbid',
-                    recipients=[previous_bidder.email],
+                    recipients=[bidder_email],
                     body=f'Your bid on {listing.title} has been outbid. The new highest bid is ${bid.amount}'
                 )
                 mail.send(msg)
@@ -129,10 +133,12 @@ def send_bid_notifications(listing, bid):
 def send_winning_bid_notification(listing, bid):
     try:
         bidder = User.query.get(bid.bidder_id)
-        if bidder and hasattr(bidder, 'email'):
+        if bidder:
+            bidder_email = bidder.email
+            current_app.logger.info(f"Sending winning bid notification to bidder at {bidder_email}")
             msg = Message(
                 'You Won the Auction!',
-                recipients=[bidder.email],
+                recipients=[bidder_email],
                 body=f'Congratulations! You won the auction for {listing.title} with your bid of ${bid.amount}. Please contact the seller to complete the transaction.'
             )
             mail.send(msg)

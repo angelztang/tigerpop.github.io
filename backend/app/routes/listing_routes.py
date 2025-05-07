@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import and_, or_, func
 from ..utils.cloudinary_config import upload_image
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+from flask_mail import Message
+from ..extensions import mail
 
 bp = Blueprint('listing', __name__)
 
@@ -637,8 +639,11 @@ def request_to_buy(listing_id):
             current_app.logger.error(f"Seller not found for listing {listing_id}")
             return jsonify({'error': 'Seller not found'}), 404
             
-        # Log seller's email address
-        current_app.logger.info(f"Seller's email address: {seller.email}")
+        # Log email addresses
+        seller_email = seller.email
+        buyer_email = buyer.email
+        current_app.logger.info(f"Seller's email address: {seller_email}")
+        current_app.logger.info(f"Buyer's email address: {buyer_email}")
         current_app.logger.info(f"Seller's NetID: {seller.netid}")
         current_app.logger.info(f"Buyer's NetID: {buyer.netid}")
             
@@ -648,6 +653,21 @@ def request_to_buy(listing_id):
             listing.buyer_id = buyer.id
             db.session.commit()
             current_app.logger.info(f"Updated listing {listing_id} status to pending")
+            
+            # Send email notification to seller
+            try:
+                msg = Message(
+                    'New Purchase Request',
+                    recipients=[seller_email],
+                    body=f'You have received a purchase request for your listing "{listing.title}" from {buyer.netid}.\n\n'
+                         f'Please contact them at {buyer_email} to arrange the transaction.'
+                )
+                mail.send(msg)
+                current_app.logger.info(f"Sent purchase request notification to seller at {seller_email}")
+            except Exception as email_error:
+                current_app.logger.error(f"Error sending email notification: {str(email_error)}")
+                # Don't fail the request if email fails
+                
         except Exception as db_error:
             current_app.logger.error(f"Database error while updating listing: {str(db_error)}")
             current_app.logger.exception("Full traceback:")

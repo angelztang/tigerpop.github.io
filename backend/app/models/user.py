@@ -12,6 +12,11 @@ class User(db.Model):
     def __init__(self, netid):
         self.netid = netid
     
+    @property
+    def email(self):
+        """Generate email from netid by appending @princeton.edu"""
+        return f"{self.netid}@princeton.edu"
+    
     def to_dict(self):
         return {
             'id': self.id,
