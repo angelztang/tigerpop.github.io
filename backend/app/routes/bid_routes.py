@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 bp = Blueprint('bids', __name__)
 
-@bp.route('/listings/<int:listing_id>/bids', methods=['POST'])
+@bp.route('/<int:listing_id>/bids', methods=['POST'])
 @jwt_required()
 def place_bid(listing_id):
     data = request.get_json()
@@ -59,7 +59,7 @@ def place_bid(listing_id):
         current_app.logger.error(f"Error placing bid: {str(e)}")
         return jsonify({'error': 'Failed to place bid'}), 500
 
-@bp.route('/listings/<int:listing_id>/bids', methods=['GET'])
+@bp.route('/<int:listing_id>/bids', methods=['GET'])
 @jwt_required()
 def get_bids(listing_id):
     try:
@@ -70,7 +70,7 @@ def get_bids(listing_id):
         current_app.logger.error(f"Error fetching bids: {str(e)}")
         return jsonify({'error': 'Failed to fetch bids'}), 500
 
-@bp.route('/listings/<int:listing_id>/close-bidding', methods=['POST'])
+@bp.route('/<int:listing_id>/close-bidding', methods=['POST'])
 def close_bidding(listing_id):
     try:
         listing = Listing.query.get_or_404(listing_id)
