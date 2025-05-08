@@ -9,11 +9,15 @@ from datetime import datetime, timedelta
 bp = Blueprint('bids', __name__)
 
 @bp.route('/<int:listing_id>/bids', methods=['POST'])
-@jwt_required()
+# @jwt_required()
 def place_bid(listing_id):
     data = request.get_json()
     amount = data.get('amount')
-    current_user_id = get_jwt_identity()
+    # current_user_id = get_jwt_identity()
+    # For unauthenticated, use a default or anonymous user, or require bidder_id in the payload
+    bidder_id = data.get('bidder_id')
+    if not bidder_id:
+        return jsonify({'error': 'bidder_id is required when not authenticated'}), 400
 
     if not amount:
         return jsonify({'error': 'Missing required fields'}), 400
@@ -42,7 +46,7 @@ def place_bid(listing_id):
         # Create new bid
         new_bid = Bid(
             listing_id=listing_id,
-            bidder_id=current_user_id,
+            bidder_id=bidder_id,
             amount=amount
         )
 
@@ -60,7 +64,7 @@ def place_bid(listing_id):
         return jsonify({'error': 'Failed to place bid'}), 500
 
 @bp.route('/<int:listing_id>/bids', methods=['GET'])
-@jwt_required()
+# @jwt_required()
 def get_bids(listing_id):
     try:
         listing = Listing.query.get_or_404(listing_id)
