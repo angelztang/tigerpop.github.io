@@ -66,6 +66,12 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         await onPlaceBid(amount);
         response = true; // Assume success if onPlaceBid doesn't throw
       } else {
+        // Debug log for bid payload
+        console.log('Placing bid with:', {
+          listing_id: listingId,
+          bidder_id: currentUserId,
+          amount
+        });
         response = await placeBid({
           listing_id: listingId,
           bidder_id: currentUserId,
