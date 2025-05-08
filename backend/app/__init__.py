@@ -63,7 +63,7 @@ def create_app(config_class=Config):
 
     # Configure JWT
     jwt.init_app(app)
-
+    
     # Register blueprints
     from app.routes.auth_routes import bp as auth_bp
     from app.routes.listing_routes import bp as listing_bp

@@ -186,7 +186,6 @@ def get_listings():
 
 @bp.route('', methods=['POST'])
 @bp.route('/', methods=['POST'])
-@jwt_required()
 def create_listing():
     # Handle both JSON and form data
     if request.is_json:
@@ -206,7 +205,7 @@ def create_listing():
     condition = data.get('condition', 'good')
     image_urls = data.get('images', [])
     pricing_mode = data.get('pricing_mode')
-    user_id = data.get('user_id')  # Get user_id from request data instead of JWT
+    user_id = data.get('user_id')  # Get user_id from request data
     
     current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
