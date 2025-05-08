@@ -487,7 +487,7 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
     const response = await fetch(`${API_URL}/api/listings/${bidData.listing_id}/bids`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ amount: bidData.amount }),
+      body: JSON.stringify({ amount: bidData.amount, bidder_id: bidData.bidder_id }),
       credentials: 'include',
       mode: 'cors'
     });
