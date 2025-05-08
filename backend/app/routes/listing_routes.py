@@ -186,99 +186,95 @@ def get_listings():
 
 @bp.route('', methods=['POST'])
 @bp.route('/', methods=['POST'])
+@jwt_required()
 def create_listing():
+    # Handle both JSON and form data
+    if request.is_json:
+        data = request.get_json()
+    else:
+        data = request.form.to_dict()
+
+    current_app.logger.info(f"Received listing creation request with data: {data}")
+    current_app.logger.info(f"Pricing mode from request: {data.get('pricing_mode')}")
+    current_app.logger.info(f"Full request data: {data}")
+
+    # Get required fields
+    title = data.get('title')
+    description = data.get('description')
+    price = data.get('price')
+    category = data.get('category', 'other')
+    condition = data.get('condition', 'good')
+    image_urls = data.get('images', [])
+    pricing_mode = data.get('pricing_mode')
+    user_id = data.get('user_id')  # Get user_id from request data instead of JWT
+    
+    current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
+
+    # Validate required fields
+    if not all([title, description, category, user_id, pricing_mode]):
+        missing_fields = []
+        if not title: missing_fields.append('title')
+        if not description: missing_fields.append('description')
+        if not category: missing_fields.append('category')
+        if not condition: missing_fields.append('condition')
+        if not user_id: missing_fields.append('user_id')
+        if not pricing_mode: missing_fields.append('pricing_mode')
+        current_app.logger.error(f"Missing required fields: {missing_fields}")
+        return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
+
+    # Validate pricing_mode
+    if pricing_mode.lower() not in ['fixed', 'auction']:
+        current_app.logger.error(f"Invalid pricing_mode: {pricing_mode}")
+        return jsonify({'error': 'pricing_mode must be either "fixed" or "auction"'}), 400
+
+    # Validate price based on pricing mode
+    if not price:
+        return jsonify({'error': 'Price is required'}), 400
     try:
-        # Handle both JSON and form data
-        if request.is_json:
-            data = request.get_json()
-        else:
-            data = request.form.to_dict()
+        price = float(price)
+        if price <= 0:
+            return jsonify({'error': 'Price must be greater than 0'}), 400
+    except (ValueError, TypeError):
+        return jsonify({'error': 'Invalid price format'}), 400
 
-        current_app.logger.info(f"Received listing creation request with data: {data}")
-        current_app.logger.info(f"Pricing mode from request: {data.get('pricing_mode')}")
-        current_app.logger.info(f"Full request data: {data}")
+    try:
+        # Create new listing
+        new_listing = Listing(
+            title=title,
+            description=description,
+            price=price,
+            user_id=user_id,
+            category=category,
+            condition=condition,
+            status='available',
+            pricing_mode=pricing_mode.lower()  # Ensure consistent casing
+        )
+        current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
+        current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
 
-        # Get required fields
-        title = data.get('title')
-        description = data.get('description')
-        price = data.get('price')
-        category = data.get('category', 'other')
-        condition = data.get('condition', 'good')
-        image_urls = data.get('images', [])
-        pricing_mode = data.get('pricing_mode')
-        user_id = data.get('user_id')  # Get user_id from request data instead of JWT
-        
-        current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
+        # Add listing to database first to get the ID
+        db.session.add(new_listing)
+        db.session.commit()
+        current_app.logger.info(f"Committed listing with pricing_mode: {new_listing.pricing_mode}")
+        current_app.logger.info(f"Listing object after commit: {new_listing.__dict__}")
 
-        # Validate required fields
-        if not all([title, description, category, user_id, pricing_mode]):
-            missing_fields = []
-            if not title: missing_fields.append('title')
-            if not description: missing_fields.append('description')
-            if not category: missing_fields.append('category')
-            if not condition: missing_fields.append('condition')
-            if not user_id: missing_fields.append('user_id')
-            if not pricing_mode: missing_fields.append('pricing_mode')
-            current_app.logger.error(f"Missing required fields: {missing_fields}")
-            return jsonify({'error': f'Missing required fields: {", ".join(missing_fields)}'}), 400
-
-        # Validate pricing_mode
-        if pricing_mode.lower() not in ['fixed', 'auction']:
-            current_app.logger.error(f"Invalid pricing_mode: {pricing_mode}")
-            return jsonify({'error': 'pricing_mode must be either "fixed" or "auction"'}), 400
-
-        # Validate price based on pricing mode
-        if not price:
-            return jsonify({'error': 'Price is required'}), 400
-        try:
-            price = float(price)
-            if price <= 0:
-                return jsonify({'error': 'Price must be greater than 0'}), 400
-        except (ValueError, TypeError):
-            return jsonify({'error': 'Invalid price format'}), 400
-
-        try:
-            # Create new listing
-            new_listing = Listing(
-                title=title,
-                description=description,
-                price=price,
-                user_id=user_id,
-                category=category,
-                condition=condition,
-                status='available',
-                pricing_mode=pricing_mode.lower()  # Ensure consistent casing
-            )
-            current_app.logger.info(f"Created listing with pricing_mode: {new_listing.pricing_mode}")
-            current_app.logger.info(f"Listing object before commit: {new_listing.__dict__}")
-
-            # Add listing to database first to get the ID
-            db.session.add(new_listing)
+        # Create image records if there are any
+        if image_urls:
+            for url in image_urls:
+                image = ListingImage(filename=url, listing_id=new_listing.id)
+                db.session.add(image)
             db.session.commit()
-            current_app.logger.info(f"Committed listing with pricing_mode: {new_listing.pricing_mode}")
-            current_app.logger.info(f"Listing object after commit: {new_listing.__dict__}")
 
-            # Create image records if there are any
-            if image_urls:
-                for url in image_urls:
-                    image = ListingImage(filename=url, listing_id=new_listing.id)
-                    db.session.add(image)
-                db.session.commit()
+        current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
+        current_app.logger.info(f"Listing pricing mode: {new_listing.pricing_mode}")
 
-            current_app.logger.info(f"Successfully created listing with ID: {new_listing.id}")
-            current_app.logger.info(f"Listing pricing mode: {new_listing.pricing_mode}")
+        # Return the listing with all its fields
+        return jsonify(new_listing.to_dict()), 201
 
-            # Return the listing with all its fields
-            return jsonify(new_listing.to_dict()), 201
-
-        except Exception as db_error:
-            db.session.rollback()
-            current_app.logger.error(f"Database error: {str(db_error)}")
-            current_app.logger.exception("Full traceback:")
-            return jsonify({'error': 'Failed to create listing'}), 500
-
-    except Exception as e:
-        current_app.logger.error(f"Error creating listing: {str(e)}")
+    except Exception as db_error:
+        db.session.rollback()
+        current_app.logger.error(f"Database error: {str(db_error)}")
+        current_app.logger.exception("Full traceback:")
         return jsonify({'error': 'Failed to create listing'}), 500
 
 @bp.route('/categories', methods=['GET'])
@@ -600,88 +596,75 @@ def get_hot_items():
         return jsonify({'error': 'Failed to get hot items'}), 500
 
 @bp.route('/<int:listing_id>/request', methods=['POST'])
+@jwt_required()
 def request_to_buy(listing_id):
+    current_user_id = get_jwt_identity()
+    current_app.logger.info(f"Starting request_to_buy for listing {listing_id}")
+    
+    # Get the listing
+    listing = Listing.query.get_or_404(listing_id)
+    current_app.logger.info(f"Found listing: {listing.id}, status: {listing.status}")
+    
+    # Get buyer's information
+    buyer = User.query.get(current_user_id)
+    if not buyer:
+        current_app.logger.error(f"Buyer not found with id {current_user_id}")
+        return jsonify({'error': 'Buyer not found'}), 404
+    
+    # Prevent users from requesting their own listings
+    if listing.user_id == buyer.id:
+        current_app.logger.error(f"User {buyer.netid} attempted to buy their own listing")
+        return jsonify({'error': 'You cannot request to buy your own listing'}), 400
+    
+    # Check if listing is available
+    if listing.status != 'available':
+        current_app.logger.error(f"Listing {listing_id} is not available (status: {listing.status})")
+        return jsonify({'error': 'This listing is no longer available'}), 400
+    
+    # Get the seller's information
+    seller = User.query.get(listing.user_id)
+    if not seller:
+        current_app.logger.error(f"Seller not found for listing {listing_id}")
+        return jsonify({'error': 'Seller not found'}), 404
+    
+    # Log email addresses
+    seller_email = seller.email
+    buyer_email = buyer.email
+    current_app.logger.info(f"Seller's email address: {seller_email}")
+    current_app.logger.info(f"Buyer's email address: {buyer_email}")
+    current_app.logger.info(f"Seller's NetID: {seller.netid}")
+    current_app.logger.info(f"Buyer's NetID: {buyer.netid}")
+    
+    # Update listing status to pending
     try:
-        current_app.logger.info(f"Starting request_to_buy for listing {listing_id}")
+        listing.status = 'pending'
+        listing.buyer_id = buyer.id
+        db.session.commit()
+        current_app.logger.info(f"Updated listing {listing_id} status to pending")
         
-        # Get the listing
-        listing = Listing.query.get_or_404(listing_id)
-        current_app.logger.info(f"Found listing: {listing.id}, status: {listing.status}")
-        
-        # Get buyer's netid from request
-        data = request.get_json()
-        current_app.logger.info(f"Received request data: {data}")
-        
-        buyer_netid = data.get('netid')
-        if not buyer_netid:
-            current_app.logger.error("No netid provided in request")
-            return jsonify({'error': 'Buyer netid is required'}), 400
-            
-        # Get the buyer's information
-        buyer = User.query.filter_by(netid=buyer_netid).first()
-        if not buyer:
-            current_app.logger.error(f"Buyer not found with netid {buyer_netid}")
-            return jsonify({'error': 'Buyer not found'}), 404
-        
-        # Prevent users from requesting their own listings
-        if listing.user_id == buyer.id:
-            current_app.logger.error(f"User {buyer_netid} attempted to buy their own listing")
-            return jsonify({'error': 'You cannot request to buy your own listing'}), 400
-            
-        # Check if listing is available
-        if listing.status != 'available':
-            current_app.logger.error(f"Listing {listing_id} is not available (status: {listing.status})")
-            return jsonify({'error': 'This listing is no longer available'}), 400
-        
-        # Get the seller's information
-        seller = User.query.get(listing.user_id)
-        if not seller:
-            current_app.logger.error(f"Seller not found for listing {listing_id}")
-            return jsonify({'error': 'Seller not found'}), 404
-            
-        # Log email addresses
-        seller_email = seller.email
-        buyer_email = buyer.email
-        current_app.logger.info(f"Seller's email address: {seller_email}")
-        current_app.logger.info(f"Buyer's email address: {buyer_email}")
-        current_app.logger.info(f"Seller's NetID: {seller.netid}")
-        current_app.logger.info(f"Buyer's NetID: {buyer.netid}")
-            
-        # Update listing status to pending
+        # Send email notification to seller
         try:
-            listing.status = 'pending'
-            listing.buyer_id = buyer.id
-            db.session.commit()
-            current_app.logger.info(f"Updated listing {listing_id} status to pending")
+            current_app.logger.info(f"Preparing to send email to seller at {seller_email}")
+            current_app.logger.info(f"Email will contain buyer's contact info: {buyer_email}")
+            msg = Message(
+                'New Purchase Request',
+                recipients=[seller_email],
+                body=f'You have received a purchase request for your listing "{listing.title}" from {buyer.netid}.\n\n'
+                     f'Please contact them at {buyer_email} to arrange the transaction.'
+            )
+            mail.send(msg)
+            current_app.logger.info(f"Successfully sent purchase request notification to seller at {seller_email}")
+        except Exception as email_error:
+            current_app.logger.error(f"Error sending email notification to {seller_email}: {str(email_error)}")
+            # Don't fail the request if email fails
             
-            # Send email notification to seller
-            try:
-                current_app.logger.info(f"Preparing to send email to seller at {seller_email}")
-                current_app.logger.info(f"Email will contain buyer's contact info: {buyer_email}")
-                msg = Message(
-                    'New Purchase Request',
-                    recipients=[seller_email],
-                    body=f'You have received a purchase request for your listing "{listing.title}" from {buyer.netid}.\n\n'
-                         f'Please contact them at {buyer_email} to arrange the transaction.'
-                )
-                mail.send(msg)
-                current_app.logger.info(f"Successfully sent purchase request notification to seller at {seller_email}")
-            except Exception as email_error:
-                current_app.logger.error(f"Error sending email notification to {seller_email}: {str(email_error)}")
-                # Don't fail the request if email fails
-                
-        except Exception as db_error:
-            current_app.logger.error(f"Database error while updating listing: {str(db_error)}")
-            current_app.logger.exception("Full traceback:")
-            db.session.rollback()
-            return jsonify({'error': 'Failed to update listing status'}), 500
-        
-        return jsonify({
-            'message': 'Request sent successfully',
-            'listing': listing.to_dict()
-        }), 200
-            
-    except Exception as e:
-        current_app.logger.error(f"Error processing buy request: {str(e)}")
+    except Exception as db_error:
+        current_app.logger.error(f"Database error while updating listing: {str(db_error)}")
         current_app.logger.exception("Full traceback:")
-        return jsonify({'error': 'Failed to process request'}), 500
+        db.session.rollback()
+        return jsonify({'error': 'Failed to update listing status'}), 500
+    
+    return jsonify({
+        'message': 'Request sent successfully',
+        'listing': listing.to_dict()
+    }), 200

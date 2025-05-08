@@ -11,34 +11,34 @@ bp = Blueprint('bids', __name__)
 @bp.route('/listings/<int:listing_id>/bids', methods=['POST'])
 @jwt_required()
 def place_bid(listing_id):
+    data = request.get_json()
+    amount = data.get('amount')
+    current_user_id = get_jwt_identity()
+
+    if not amount:
+        return jsonify({'error': 'Missing required fields'}), 400
+
+    listing = Listing.query.get_or_404(listing_id)
+
+    # Check if listing is available for bidding
+    if listing.pricing_mode != 'auction':
+        return jsonify({'error': 'This listing is not available for bidding'}), 400
+
+    if listing.status != 'available':
+        return jsonify({'error': 'This listing is no longer available'}), 400
+
+    if listing.bidding_end_date and datetime.utcnow() > listing.bidding_end_date:
+        return jsonify({'error': 'Bidding has ended for this listing'}), 400
+
+    # Check if bid amount is valid
+    current_bid = listing.get_current_bid()
+    if current_bid and amount <= current_bid:
+        return jsonify({'error': 'Bid amount must be higher than current bid'}), 400
+
+    if listing.starting_price and amount < listing.starting_price:
+        return jsonify({'error': 'Bid amount must be at least the starting price'}), 400
+
     try:
-        data = request.get_json()
-        amount = data.get('amount')
-        current_user_id = get_jwt_identity()
-
-        if not amount:
-            return jsonify({'error': 'Missing required fields'}), 400
-
-        listing = Listing.query.get_or_404(listing_id)
-
-        # Check if listing is available for bidding
-        if listing.pricing_mode != 'auction':
-            return jsonify({'error': 'This listing is not available for bidding'}), 400
-
-        if listing.status != 'available':
-            return jsonify({'error': 'This listing is no longer available'}), 400
-
-        if listing.bidding_end_date and datetime.utcnow() > listing.bidding_end_date:
-            return jsonify({'error': 'Bidding has ended for this listing'}), 400
-
-        # Check if bid amount is valid
-        current_bid = listing.get_current_bid()
-        if current_bid and amount <= current_bid:
-            return jsonify({'error': 'Bid amount must be higher than current bid'}), 400
-
-        if listing.starting_price and amount < listing.starting_price:
-            return jsonify({'error': 'Bid amount must be at least the starting price'}), 400
-
         # Create new bid
         new_bid = Bid(
             listing_id=listing_id,
@@ -55,6 +55,7 @@ def place_bid(listing_id):
         return jsonify(new_bid.to_dict()), 201
 
     except Exception as e:
+        db.session.rollback()
         current_app.logger.error(f"Error placing bid: {str(e)}")
         return jsonify({'error': 'Failed to place bid'}), 500
 
