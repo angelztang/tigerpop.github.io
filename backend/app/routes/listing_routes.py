@@ -597,7 +597,10 @@ def get_hot_items():
 @bp.route('/<int:listing_id>/request', methods=['POST'])
 @jwt_required()
 def request_to_buy(listing_id):
-    current_user_id = get_jwt_identity()
+    data = request.get_json()
+    current_user_id = data.get('buyer_id')
+    if not current_user_id:
+        return jsonify({'error': 'buyer_id is required'}), 400
     current_app.logger.info(f"Starting request_to_buy for listing {listing_id}")
     
     # Get the listing
