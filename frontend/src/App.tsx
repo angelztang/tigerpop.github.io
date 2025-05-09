@@ -47,7 +47,7 @@ const App: React.FC = () => {
             console.log('Auth response:', response.data); // Log to check isFirstLogin
 
             // Store token and netid in localStorage
-            localStorage.setItem('token', token);
+            localStorage.setItem('access_token', token);
             localStorage.setItem('netid', netid);
             
             // Update state

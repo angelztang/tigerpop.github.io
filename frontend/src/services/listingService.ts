@@ -301,19 +301,9 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
   try {
-    const netid = getNetid();
-    if (!netid) {
-      throw new Error('User not authenticated');
-    }
-
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({
-        netid: netid,
-        message: 'I am interested in this item',
-        contact_info: 'Please contact me via email'
-      }),
       credentials: 'include',
       mode: 'cors'
     });
@@ -530,7 +520,7 @@ export const getBids = async (listingId: number): Promise<Bid[]> => {
 };
 
 export const closeBidding = async (listingId: number): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/listing/${listingId}/close-bidding`, {
+  const response = await fetch(`${API_URL}/api/listings/${listingId}/close-bidding`, {
     method: 'POST',
     headers: getHeaders(),
     credentials: 'include',

@@ -33,7 +33,7 @@ const MarketplacePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPrice, setSelectedPrice] = useState<number>(0);
-  const [selectedCondition, setSelectedCondition] = useState<string>('');
+  const [selectedCondition, setSelectedCondition] = useState<string[]>([]);
   const [selectedAuctionFilter, setSelectedAuctionFilter] = useState<string>('all'); // 'all', 'auction', 'fixed'
   const [heartedListings, setHeartedListings] = useState<number[]>([]);
   const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
@@ -44,6 +44,9 @@ const MarketplacePage: React.FC = () => {
   const searchQuery = searchParams.get('search')?.toLowerCase() || '';
   const category = searchParams.get('category') || '';
   const currentUserId = parseInt(getUserId() || '0');
+  const [isConditionDropdownOpen, setIsConditionDropdownOpen] = useState(false);
+  const [isPriceDropdownOpen, setIsPriceDropdownOpen] = useState(false);
+  const [isAuctionDropdownOpen, setIsAuctionDropdownOpen] = useState(false);
 
   // Add event listener for clearFilters event
   useEffect(() => {
@@ -59,7 +62,7 @@ const MarketplacePage: React.FC = () => {
 
   const clearFilters = () => {
     setSelectedPrice(0);
-    setSelectedCondition('');
+    setSelectedCondition([]);
     setSelectedAuctionFilter('all');
     setShowHotOnly(false);
     // Clear search and category from URL
@@ -119,8 +122,14 @@ const MarketplacePage: React.FC = () => {
     setSelectedPrice(Number(e.target.value));
   };
 
-  const handleConditionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCondition(e.target.value);
+  const handleConditionClick = (condition: string) => {
+    setSelectedCondition(prev => {
+      if (prev.includes(condition)) {
+        return prev.filter(c => c !== condition);
+      } else {
+        return [...prev, condition];
+      }
+    });
   };
 
   const handleAuctionFilterChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -182,8 +191,8 @@ const MarketplacePage: React.FC = () => {
     // Apply price filter
     if (selectedPrice > 0 && listing.price > selectedPrice) return false;
     
-    // Apply condition filter
-    if (selectedCondition && listing.condition !== selectedCondition) return false;
+    // Apply condition filter - now checks if listing condition is in selected conditions array
+    if (selectedCondition.length > 0 && !selectedCondition.includes(listing.condition)) return false;
     
     // Apply auction filter
     if (selectedAuctionFilter !== 'all') {
@@ -203,6 +212,26 @@ const MarketplacePage: React.FC = () => {
     
     return true;
   });
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.condition-dropdown')) {
+        setIsConditionDropdownOpen(false);
+      }
+      if (!target.closest('.price-dropdown')) {
+        setIsPriceDropdownOpen(false);
+      }
+      if (!target.closest('.auction-dropdown')) {
+        setIsAuctionDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   if (loading) {
     return (
@@ -242,42 +271,137 @@ const MarketplacePage: React.FC = () => {
           <div className="flex flex-wrap gap-4 items-center justify-between">
             <div className="flex flex-wrap gap-4 items-center">
               {/* Price Range Filter */}
-              <select
-                value={selectedPrice}
-                onChange={handlePriceChange}
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {priceRanges.map((range) => (
-                  <option key={range.max} value={range.max}>
-                    {range.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative price-dropdown w-48">
+                <button
+                  type="button"
+                  onClick={() => setIsPriceDropdownOpen(!isPriceDropdownOpen)}
+                  className="rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full"
+                >
+                  {priceRanges.find(range => range.max === selectedPrice)?.label || 'Any Price'}
+                </button>
+                
+                {isPriceDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {priceRanges.map((range) => (
+                        <li
+                          key={range.max}
+                          onClick={() => {
+                            setSelectedPrice(range.max);
+                            setIsPriceDropdownOpen(false);
+                          }}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 ${
+                            selectedPrice === range.max ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`block truncate ${
+                              selectedPrice === range.max ? 'font-medium' : 'font-normal'
+                            }`}>
+                              {range.label}
+                            </span>
+                            {selectedPrice === range.max && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Condition Filter */}
-              <select
-                value={selectedCondition}
-                onChange={handleConditionChange}
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Any Condition</option>
-                {conditions.map((condition) => (
-                  <option key={condition} value={condition}>
-                    {condition}
-                  </option>
-                ))}
-              </select>
+              <div className="relative condition-dropdown w-48">
+                <button
+                  type="button"
+                  onClick={() => setIsConditionDropdownOpen(!isConditionDropdownOpen)}
+                  className="rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full"
+                >
+                  {selectedCondition.length > 0 
+                    ? selectedCondition.join(', ')
+                    : 'All Conditions'}
+                </button>
+                
+                {isConditionDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {conditions.map((condition) => (
+                        <li
+                          key={condition}
+                          onClick={() => handleConditionClick(condition)}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 ${
+                            selectedCondition.includes(condition) ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`block truncate ${
+                              selectedCondition.includes(condition) ? 'font-medium' : 'font-normal'
+                            }`}>
+                              {condition}
+                            </span>
+                            {selectedCondition.includes(condition) && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Auction Filter */}
-              <select
-                value={selectedAuctionFilter}
-                onChange={handleAuctionFilterChange}
-                className="rounded-md border border-gray-300 py-2 px-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="all">All Items</option>
-                <option value="auction">Auction Only</option>
-                <option value="fixed">Fixed Price Only</option>
-              </select>
+              <div className="relative auction-dropdown w-48">
+                <button
+                  type="button"
+                  onClick={() => setIsAuctionDropdownOpen(!isAuctionDropdownOpen)}
+                  className="rounded-md border border-gray-300 py-2 px-4 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white w-full"
+                >
+                  {selectedAuctionFilter === 'all' ? 'All Items' : 
+                   selectedAuctionFilter === 'auction' ? 'Auction Only' : 'Fixed Price Only'}
+                </button>
+                
+                {isAuctionDropdownOpen && (
+                  <div className="absolute z-10 mt-1 w-full rounded-md bg-white shadow-lg border border-gray-300">
+                    <ul className="max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm">
+                      {[
+                        { value: 'all', label: 'All Items' },
+                        { value: 'auction', label: 'Auction Only' },
+                        { value: 'fixed', label: 'Fixed Price Only' }
+                      ].map((option) => (
+                        <li
+                          key={option.value}
+                          onClick={() => {
+                            setSelectedAuctionFilter(option.value);
+                            setIsAuctionDropdownOpen(false);
+                          }}
+                          className={`cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-gray-50 ${
+                            selectedAuctionFilter === option.value ? 'bg-gray-100' : ''
+                          }`}
+                        >
+                          <div className="flex items-center">
+                            <span className={`block truncate ${
+                              selectedAuctionFilter === option.value ? 'font-medium' : 'font-normal'
+                            }`}>
+                              {option.label}
+                            </span>
+                            {selectedAuctionFilter === option.value && (
+                              <span className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-600">
+                                ✓
+                              </span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
 
               {/* Hot Items Toggle */}
               <button
@@ -311,8 +435,8 @@ const MarketplacePage: React.FC = () => {
                 if (selectedPrice > 0) {
                   activeFilters.push(`under $${selectedPrice}`);
                 }
-                if (selectedCondition) {
-                  activeFilters.push(`in ${selectedCondition} condition`);
+                if (selectedCondition.length > 0) {
+                  activeFilters.push(`in ${selectedCondition.join(' or ')} condition`);
                 }
                 if (selectedAuctionFilter !== 'all') {
                   activeFilters.push(selectedAuctionFilter === 'auction' ? 'Auction Items' : 'Fixed Price Items');
@@ -339,8 +463,8 @@ const MarketplacePage: React.FC = () => {
                     ? `No items found matching "${searchQuery}"`
                     : showHotOnly
                     ? "No hot items available at the moment"
-                    : selectedPrice > 0 || selectedCondition
-                    ? `No items found${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition ? ` in ${selectedCondition} condition` : ''}`
+                    : selectedPrice > 0 || selectedCondition.length > 0
+                    ? `No items found${selectedPrice > 0 ? ` under $${selectedPrice}` : ''}${selectedCondition.length > 0 ? ` in ${selectedCondition.join(' or ')} condition` : ''}`
                     : category
                     ? `No ${category} available in the marketplace yet`
                     : 'No items available in the marketplace yet'}
@@ -372,11 +496,7 @@ const MarketplacePage: React.FC = () => {
           isHearted={heartedListings.includes(selectedListing.id)}
           onHeartClick={() => handleHeartClick(selectedListing.id)}
           onClose={() => setSelectedListing(null)}
-          onUpdate={async (updatedListing) => {
-            // Update the selected listing with the new bid
-            setSelectedListing(updatedListing);
-            
-            // Refresh the listings
+          onUpdate={async () => {
             const categoryParam = category ? `&category=${category}` : '';
             const [updatedListings, hotItemsData] = await Promise.all([
               getListings(`?status=available${categoryParam}`),
@@ -397,23 +517,6 @@ const MarketplacePage: React.FC = () => {
                 bidder_id: currentUserId,
                 amount
               });
-              
-              // Immediately update the selected listing with the new bid
-              if (selectedListing) {
-                setSelectedListing({
-                  ...selectedListing,
-                  current_bid: amount
-                });
-              }
-              
-              // Update the listing in the listings array
-              setListings(prev => prev.map(listing => 
-                listing.id === selectedListing.id 
-                  ? { ...listing, current_bid: amount }
-                  : listing
-              ));
-              
-              // Refresh the listings and hot items
               const categoryParam = category ? `&category=${category}` : '';
               const [updatedListings, hotItemsData] = await Promise.all([
                 getListings(`?status=available${categoryParam}`),

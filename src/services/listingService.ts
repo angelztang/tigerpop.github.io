@@ -75,7 +75,22 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
     const baseUrl = `${API_URL}/api/listing/`;
     // Always include status=available
     const baseFilters = '?status=available';
-    const url = filters ? `${baseUrl}${baseFilters}${filters.replace('?', '&')}` : `${baseUrl}${baseFilters}`;
+    
+    // Parse the filters string to handle multiple conditions
+    let filterParams = '';
+    if (filters) {
+      const params = new URLSearchParams(filters.replace('?', ''));
+      // Handle multiple conditions
+      const conditions = params.getAll('condition');
+      params.delete('condition');
+      conditions.forEach(condition => {
+        params.append('condition', condition);
+      });
+      filterParams = '&' + params.toString();
+    }
+    
+    const url = `${baseUrl}${baseFilters}${filterParams}`;
+    
     console.log('Fetching listings from:', url);
     
     const response = await fetch(url, {
@@ -99,7 +114,11 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
       throw new Error('Invalid response format: expected array of listings');
     }
     
-    return data;
+    // Filter out any listings that are not available
+    const availableListings = data.filter(listing => listing.status === 'available');
+    console.log('Filtered available listings:', availableListings);
+    
+    return availableListings;
   } catch (error) {
     console.error('Error in getListings:', error);
     throw error;
@@ -253,9 +272,26 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
       credentials: 'include',
       mode: 'cors'
     });
-    const data = await handleResponse<Listing[]>(response);
-    console.log('User listings response:', data); // Debug log
-    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode }))); // Debug log
+    
+    // Log raw response
+    const rawData = await response.json();
+    console.log('Raw API response:', rawData);
+    console.log('Raw pricing_mode values:', rawData.map((l: any) => ({ id: l.id, pricing_mode: l.pricing_mode })));
+    
+    // Type check and transform the data
+    if (!Array.isArray(rawData)) {
+      throw new Error('Invalid response format: expected array of listings');
+    }
+    
+    // Transform pricing_mode to match the expected format
+    const data: Listing[] = rawData.map(listing => ({
+      ...listing,
+      pricing_mode: listing.pricing_mode?.toLowerCase() as Listing['pricing_mode']
+    }));
+    
+    console.log('Processed listings:', data);
+    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode })));
+    
     return data;
   } catch (error) {
     console.error('Error fetching user listings:', error);
@@ -269,6 +305,7 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
     if (!netid) {
       throw new Error('User not authenticated');
     }
+
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
       headers: getHeaders(),
@@ -280,7 +317,13 @@ export const requestToBuy = async (listingId: number): Promise<any> => {
       credentials: 'include',
       mode: 'cors'
     });
-    return handleResponse(response);
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    return response.json();
   } catch (error) {
     console.error('Error sending notification:', error);
     throw error;
@@ -441,10 +484,10 @@ export interface CreateBidData {
 
 export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
   try {
-    const response = await fetch(`${API_URL}/api/listing/${bidData.listing_id}/bids`, {
+    const response = await fetch(`${API_URL}/api/listings/${bidData.listing_id}/bids`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify(bidData),
+      body: JSON.stringify({ amount: bidData.amount, bidder_id: bidData.bidder_id }),
       credentials: 'include',
       mode: 'cors'
     });
@@ -472,16 +515,22 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
 };
 
 export const getBids = async (listingId: number): Promise<Bid[]> => {
-  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`, {
+  const response = await fetch(`${API_URL}/api/listings/${listingId}/bids`, {
     headers: getHeaders(),
     credentials: 'include',
     mode: 'cors'
   });
-  return handleResponse(response);
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Failed to fetch bids');
+  }
+
+  return response.json();
 };
 
 export const closeBidding = async (listingId: number): Promise<void> => {
-  const response = await fetch(`${API_URL}/api/listing/${listingId}/close-bidding`, {
+  const response = await fetch(`${API_URL}/api/listings/${listingId}/close-bidding`, {
     method: 'POST',
     headers: getHeaders(),
     credentials: 'include',

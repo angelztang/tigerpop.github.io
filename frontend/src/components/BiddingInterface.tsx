@@ -81,12 +81,17 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
 
       // Only proceed if we got a valid response
       if (response) {
-        setBidAmount('');
-        setSuccess('Bid placed successfully! The seller has been notified.');
-        onBidPlaced?.(amount);
-        
-        // Fetch the updated bids from the server
+        // Fetch the updated bids from the server first
         await fetchBids();
+        
+        // Only show success message if we successfully fetched the updated bids
+        if (bids.length > 0) {
+          setBidAmount('');
+          setSuccess('Bid placed successfully!');
+          onBidPlaced?.(amount);
+        } else {
+          throw new Error('Failed to confirm bid was placed');
+        }
       }
     } catch (err: unknown) {
       let errorMessage = 'Failed to place bid';

@@ -6,43 +6,52 @@ from ..models import Listing, User
 from flask_mail import Message
 from datetime import datetime, timedelta
 
-bp = Blueprint('bids', __name__)
+bp = Blueprint('bid', __name__)
 
 @bp.route('/<int:listing_id>/bids', methods=['POST'])
 # @jwt_required()
 def place_bid(listing_id):
-    data = request.get_json()
-    amount = data.get('amount')
-    # current_user_id = get_jwt_identity()
-    # For unauthenticated, use a default or anonymous user, or require bidder_id in the payload
-    bidder_id = data.get('bidder_id')
-    if not bidder_id:
-        return jsonify({'error': 'bidder_id is required when not authenticated'}), 400
-
-    if not amount:
-        return jsonify({'error': 'Missing required fields'}), 400
-
-    listing = Listing.query.get_or_404(listing_id)
-
-    # Check if listing is available for bidding
-    if listing.pricing_mode != 'auction':
-        return jsonify({'error': 'This listing is not available for bidding'}), 400
-
-    if listing.status != 'available':
-        return jsonify({'error': 'This listing is no longer available'}), 400
-
-    if listing.bidding_end_date and datetime.utcnow() > listing.bidding_end_date:
-        return jsonify({'error': 'Bidding has ended for this listing'}), 400
-
-    # Check if bid amount is valid
-    current_bid = listing.get_current_bid()
-    if current_bid and amount <= current_bid:
-        return jsonify({'error': 'Bid amount must be higher than current bid'}), 400
-
-    if listing.starting_price and amount < listing.starting_price:
-        return jsonify({'error': 'Bid amount must be at least the starting price'}), 400
-
     try:
+        data = request.get_json()
+        if not data:
+            return jsonify({'error': 'No data provided'}), 400
+
+        amount = data.get('amount')
+        bidder_id = data.get('bidder_id')
+
+        if not bidder_id:
+            return jsonify({'error': 'bidder_id is required when not authenticated'}), 400
+
+        if not amount:
+            return jsonify({'error': 'amount is required'}), 400
+
+        try:
+            amount = float(amount)
+        except (TypeError, ValueError):
+            return jsonify({'error': 'amount must be a valid number'}), 400
+
+        listing = Listing.query.get(listing_id)
+        if not listing:
+            return jsonify({'error': 'Listing not found'}), 404
+
+        # Check if listing is available for bidding
+        if listing.pricing_mode != 'auction':
+            return jsonify({'error': 'This listing is not available for bidding'}), 400
+
+        if listing.status != 'available':
+            return jsonify({'error': 'This listing is no longer available'}), 400
+
+        if listing.bidding_end_date and datetime.utcnow() > listing.bidding_end_date:
+            return jsonify({'error': 'Bidding has ended for this listing'}), 400
+
+        # Check if bid amount is valid
+        current_bid = listing.get_current_bid()
+        if current_bid and amount <= current_bid:
+            return jsonify({'error': f'Bid amount must be higher than current bid (${current_bid})'}), 400
+
+        if amount < listing.price:
+            return jsonify({'error': f'Bid amount must be at least the starting price (${listing.price})'}), 400
+
         # Create new bid
         new_bid = Bid(
             listing_id=listing_id,
@@ -51,17 +60,27 @@ def place_bid(listing_id):
         )
 
         db.session.add(new_bid)
+        
+        # Update listing's current bid
+        listing.current_bid = amount
+        listing.current_bidder_id = bidder_id
+        
         db.session.commit()
 
         # Send notifications
-        send_bid_notifications(listing, new_bid)
+        try:
+            send_bid_notifications(listing, new_bid)
+        except Exception as email_error:
+            current_app.logger.error(f"Error sending notifications: {str(email_error)}")
+            # Don't fail the bid placement if notifications fail
+            pass
 
         return jsonify(new_bid.to_dict()), 201
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error placing bid: {str(e)}")
-        return jsonify({'error': 'Failed to place bid'}), 500
+        return jsonify({'error': 'An unexpected error occurred while placing the bid'}), 500
 
 @bp.route('/<int:listing_id>/bids', methods=['GET'])
 # @jwt_required()

@@ -90,13 +90,8 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
-      const netid = getNetid();
-      if (!netid) {
-        throw new Error('Please log in to request to buy this item');
-      }
-      
       // Check if user is trying to buy their own listing
-      if (netid === listing.user_netid) {
+      if (userId !== null && parseInt(userId) === listing.user_id) {
         throw new Error("You can't buy your own listing!");
       }
 
