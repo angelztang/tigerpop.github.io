@@ -40,7 +40,6 @@ const BuyerDashboard: React.FC = () => {
   const fetchHeartedListings = async () => {
     try {
       const hearted = await getHeartedListings();
-      console.log('Fetched hearted listings:', hearted);
       setHeartedListings(hearted);
     } catch (error) {
       console.error('Error fetching hearted listings:', error);
@@ -173,11 +172,11 @@ const BuyerDashboard: React.FC = () => {
           onHeart={() => handleHeartClick(selectedListing.id)}
           onUnheart={() => handleHeartClick(selectedListing.id)}
           onRequestToBuy={() => {
-            console.log('Request to buy:', selectedListing.id);
+            // console.log('Request to buy:', selectedListing.id);
           }}
           onPlaceBid={async (amount) => {
             try {
-              console.log('Placing bid:', amount);
+              // console.log('Placing bid:', amount);
             } catch (error) {
               console.error('Error placing bid:', error);
             }

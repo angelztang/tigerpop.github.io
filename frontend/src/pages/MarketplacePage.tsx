@@ -28,7 +28,7 @@ const priceRanges: PriceRange[] = [
 ];
 
 const MarketplacePage: React.FC = () => {
-  console.log('MarketplacePage component mounted');
+  // console.log('MarketplacePage component mounted');
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +81,7 @@ const MarketplacePage: React.FC = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log('Fetching listings...');
+        // console.log('Fetching listings...');
         // Include category in the API request if it exists
         const categoryParam = category ? `&category=${category}` : '';
         
@@ -97,18 +97,18 @@ const MarketplacePage: React.FC = () => {
             const heartedData = await getHeartedListings();
             setHeartedListings(heartedData.map(listing => listing.id));
           } catch (error) {
-            console.error('Error fetching hearted listings:', error);
+            // console.error('Error fetching hearted listings:', error);
             setHeartedListings([]);
           }
         } else {
           setHeartedListings([]);
         }
         
-        console.log('Received listings:', listingsData);
+        // console.log('Received listings:', listingsData);
         setListings(listingsData);
         setHotItems(new Set(hotItemsData.map(listing => listing.id)));
       } catch (error) {
-        console.error('Error fetching data:', error);
+        // console.error('Error fetching data:', error);
         setError('Failed to load listings');
       } finally {
         setLoading(false);
@@ -146,8 +146,7 @@ const MarketplacePage: React.FC = () => {
 
   const handleHeartClick = async (id: number) => {
     if (!currentUserId) {
-      // Optionally show a message or redirect to login
-      console.log('Please log in to heart listings');
+      // console.log('Please log in to heart listings');
       return;
     }
     
@@ -170,7 +169,7 @@ const MarketplacePage: React.FC = () => {
       setListings(updatedListings);
       setHotItems(new Set(hotItemsData.map(listing => listing.id)));
     } catch (error) {
-      console.error('Error toggling heart:', error);
+      // console.error('Error toggling heart:', error);
       // If there's an error, refresh both listings and hearted listings to ensure consistency
       const categoryParam = category ? `&category=${category}` : '';
       const [updatedListings, hearted, hotItemsData] = await Promise.all([
