@@ -19,7 +19,7 @@ const getHeaders = () => {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
   };
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('access_token');
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
@@ -301,19 +301,9 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
 
 export const requestToBuy = async (listingId: number): Promise<any> => {
   try {
-    const netid = getNetid();
-    if (!netid) {
-      throw new Error('User not authenticated');
-    }
-
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({
-        netid: netid,
-        message: 'I am interested in this item',
-        contact_info: 'Please contact me via email'
-      }),
       credentials: 'include',
       mode: 'cors'
     });
