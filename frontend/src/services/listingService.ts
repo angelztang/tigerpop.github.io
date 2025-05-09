@@ -19,7 +19,7 @@ const getHeaders = () => {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
   };
-  const token = localStorage.getItem('access_token');
+  const token = localStorage.getItem('token');
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
