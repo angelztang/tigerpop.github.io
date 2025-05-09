@@ -206,7 +206,7 @@ def create_listing():
     condition = data.get('condition', 'good')
     image_urls = data.get('images', [])
     pricing_mode = data.get('pricing_mode')
-    user_id = data.get('user_id')  # Get user_id from request data instead of JWT
+    user_id = get_jwt_identity()  # Get user_id from JWT token
     
     current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
@@ -624,7 +624,7 @@ def request_to_buy(listing_id):
             current_app.logger.info(f"Preparing to send email to seller at {seller_email}")
             current_app.logger.info(f"Email will contain buyer's contact info: {buyer_email}")
             msg = Message(
-                'New Purchase Request',
+                subject='New Purchase Request',
                 recipients=[seller_email],
                 body=f'You have received a purchase request for your listing "{listing.title}" from {buyer.netid}.\n\n'
                      f'Please contact them at {buyer_email} to arrange the transaction.'
