@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Listing, getBids, Bid, closeBidding } from '../services/listingService';
+import { Listing, getBids, Bid } from '../services/listingService';
 import { requestToBuy } from '../services/listingService';
-import { getUserId } from '../services/authService';
+import { getUserId, getNetid } from '../services/authService';
 import BiddingInterface from './BiddingInterface';
 
 interface ListingDetailModalProps {
@@ -43,12 +43,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
   const CHARACTER_LIMIT = 150;  // Show first 150 characters when collapsed
   const userId = getUserId();
   const isSeller = userId !== null && parseInt(userId) === listing.user_id;
-  console.log('ListingDetailModal - isSeller:', isSeller);
-  console.log('ListingDetailModal - userId:', userId);
-  console.log('ListingDetailModal - listing.user_id:', listing.user_id);
   const modalRef = useRef<HTMLDivElement>(null);
-  const [showCloseBiddingModal, setShowCloseBiddingModal] = useState(false);
-  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (listing.pricing_mode?.toLowerCase() === 'auction') {
@@ -95,18 +90,34 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     setIsSubmitting(true);
     setError(null);
     try {
+      const netid = getNetid();
+      if (!netid) {
+        throw new Error('Please log in to request to buy this item');
+      }
+      
+      // Check if user is trying to buy their own listing
+      if (netid === listing.user_netid) {
+        throw new Error("You can't buy your own listing!");
+      }
+
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
       onUpdate?.({ ...listing, status: 'pending' });
       onListingUpdated?.();
+      // Show success message for 1 second before closing
       setTimeout(() => {
+        setNotificationSent(false);
         onClose();
-      }, 2000);
+      }, 1000);
     } catch (err: unknown) {
       console.error('Error sending notification:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to send notification';
       const errorDetails = err instanceof Error && 'details' in err ? (err as any).details : '';
       setError(`${errorMessage}${errorDetails ? `: ${errorDetails}` : ''}`);
+      // Clear error message after 2 seconds
+      setTimeout(() => {
+        setError(null);
+      }, 2000);
     } finally {
       setIsSubmitting(false);
     }
@@ -123,13 +134,14 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       // Fetch updated bids
       await fetchBids();
       
-      // Notify parent component of the update with the complete listing data
-      if (onUpdate) {
-        onUpdate({
-          ...localListing,
-          current_bid: newBid
-        });
-      }
+      // Notify parent component of the update
+      onUpdate?.({
+        ...localListing,
+        current_bid: newBid
+      });
+
+      // Update the listing prop to ensure parent state is updated
+      listing.current_bid = newBid;
     } catch (error) {
       console.error('Error updating bid:', error);
     }
@@ -154,28 +166,20 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     }
   };
 
-  const handleCloseBidding = async () => {
-    setIsSubmitting(true);
-    setError(null);
-    setSuccess(null);
-    try {
-      await closeBidding(localListing.id);
-      setSuccess('Bidding closed successfully! The highest bidder has been notified.');
-      setLocalListing(prev => ({ ...prev, status: 'pending' }));
-      onUpdate?.({ ...localListing, status: 'pending' });
-      setShowCloseBiddingModal(false);
-    } catch (err) {
-      setError('Failed to close bidding. Please try again.');
-      console.error('Error closing bidding:', err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={handleOverlayClick}>
       <div ref={modalRef} className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
         <div className="p-6">
+          {notificationSent && (
+            <div className="fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+              Email sent successfully! The seller will be notified.
+            </div>
+          )}
+          {error && (
+            <div className="fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in">
+              {error}
+            </div>
+          )}
           <div className="flex justify-between items-start mb-4">
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold">{localListing.title}</h2>
@@ -358,52 +362,13 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
                 startingPrice={localListing.price}
                 currentBid={localListing.current_bid}
                 isSeller={isSeller}
-                onCloseBidding={() => setShowCloseBiddingModal(true)}
+                onCloseBidding={() => {}}
                 onPlaceBid={async (amount) => {
                   await onPlaceBid(amount);
                   await handleBidPlaced(amount);
                 }}
                 onBidPlaced={handleBidPlaced}
               />
-            </div>
-          )}
-
-          {/* Success/Error Messages */}
-          {success && (
-            <div className="mt-4 p-4 bg-green-100 text-green-700 rounded-md">
-              {success}
-            </div>
-          )}
-          {error && (
-            <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
-              {error}
-            </div>
-          )}
-
-          {/* Close Bidding Confirmation Modal */}
-          {showCloseBiddingModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold mb-4">Close Bidding</h3>
-                <p className="text-gray-600 mb-4">
-                  Are you sure you want to close bidding for this auction? This will notify the highest bidder and mark the listing as pending.
-                </p>
-                <div className="flex justify-end space-x-4">
-                  <button
-                    onClick={() => setShowCloseBiddingModal(false)}
-                    className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleCloseBidding}
-                    disabled={isSubmitting}
-                    className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
-                  >
-                    {isSubmitting ? 'Processing...' : 'Close Bidding'}
-                  </button>
-                </div>
-              </div>
             </div>
           )}
         </div>

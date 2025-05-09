@@ -48,10 +48,6 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
     setIsLoading(true);
 
     try {
-      if (isSeller) {
-        throw new Error('You cannot bid on your own listing');
-      }
-
       const amount = parseFloat(bidAmount);
       if (isNaN(amount) || amount <= 0) {
         throw new Error('Please enter a valid bid amount');
@@ -70,6 +66,12 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         await onPlaceBid(amount);
         response = true; // Assume success if onPlaceBid doesn't throw
       } else {
+        // Debug log for bid payload
+        console.log('Placing bid with:', {
+          listing_id: listingId,
+          bidder_id: currentUserId,
+          amount
+        });
         response = await placeBid({
           listing_id: listingId,
           bidder_id: currentUserId,
@@ -79,12 +81,17 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
 
       // Only proceed if we got a valid response
       if (response) {
-        setBidAmount('');
-        setSuccess('Bid placed successfully! The seller has been notified.');
-        onBidPlaced?.(amount);
-        
-        // Fetch the updated bids from the server
+        // Fetch the updated bids from the server first
         await fetchBids();
+        
+        // Only show success message if we successfully fetched the updated bids
+        if (bids.length > 0) {
+          setBidAmount('');
+          setSuccess('Bid placed successfully!');
+          onBidPlaced?.(amount);
+        } else {
+          throw new Error('Failed to confirm bid was placed');
+        }
       }
     } catch (err: unknown) {
       let errorMessage = 'Failed to place bid';
@@ -124,7 +131,7 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         )}
       </div>
 
-      {!isSeller && (
+      {(
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Place a Bid</h3>
           <form onSubmit={handleBidSubmit} className="space-y-4">
@@ -173,14 +180,6 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
               {isLoading ? 'Placing Bid...' : 'Place Bid'}
             </button>
           </form>
-        </div>
-      )}
-
-      {isSeller && (
-        <div className="bg-white p-4 rounded-lg shadow">
-          <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
-            As the seller of this listing, you cannot place bids on your own auction.
-          </div>
         </div>
       )}
 

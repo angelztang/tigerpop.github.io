@@ -49,8 +49,8 @@ def place_bid(listing_id):
         if current_bid and amount <= current_bid:
             return jsonify({'error': f'Bid amount must be higher than current bid (${current_bid})'}), 400
 
-        if listing.starting_price and amount < listing.starting_price:
-            return jsonify({'error': f'Bid amount must be at least the starting price (${listing.starting_price})'}), 400
+        if amount < listing.price:
+            return jsonify({'error': f'Bid amount must be at least the starting price (${listing.price})'}), 400
 
         # Create new bid
         new_bid = Bid(
