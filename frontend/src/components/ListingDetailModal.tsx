@@ -95,7 +95,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
         throw new Error("You can't buy your own listing!");
       }
 
-      const response = await requestToBuy(listing.id);
+      const response = await requestToBuy(listing.id, currentUserId);
       setNotificationSent(true);
       onUpdate?.({ ...listing, status: 'pending' });
       onListingUpdated?.();

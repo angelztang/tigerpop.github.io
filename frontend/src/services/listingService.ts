@@ -299,13 +299,14 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
   }
 };
 
-export const requestToBuy = async (listingId: number): Promise<any> => {
+export const requestToBuy = async (listingId: number, buyerId: number): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/listing/${listingId}/request`, {
       method: 'POST',
       headers: getHeaders(),
       credentials: 'include',
-      mode: 'cors'
+      mode: 'cors',
+      body: JSON.stringify({ buyer_id: buyerId })
     });
 
     if (!response.ok) {
