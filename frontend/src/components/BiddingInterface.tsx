@@ -183,14 +183,14 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         </div>
       )}
 
-      {isSeller && onCloseBidding && (
+      {/* {isSeller && onCloseBidding && (
         <button
           onClick={onCloseBidding}
           className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors"
         >
           Close Bidding
         </button>
-      )}
+      )} */}
     </div>
   );
 };

@@ -6,12 +6,13 @@ import { getNetid, getUserId } from '../services/authService';
 import ListingCard from '../components/ListingCard';
 import ListingDetailModal from '../components/ListingDetailModal';
 
-type FilterTab = 'all' | 'pending' | 'purchased' | 'hearted';
+type FilterTab = 'all' | 'pending' | 'purchased' | 'hearted' | 'bids';
 
 const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [listings, setListings] = useState<Listing[]>([]);
   const [heartedListings, setHeartedListings] = useState<Listing[]>([]);
+  const [bidsListings, setBidsListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeFilter, setActiveFilter] = useState<FilterTab>('all');
@@ -47,9 +48,24 @@ const BuyerDashboard: React.FC = () => {
     }
   };
 
+  const fetchBidsListings = async () => {
+    try {
+      const netid = getNetid();
+      if (!netid) return;
+      const response = await fetch(`/api/listing/bids?netid=${netid}`);
+      if (!response.ok) throw new Error('Failed to fetch bids');
+      const data = await response.json();
+      setBidsListings(data);
+    } catch (error) {
+      console.error('Error fetching bids:', error);
+      setBidsListings([]);
+    }
+  };
+
   useEffect(() => {
     fetchListings();
     fetchHeartedListings();
+    fetchBidsListings();
   }, []);
 
   const handleHeartClick = async (id: number) => {
@@ -78,7 +94,10 @@ const BuyerDashboard: React.FC = () => {
     return false;
   });
 
-  const displayListings = activeFilter === 'hearted' ? heartedListings : filteredListings;
+  const displayListings =
+    activeFilter === 'hearted' ? heartedListings :
+    activeFilter === 'bids' ? bidsListings :
+    filteredListings;
 
   if (loading) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
@@ -97,7 +116,7 @@ const BuyerDashboard: React.FC = () => {
         <nav className="-mb-px flex space-x-8" aria-label="Tabs">
           <button
             onClick={() => setActiveFilter('all')}
-            className={`${
+            className={`$${
               activeFilter === 'all'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -107,7 +126,7 @@ const BuyerDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveFilter('pending')}
-            className={`${
+            className={`$${
               activeFilter === 'pending'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -117,7 +136,7 @@ const BuyerDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveFilter('purchased')}
-            className={`${
+            className={`$${
               activeFilter === 'purchased'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -127,13 +146,23 @@ const BuyerDashboard: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveFilter('hearted')}
-            className={`${
+            className={`$${
               activeFilter === 'hearted'
                 ? 'border-orange-500 text-orange-600'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
           >
             Hearted ({heartedListings.length})
+          </button>
+          <button
+            onClick={() => setActiveFilter('bids')}
+            className={`$${
+              activeFilter === 'bids'
+                ? 'border-orange-500 text-orange-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm`}
+          >
+            Bids ({bidsListings.length})
           </button>
         </nav>
       </div>
@@ -145,7 +174,8 @@ const BuyerDashboard: React.FC = () => {
             {activeFilter === 'all' ? "You don't have any listings yet" :
              activeFilter === 'pending' ? "You don't have any pending listings" :
              activeFilter === 'purchased' ? "You haven't purchased any items yet" :
-             "You haven't hearted any items yet"}
+             activeFilter === 'hearted' ? "You haven't hearted any items yet" :
+             "You haven't placed any bids yet"}
           </p>
         </div>
       ) : (
