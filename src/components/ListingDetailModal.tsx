@@ -9,7 +9,7 @@ interface ListingDetailModalProps {
   isHearted: boolean;
   onHeartClick: () => void;
   onClose: () => void;
-  onUpdate: (updatedListing: Listing) => void;
+  onUpdate?: (updatedListing: Listing) => void;
   onListingUpdated?: () => void;
   onHeart: () => void;
   onUnheart: () => void;
@@ -97,7 +97,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
     try {
       const response = await requestToBuy(listing.id);
       setNotificationSent(true);
-      onUpdate({ ...listing, status: 'pending' });
+      onUpdate?.({ ...listing, status: 'pending' });
       onListingUpdated?.();
       setTimeout(() => {
         onClose();
@@ -162,7 +162,7 @@ const ListingDetailModal: React.FC<ListingDetailModalProps> = ({
       await closeBidding(localListing.id);
       setSuccess('Bidding closed successfully! The highest bidder has been notified.');
       setLocalListing(prev => ({ ...prev, status: 'pending' }));
-      onUpdate({ ...localListing, status: 'pending' });
+      onUpdate?.({ ...localListing, status: 'pending' });
       setShowCloseBiddingModal(false);
     } catch (err) {
       setError('Failed to close bidding. Please try again.');
