@@ -472,7 +472,7 @@ export const placeBid = async (bidData: CreateBidData): Promise<Bid> => {
 };
 
 export const getBids = async (listingId: number): Promise<Bid[]> => {
-  const response = await fetch(`${API_URL}/api/listing/${listingId}/bids`, {
+  const response = await fetch(`${API_URL}/api/listings/${listingId}/bids`, {
     headers: getHeaders(),
     credentials: 'include',
     mode: 'cors'

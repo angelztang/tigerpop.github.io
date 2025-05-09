@@ -48,6 +48,10 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
     setIsLoading(true);
 
     try {
+      if (isSeller) {
+        throw new Error('You cannot bid on your own listing');
+      }
+
       const amount = parseFloat(bidAmount);
       if (isNaN(amount) || amount <= 0) {
         throw new Error('Please enter a valid bid amount');
@@ -120,7 +124,7 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         )}
       </div>
 
-      {(
+      {!isSeller && (
         <div className="bg-white p-4 rounded-lg shadow">
           <h3 className="text-lg font-semibold mb-2">Place a Bid</h3>
           <form onSubmit={handleBidSubmit} className="space-y-4">
@@ -172,14 +176,17 @@ const BiddingInterface: React.FC<BiddingInterfaceProps> = ({
         </div>
       )}
 
+      {isSeller && (
+        <div className="bg-white p-4 rounded-lg shadow">
+          <div className="p-3 bg-blue-50 text-blue-700 rounded-md text-sm">
+            As the seller of this listing, you cannot place bids on your own auction.
+          </div>
+        </div>
+      )}
+
       {isSeller && onCloseBidding && (
         <button
-          onClick={() => {
-            console.log('Close bidding button clicked');
-            console.log('isSeller:', isSeller);
-            console.log('onCloseBidding:', onCloseBidding);
-            onCloseBidding();
-          }}
+          onClick={onCloseBidding}
           className="w-full bg-red-500 text-white py-2 px-4 rounded-md hover:bg-red-600 transition-colors"
         >
           Close Bidding

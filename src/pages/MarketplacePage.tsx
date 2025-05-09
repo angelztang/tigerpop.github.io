@@ -392,28 +392,27 @@ const MarketplacePage: React.FC = () => {
           }}
           onPlaceBid={async (amount) => {
             try {
+              // Place the bid
               await placeBid({
                 listing_id: selectedListing.id,
                 bidder_id: currentUserId,
                 amount
               });
-              
-              // Immediately update the selected listing with the new bid
-              if (selectedListing) {
-                setSelectedListing({
-                  ...selectedListing,
-                  current_bid: amount
-                });
-              }
-              
-              // Update the listing in the listings array
+
+              // Update the selected listing immediately
+              setSelectedListing(prev => ({
+                ...prev!,
+                current_bid: amount
+              }));
+
+              // Update the listings array to reflect the new bid
               setListings(prev => prev.map(listing => 
                 listing.id === selectedListing.id 
                   ? { ...listing, current_bid: amount }
                   : listing
               ));
-              
-              // Refresh the listings and hot items
+
+              // Refresh data from server
               const categoryParam = category ? `&category=${category}` : '';
               const [updatedListings, hotItemsData] = await Promise.all([
                 getListings(`?status=available${categoryParam}`),
