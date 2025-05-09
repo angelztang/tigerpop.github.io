@@ -205,11 +205,7 @@ def create_listing():
     condition = data.get('condition', 'good')
     image_urls = data.get('images', [])
     pricing_mode = data.get('pricing_mode')
-<<<<<<< HEAD
     user_id = data.get('user_id')  # Get user_id from request data
-=======
-    user_id = get_jwt_identity()  # Get user_id from JWT token
->>>>>>> 33369f398fb814b35d05fb65b8e138b3207c08d1
     
     current_app.logger.info(f"Pricing mode after processing: {pricing_mode}")
 
@@ -576,7 +572,6 @@ def get_hot_items():
         return jsonify({'error': 'Failed to get hot items'}), 500
 
 @bp.route('/<int:listing_id>/request', methods=['POST'])
-@jwt_required()
 def request_to_buy(listing_id):
     data = request.get_json()
     current_user_id = data.get('buyer_id')
