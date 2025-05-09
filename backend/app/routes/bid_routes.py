@@ -6,7 +6,7 @@ from ..models import Listing, User
 from flask_mail import Message
 from datetime import datetime, timedelta
 
-bp = Blueprint('bids', __name__)
+bp = Blueprint('bid', __name__)
 
 @bp.route('/<int:listing_id>/bids', methods=['POST'])
 # @jwt_required()
