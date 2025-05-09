@@ -91,8 +91,6 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
     
     const url = `${baseUrl}${baseFilters}${filterParams}`;
     
-    console.log('Fetching listings from:', url);
-    
     const response = await fetch(url, {
       headers: getHeaders(),
       credentials: 'include',
@@ -101,26 +99,21 @@ export const getListings = async (filters?: string): Promise<Listing[]> => {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      console.error('Error response:', errorData);
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
     
     const data = await response.json();
-    console.log('Raw response data:', data);
     
     // Ensure we have an array of listings
     if (!Array.isArray(data)) {
-      console.error('Expected array of listings, got:', data);
       throw new Error('Invalid response format: expected array of listings');
     }
     
     // Filter out any listings that are not available
     const availableListings = data.filter(listing => listing.status === 'available');
-    console.log('Filtered available listings:', availableListings);
     
     return availableListings;
   } catch (error) {
-    console.error('Error in getListings:', error);
     throw error;
   }
 };
@@ -146,7 +139,6 @@ export const createListing = async (listingData: CreateListingData): Promise<Lis
 
     return handleResponse(response);
   } catch (error) {
-    console.error('Error creating listing:', error);
     throw error;
   }
 };
@@ -162,7 +154,6 @@ export const updateListing = async (id: number, data: Partial<Listing>): Promise
     });
     return handleResponse(response);
   } catch (error) {
-    console.error('Error updating listing:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to update listing');
   }
 };
@@ -187,7 +178,6 @@ export const updateListingStatus = async (id: number, status: 'available' | 'sol
     window.location.reload();
     return data;
   } catch (error) {
-    console.error('Error updating listing status:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to update listing status');
   }
 };
@@ -217,7 +207,6 @@ export const deleteListing = async (id: number): Promise<void> => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error deleting listing:', error);
     throw new Error(error instanceof Error ? error.message : 'Failed to delete listing');
   }
 };
@@ -251,7 +240,6 @@ export const uploadImages = async (files: File[]): Promise<string[]> => {
 
     return data.urls;
   } catch (error) {
-    console.error('Error uploading images:', error);
     throw error;
   }
 };
@@ -275,8 +263,6 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
     
     // Log raw response
     const rawData = await response.json();
-    console.log('Raw API response:', rawData);
-    console.log('Raw pricing_mode values:', rawData.map((l: any) => ({ id: l.id, pricing_mode: l.pricing_mode })));
     
     // Type check and transform the data
     if (!Array.isArray(rawData)) {
@@ -289,12 +275,8 @@ export const getUserListings = async (userId: string): Promise<Listing[]> => {
       pricing_mode: listing.pricing_mode?.toLowerCase() as Listing['pricing_mode']
     }));
     
-    console.log('Processed listings:', data);
-    console.log('Listings with pricing_mode:', data.map(l => ({ id: l.id, title: l.title, pricing_mode: l.pricing_mode })));
-    
     return data;
   } catch (error) {
-    console.error('Error fetching user listings:', error);
     throw error;
   }
 };
@@ -316,7 +298,6 @@ export const requestToBuy = async (listingId: number, buyerId: number): Promise<
 
     return response.json();
   } catch (error) {
-    console.error('Error sending notification:', error);
     throw error;
   }
 };
@@ -332,24 +313,15 @@ export const getUserPurchases = async (): Promise<Listing[]> => {
 
 export const getBuyerListings = async (netid: string): Promise<Listing[]> => {
   try {
-    console.log('Fetching buyer listings for netid:', netid);
     const response = await fetch(`${API_URL}/api/listing/buyer?netid=${netid}`, {
       headers: getHeaders(),
       credentials: 'include',
       mode: 'cors'
     });
     
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('Error fetching buyer listings:', errorData);
-      throw new Error(errorData.error || 'Failed to fetch buyer listings');
-    }
-    
     const data = await response.json();
-    console.log('Received buyer listings:', data);
     return data;
   } catch (error) {
-    console.error('Error in getBuyerListings:', error);
     throw error;
   }
 };
@@ -374,7 +346,6 @@ export const heartListing = async (id: number): Promise<void> => {
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
   } catch (error) {
-    console.error('Error hearting listing:', error);
     throw error;
   }
 };
@@ -399,7 +370,6 @@ export const unheartListing = async (id: number): Promise<void> => {
       throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
     }
   } catch (error) {
-    console.error('Error unhearting listing:', error);
     throw error;
   }
 };
@@ -429,7 +399,6 @@ export const getHeartedListings = async (): Promise<Listing[]> => {
     
     return data;
   } catch (error) {
-    console.error('Error fetching hearted listings:', error);
     throw error;
   }
 };
@@ -454,7 +423,6 @@ export const getHotItems = async (): Promise<Listing[]> => {
     
     return data;
   } catch (error) {
-    console.error('Error fetching hot items:', error);
     throw error;
   }
 };

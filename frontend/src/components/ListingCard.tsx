@@ -21,13 +21,13 @@ const ListingCard: React.FC<ListingCardProps> = ({ listing, onDelete, onClick, i
   const currentUserId = getUserId();
 
   // Debug logging
-  console.log('ListingCard props:', {
-    listingId: listing.id,
-    title: listing.title,
-    pricingMode: listing.pricing_mode,
-    isAuctionProp: isAuction,
-    showAuctionTag: isAuction || (listing.pricing_mode?.toLowerCase() === 'auction')
-  });
+  // console.log('ListingCard props:', {
+  //   listingId: listing.id,
+  //   title: listing.title,
+  //   pricingMode: listing.pricing_mode,
+  //   isAuctionProp: isAuction,
+  //   showAuctionTag: isAuction || (listing.pricing_mode?.toLowerCase() === 'auction')
+  // });
 
   const handleCardClick = () => {
     if (onClick) {

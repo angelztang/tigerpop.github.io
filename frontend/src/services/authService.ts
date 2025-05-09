@@ -97,23 +97,18 @@ export const isAuthenticated = () => {
 // For backward compatibility - returns user_id from localStorage
 export const getUserId = () => {
   const userId = localStorage.getItem('user_id');
-  console.log('Getting user ID:', userId);
   return userId;
 };
 
 // Initialize user in database
 export const initializeUser = async () => {
-  console.log('Starting user initialization');
   try {
     const netid = getNetid();
     if (!netid) {
-      console.error('No netid found during initialization');
-      // Redirect to login if no netid is found
       login();
       return;
     }
 
-    console.log('Making request to check user');
     const response = await fetch(`${API_URL}/api/auth/users/check`, {
       method: 'POST',
       headers: {
@@ -132,12 +127,10 @@ export const initializeUser = async () => {
         login();
         return;
       }
-      console.error('Failed to check user:', response.status, response.statusText);
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log('User checked successfully:', data);
     
     // Store user_id in localStorage
     if (data.user_id) {
@@ -146,13 +139,11 @@ export const initializeUser = async () => {
     
     return data;
   } catch (error) {
-    console.error('Error checking user:', error);
     throw error;
   }
 };
 
 export const setUserInfo = (userInfo: UserInfo) => {
-  console.log('Setting user info:', userInfo);
   localStorage.setItem('netid', userInfo.netid);
 };
 
@@ -187,7 +178,6 @@ export const getUserInfo = async (): Promise<UserInfo | null> => {
     const data = await response.json();
     return data;
   } catch (error) {
-    console.error('Error getting user info:', error);
     return null;
   }
 }; 
