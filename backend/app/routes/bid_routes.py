@@ -54,14 +54,19 @@ def place_bid(listing_id):
         db.session.commit()
 
         # Send notifications
-        send_bid_notifications(listing, new_bid)
+        try:
+            send_bid_notifications(listing, new_bid)
+        except Exception as email_error:
+            current_app.logger.error(f"Error sending notifications: {str(email_error)}")
+            # Don't fail the bid placement if notifications fail
+            pass
 
         return jsonify(new_bid.to_dict()), 201
 
     except Exception as e:
         db.session.rollback()
         current_app.logger.error(f"Error placing bid: {str(e)}")
-        return jsonify({'error': 'Failed to place bid'}), 500
+        return jsonify({'error': f'Failed to place bid: {str(e)}'}), 500
 
 @bp.route('/<int:listing_id>/bids', methods=['GET'])
 # @jwt_required()
