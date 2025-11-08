@@ -47,31 +47,4 @@ python backend/run.py
 
 Visit http://localhost:3000 for the frontend and http://localhost:8000 (or configured port) for backend routes.
 
-## Environment variables (for Vercel / Production)
-Set these in your Vercel project (Production + Preview environments). Build-time vars for CRA must be present before the build.
-
-- DATABASE_URL — Postgres connection string (production DB).
-- SECRET_KEY — Flask secret key.
-- JWT_SECRET_KEY — JWT signing secret.
-- CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET — Cloudinary creds.
-- REACT_APP_API_URL — frontend build-time API URL (e.g. https://your-app.vercel.app/api)
-- REACT_APP_FRONTEND_URL — frontend URL used for redirects.
-- MAIL_SERVER, MAIL_PORT, MAIL_USE_TLS, MAIL_USERNAME, MAIL_PASSWORD, MAIL_DEFAULT_SENDER_EMAIL, MAIL_DEFAULT_SENDER_NAME — for outgoing mail.
-
-## Deployment notes
-- The repo contains `vercel.json` and a root `requirements.txt` so Vercel can build the frontend (`frontend/package.json`) and run the Python serverless API under `/api`.
-- The backend is serverless-friendly and uses Cloudinary for all image storage — no local file persistence is required.
-- Database migrations should be run outside of Vercel (e.g., from CI or a one-off machine) using Flask-Migrate/Alembic against the production DATABASE_URL.
-
-## Developer notes & next steps
-- The project is prepped to deploy both frontend and backend on Vercel. Before first deploy, add required env vars to the Vercel dashboard (see list above).
-- I recommend storing Cloudinary `public_id` in the DB alongside image URLs for robust delete/update operations; currently the delete flow attempts to extract the public_id from the URL.
-- If you want, I can add a health-check endpoint and a smoke-test that verifies DB connectivity and Cloudinary access during deployment.
-
-## Contact / demo
-If you'd like a live demo or specific feature walkthrough for recruiting purposes, let me know and I can deploy a demo instance or prepare a short video highlighting the UX and infrastructure.
-
----
-Generated README summary — includes tech stack, features, run instructions, and deployment notes for recruiters and reviewers.
-
 
